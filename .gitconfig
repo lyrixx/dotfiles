@@ -1,0 +1,23 @@
+[user]
+  name            = Grégoire Pineau
+  email           = lyrixx@lyrixx.info
+[alias]
+  st              = status
+  ci              = commit
+  co              = checkout
+  br              = branch -a
+  lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative 
+  logfull         = log --pretty=fuller --graph --stat -p
+  cat             = cat-file -p
+  unstage         = reset HEAD
+  uncommit        = update-ref HEAD HEAD^
+  uncommithard    = reset --hard HEAD^
+  oups            = commit -a --amend -C HEAD
+[branch]
+  autosetupmerge  = true
+[color]
+  ui              = always
+[core]
+  autocrlf        = input
+[branch "master"]
+  rebase          = true
