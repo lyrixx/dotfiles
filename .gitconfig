@@ -7,6 +7,8 @@
   co              = checkout
   br              = branch -a
   lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative 
+  di              = diff
+  sdi             = diff --cached
   logfull         = log --pretty=fuller --graph --stat -p
   cat             = cat-file -p
   unstage         = reset HEAD
