@@ -15,7 +15,7 @@
   unstage         = reset HEAD
   uncommit        = update-ref HEAD HEAD^
   uncommithard    = reset --hard HEAD^
-  oups            = commit -a --amend -C HEAD
+  oups            = commit --amend -C HEAD
 [branch]
   autosetupmerge  = true
 [color]
