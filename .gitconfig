@@ -5,7 +5,8 @@
   st              = status
   ci              = commit
   co              = checkout
-  br              = branch -a
+  br              = branch
+  bra             = branch -a
   lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative 
   di              = diff
   sdi             = diff --cached
