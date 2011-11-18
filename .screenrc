@@ -3,6 +3,9 @@ altscreen on
 autodetach on
 startup_message off
 
+#vbell
+vbell off
+
 # Change default scrollback value for new windows
 defscrollback 20000
 
