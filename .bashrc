@@ -14,6 +14,9 @@ fi
 # VIM as default text editor
 export EDITOR=/usr/bin/vim
 
+# less with clor
+export LESS=-R
+
 # Bash symfony completion
 _symfony()
 {
