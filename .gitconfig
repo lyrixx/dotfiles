@@ -22,5 +22,6 @@
   ui              = always
 [core]
   autocrlf        = input
+  excludesfile    = /home/sensio/.gitglobalexclude
 [branch "master"]
   rebase          = true
