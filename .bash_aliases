@@ -42,3 +42,5 @@ alias svnup="svn up --ignore-externals"
 
 alias tags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" --totals=yes --tag-relative=yes --fields=+afkst --PHP-kinds=+cf'
 
+#alias toLC="find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;" 
+
