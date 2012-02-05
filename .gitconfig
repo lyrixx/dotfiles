@@ -16,7 +16,7 @@
   uncommit        = update-ref HEAD HEAD^
   uncommithard    = reset --hard HEAD^
   oups            = commit --amend -C HEAD
-  tagg            = ! git tag -f -a -m 'created tag : `cat VERSION`' `cat VERSION` && git push --tags
+  tagg            = ! git fetch -t && git tag -f -a -m 'created tag : `cat VERSION`' `cat VERSION` && git push --tags
 [branch]
   autosetupmerge  = true
 [color]
@@ -26,3 +26,5 @@
   excludesfile    = ~/.gitglobalexclude
 [branch "master"]
   rebase          = true
+[rerere]
+  enabled = 1
