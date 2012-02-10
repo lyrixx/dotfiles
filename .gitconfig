@@ -28,3 +28,6 @@
   rebase          = true
 [rerere]
   enabled = 1
+[github]
+  user = lyrixx
+  token = 1350974820846ca1c83aa591bbfd016c
