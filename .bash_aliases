@@ -44,3 +44,5 @@ alias tags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" --
 
 #alias toLC="find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;" 
 
+alias subl="/usr/bin/sublime-text-2 . > /dev/null 2>&1 &"
+
