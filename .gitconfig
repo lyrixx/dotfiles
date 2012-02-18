@@ -8,6 +8,7 @@
   br              = branch
   bra             = branch -a
   lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative 
+  lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
   di              = diff
   sdi             = diff --cached
   logfull         = log --pretty=fuller --graph --stat -p
@@ -17,6 +18,9 @@
   uncommithard    = reset --hard HEAD^
   oups            = commit --amend -C HEAD
   tagg            = ! git fetch -t && git tag -f -a -m 'created tag : `cat VERSION`' `cat VERSION` && git push --tags
+  rebc            = rebase --continue
+  reba            = rebase --abort
+  rebs            = rebase --skip
 [branch]
   autosetupmerge  = true
 [color]
