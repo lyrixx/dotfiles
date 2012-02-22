@@ -1,5 +1,9 @@
 # Comment in the above and uncomment this below for a color prompt
-PS1='\[\e[01;33m\]\u@\H\[\e[00;36m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] '
+
+GIT_PS1_SHOWDIRTYSTATE=true
+GIT_PS1_SHOWUNTRACKEDFILES=true
+
+PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] '
 
 # Load bash aliases
 if [ -f ~/.bash_aliases ]; then
