@@ -1,3 +1,5 @@
+alias sudo="sudo "
+
 alias ls="ls --color"
 alias ll="ls -lh"
 alias lla="ll -a"
