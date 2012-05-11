@@ -4,10 +4,11 @@
 [alias]
   st              = status
   ci              = commit
+  cim             = commit -m "--"
   co              = checkout
   br              = branch
   bra             = branch -a
-  lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative 
+  lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative
   lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(yellow)%d%Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
   di              = diff
   sdi             = diff --cached
@@ -20,19 +21,25 @@
   tagg            = ! git fetch -t && git tag -f -a -m 'created tag : `cat VERSION`' `cat VERSION` && git push --tags
   tagc            = ! TAG=`git describe --tags $(git rev-list --tags --max-count=1) | sed 's/v//' | awk -F . '{ printf "v%d.%d.%d", $1, $2, $3 + 1 }'` && echo $TAG > VERSION && git ci -m "Bumped to version : $TAG" VERSION && git tag -a -m "Created tag $TAG" $TAG  && git push &&  git push --tags
   rebc            = rebase --continue
-  reba            = rebase --abort
+  rebt            = rebase --abort
   rebs            = rebase --skip
 [branch]
   autosetupmerge  = true
 [color]
   ui              = always
+[color "branch"]
+  current = yellow bold
+  local   = yellow
+[color "diff"]
+  meta = yellow bold
+[color "status"]
+  untracked = cyan
 [core]
   autocrlf        = input
   excludesfile    = ~/.gitglobalexclude
-[branch "master"]
+[branch]
   rebase          = true
 [rerere]
   enabled = 1
 [github]
   user = lyrixx
-  token = 1350974820846ca1c83aa591bbfd016c
