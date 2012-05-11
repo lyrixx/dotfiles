@@ -8,12 +8,12 @@ alias du="du -h"
 
 alias grep='grep -n --exclude-dir ".svn" --exclude tagsi --color'
 
-alias agi=" apt-get install"
-alias agua=" apt-get update"
-alias agup=" apt-get upgrade"
-alias aguap="agua && agup"
-alias asearch="apt-cache search"
+alias agi="apt-get install"
+alias agua="apt-get update"
+alias agup="apt-get upgrade"
+alias aguap="apt-get update && apt-get upgrade"
 alias adel=" apt-get remove"
+alias asearch="apt-cache search"
 
 alias untar="tar xvf"
 alias ungz="gunzip"
@@ -42,9 +42,9 @@ alias go_logVarnish="cd /var/log/varnish"
 alias svnst="svn status --ignore-externals"
 alias svnup="svn up --ignore-externals"
 
-alias tags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" --totals=yes --tag-relative=yes --fields=+afkst --PHP-kinds=+cf'
+alias ctags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" --totals=yes --tag-relative=yes --fields=+afkst --PHP-kinds=+cf'
 
-#alias toLC="find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;" 
+#alias toLC="find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;"
 
 alias subl="/usr/bin/sublime-text-2 . > /dev/null 2>&1 &"
 
