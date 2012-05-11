@@ -1,3 +1,5 @@
+#!/bin/bash
+
 git co sensio
 git rebase master
 git co prod
