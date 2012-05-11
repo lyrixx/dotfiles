@@ -1,17 +1,17 @@
 #global
-altscreen on
-autodetach on
+altscreen       on
+autodetach      on
 startup_message off
 
 #vbell
-vbell off
+vbell           off
 
 # Change default scrollback value for new windows
-defscrollback 20000
+defscrollback   20000
 
 # Caption
-caption always "%{Yb} %02d-%02m-%Y %0c %{k}|%{C} %H %{k}|%{G} %l %{k}|%{W} %-Lw%{R}%n %t%{W}%+Lw"
+caption always  "%{Yb} %02d-%02m-%Y %0c %{k}|%{C} %H %{k}|%{G} %l %{k}|%{W} %-Lw%{R}%n %t%{W}%+Lw"
 
 # Term :
-screen -t ROOT          0 su
-screen -t bash          1
+screen -t ROOT  0 su
+screen -t bash  1

@@ -28,10 +28,10 @@
 [color]
     ui              = always
 [color "branch"]
-    current = yellow bold
-    local   = yellow
+    current         = yellow bold
+    local           = yellow
 [color "diff"]
-    meta = yellow bold
+    meta            = yellow bold
 [color "status"]
     untracked = cyan
 [core]
@@ -40,6 +40,6 @@
 [branch]
     rebase          = true
 [rerere]
-    enabled = 1
+    enabled         = 1
 [github]
-    user = lyrixx
+    user            = lyrixx
