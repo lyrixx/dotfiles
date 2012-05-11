@@ -9,6 +9,7 @@ ln -sf $CURRENT/.gitconfig           ~/.gitconfig
 ln -sf $CURRENT/.gitglobalexclude    ~/.gitglobalexclude
 ln -sf $CURRENT/.profile             ~/.profile
 ln -sf $CURRENT/.screenrc            ~/.screenrc
+ln -sf $CURRENT/.vimrc               ~/.vimrc
 
 if [ $EUID -ne 0 ]; then
     ln -sf $CURRENT/.bashrc              ~/.bashrc
