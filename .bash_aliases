@@ -49,3 +49,5 @@ alias ctags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" -
 alias subl="/usr/bin/sublime-text-2 . > /dev/null 2>&1 &"
 
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+
+alias mysql="mysql --sigint-ignore"
