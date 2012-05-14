@@ -9,11 +9,14 @@ fi
 GIT_PS1_SHOWDIRTYSTATE=true
 GIT_PS1_SHOWUNTRACKEDFILES=true
 
+# 0 : normal, 1 : bold, 4 underline, nothing : background
 NoColor="\[\e[0m\]"
-Red="\[\e[01;31m\]"
+Black="\[\e[00;30m\]"
+Red="\[\e[00;31m\]"
 Green="\[\e[00;32m\]"
-Yellow="\[\e[01;33m\]"
-Blue="\[\e[01;34m\]"
+Yellow="\[\e[00;33m\]"
+Blue="\[\e[00;34m\]"
+Purple="\[\e[00;35m\]"
 Cyan="\[\e[00;36m\]"
 
 if [[ $UID -eq 0 ]]; then
@@ -22,10 +25,10 @@ elif [[ $SSH_CONNECTION ]]; then
     PROMPT_PREFIX="$Yellow\u@\H$NoColor"
 fi
 if [[ `which git` ]]; then
-    PS1GIT=$Blue'$(__git_ps1 "(%s)")'$NoColor
+    PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
 
-PS1="$PROMPT_PREFIX$Green[\w]$NoColor$PS1GIT "
+PS1="$PROMPT_PREFIX$Cyan[\w]$NoColor$PS1GIT "
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Formation
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' #One line, OLD
 
