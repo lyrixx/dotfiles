@@ -1,5 +1,0 @@
-if [ -f ~/.bash_common ]; then
-    . ~/.bash_common
-fi
-
-PS1='\[\e[01;31m\]\u@\H\[\e[00;36m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] '
