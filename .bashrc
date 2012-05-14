@@ -27,8 +27,7 @@ fi
 
 PS1="$PROMPT_PREFIX$Green[\w]$NoColor$PS1GIT "
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Formation
-# PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' #One line, OLD
-
+#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' #One line, OLD
 
 # less with clor
 export LESS=-R
