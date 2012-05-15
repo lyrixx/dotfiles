@@ -27,10 +27,13 @@ fi
 if [[ `which git` ]]; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
+_set_exit_color() {
+    if [[ $? != "0" ]]; then EXITCOLOR=$Red.$NoColor; else EXITCOLOR=$Green.$Nocolor; fi
+}
 
-PS1="$PROMPT_PREFIX$Cyan[\w]$NoColor$PS1GIT "
-#PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Formation
-#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' #One line, OLD
+PROMPT_COMMAND='_set_exit_color;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan[\w]$NoColor$PS1GIT "'
+#PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, trainging
+#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
 # less with clor
 export LESS=-R
