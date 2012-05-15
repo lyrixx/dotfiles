@@ -1,14 +1,20 @@
 #!/bin/bash
 
-CURRENT=`pwd`
+DOTFILES=`pwd`
 
-ln -sf $CURRENT/.bash_aliases        ~/.bash_aliases
-ln -sf $CURRENT/.bash_logout         ~/.bash_logout
-ln -sf $CURRENT/.bashrc              ~/.bashrc
-ln -sf $CURRENT/.gitconfig           ~/.gitconfig
-ln -sf $CURRENT/.gitglobalexclude    ~/.gitglobalexclude
-ln -sf $CURRENT/.profile             ~/.profile
-ln -sf $CURRENT/.screenrc            ~/.screenrc
-ln -sf $CURRENT/.vimrc               ~/.vimrc
+ln -sf $DOTFILES/.bash_aliases        ~/.bash_aliases
+ln -sf $DOTFILES/.bash_logout         ~/.bash_logout
+ln -sf $DOTFILES/.bashrc              ~/.bashrc
+ln -sf $DOTFILES/.gitconfig           ~/.gitconfig
+ln -sf $DOTFILES/.gitglobalexclude    ~/.gitglobalexclude
+ln -sf $DOTFILES/.profile             ~/.profile
+ln -sf $DOTFILES/.screenrc            ~/.screenrc
+ln -sf $DOTFILES/.vimrc               ~/.vimrc
+
+if type -t git &> /dev/null; then
+  git submodule update --init
+  ln -sf $DOTFILES/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
+fi
 
 . ~/.bashrc
+

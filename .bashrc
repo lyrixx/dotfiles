@@ -58,3 +58,13 @@ _symfony()
     return 0
 } &&
 complete -F _symfony symfony
+
+_command_exists() {
+    type "$1" &> /dev/null ;
+}
+
+if _command_exists dircolors; then
+    if [ -f ~/.dir_colors ]; then
+        eval `dircolors --bourne-shell ~/.dir_colors`
+    fi
+fi
