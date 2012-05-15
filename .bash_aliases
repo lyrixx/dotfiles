@@ -51,3 +51,5 @@ alias subl="/usr/bin/sublime-text-2 . > /dev/null 2>&1 &"
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 
 alias mysql="mysql --sigint-ignore"
+
+alias whatismyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' -e 's/<.*$//'"
