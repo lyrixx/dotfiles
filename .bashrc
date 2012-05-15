@@ -28,7 +28,7 @@ if [[ `which git` ]]; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
 _set_exit_color() {
-    if [[ $? != "0" ]]; then EXITCOLOR=$Red.$NoColor; else EXITCOLOR=$Green.$Nocolor; fi
+    if [[ $? != "0" ]]; then EXITCOLOR=$Red\>$NoColor; else EXITCOLOR=$Green\>$Nocolor; fi
 }
 
 PROMPT_COMMAND='_set_exit_color;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan[\w]$NoColor$PS1GIT "'
