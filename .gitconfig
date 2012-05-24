@@ -3,11 +3,11 @@
     email           = lyrixx@lyrixx.info
 [alias]
     st              = status
-    ci              = commit
-    cim             = commit -m "--"
+    ci              = commit -v
+    cim             = commit -v -m "--"
     co              = checkout
-    br              = branch
-    bra             = branch -a
+    br              = branch -v
+    bra             = branch -v -a
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
     di              = diff
