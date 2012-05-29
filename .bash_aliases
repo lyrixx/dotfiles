@@ -8,6 +8,8 @@ alias du="du -h"
 
 alias grep='grep -n --exclude-dir ".svn" --exclude tagsi --color'
 
+alias sed="sed --follow-symlinks"
+
 alias agi="apt-get install"
 alias agua="apt-get update"
 alias agup="apt-get upgrade"
