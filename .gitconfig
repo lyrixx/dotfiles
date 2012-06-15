@@ -43,3 +43,5 @@
     enabled         = 1
 [github]
     user            = lyrixx
+[push]
+    default         = tracking
