@@ -6,8 +6,18 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-GIT_PS1_SHOWDIRTYSTATE=true
-GIT_PS1_SHOWUNTRACKEDFILES=true
+export GIT_PS1_SHOWDIRTYSTATE=true
+export GIT_PS1_SHOWUNTRACKEDFILES=true
+
+export HISTSIZE=10000
+export HISTFILESIZE=${HISTSIZE}
+export HISTIGNORE="ls:cd:[bf]g:exit"
+export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
+
+export LESS=-R # Color
+
+export EDITOR=`which vim`
+if [[ `which most` ]]; then export PAGER=`which most` ; fi
 
 # 0 : normal, 1 : bold, 4 underline, nothing : background
 NoColor="\[\e[0m\]"
@@ -35,17 +45,10 @@ PROMPT_COMMAND='_set_exit_color;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan[\w]$NoColor$P
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, trainging
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
-# less with clor
-export LESS=-R
-
-export EDITOR=`which vim`
-export PAGER=`which most`
-
 # Bash symfony1 completion
 _symfony()
 {
     local cmds cur colonprefixes
-
     cmds="$( ${COMP_WORDS[0]} | perl -ne 'if( /^([a-zA-Z0-9\-]+)/ ) { $first = $1; } elsif ( /^\s*(:[a-zA-Z0-9\-]+)/ ) { print $first . $1 . "\n"; }' )"
     COMPREPLY=()
     cur=${COMP_WORDS[COMP_CWORD]}
@@ -62,12 +65,12 @@ _symfony()
 } &&
 complete -F _symfony symfony
 
-_command_exists() {
-    type "$1" &> /dev/null ;
-}
-
-if _command_exists dircolors; then
+if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then
         eval `dircolors --bourne-shell ~/.dir_colors`
     fi
 fi
+
+# Autocomple with sudo
+complete -cf sudo
+
