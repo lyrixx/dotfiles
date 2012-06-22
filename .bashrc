@@ -37,11 +37,20 @@ fi
 if [[ `which git` ]]; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
-_set_exit_color() {
+
+function _set_exit_color() {
     if [[ $? != "0" ]]; then EXITCOLOR=$Red\>$NoColor; else EXITCOLOR=$Green\>$Nocolor; fi
 }
 
-PROMPT_COMMAND='_set_exit_color;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan[\w]$NoColor$PS1GIT "'
+function _truncate_pwd() {
+    PWD2="${PWD/#$HOME/~}"
+    local pwdmaxlen=$((${COLUMNS:-20}/3))
+    if [ ${#PWD2} -gt $pwdmaxlen ] ; then
+        PWD2="{..}${PWD2: -$pwdmaxlen}"
+    fi
+}
+
+PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan[$PWD2]$NoColor$PS1GIT "'
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, trainging
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
