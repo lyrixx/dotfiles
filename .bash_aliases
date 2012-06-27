@@ -37,11 +37,16 @@ mktgz() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
 mktbz() { tar cvjf "${1%%/}.tar.bz2" "${1%%/}/"; }
 
 ## Services
+### Start / stop
 alias apache_restart="/etc/init.d/apache2 restart"
 alias mysql_restart="/etc/init.d/mysql restart"
 alias nginx_restart="/etc/init.d/nginx restart"
 alias varnish_restart="/etc/init.d/varnish restart"
 alias phpfpm_restart="/etc/init.d/php5-fpm restart"
+alias memcached_restart="/etc/init.d/memcached restart"
+### Flush
+alias memcached_flush='echo "flush_all" | nc localhost 11211'
+alias varnish_flush='varnishadm "ban.url .*"'
 
 ## Jump to a dir
 alias go_vhost="cd /etc/apache2/vhosts.d"
