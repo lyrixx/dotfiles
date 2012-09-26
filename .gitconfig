@@ -37,6 +37,7 @@
 [core]
     autocrlf        = input
     excludesfile    = ~/.gitglobalexclude
+    pager           = less
 [branch]
     rebase          = true
 [rerere]
