@@ -14,10 +14,10 @@ export HISTFILESIZE=${HISTSIZE}
 export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
 
-export LESS=-R # Color
+if [[ `which most` ]]; then export PAGER=`which most` ; fi
+export LESS="FRSX"
 
 export EDITOR=`which vim`
-if [[ `which most` ]]; then export PAGER=`which most` ; fi
 
 # 0 : normal, 1 : bold, 4 underline, nothing : background
 NoColor="\[\e[0m\]"
