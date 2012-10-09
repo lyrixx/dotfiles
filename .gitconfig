@@ -12,6 +12,7 @@
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
     di              = diff
     sdi             = diff --cached
+    dis             = diff --ignore-all-space
     logfull         = log --pretty=fuller --graph --stat -p
     cat             = cat-file -p
     unstage         = reset HEAD
