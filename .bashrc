@@ -6,6 +6,9 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
+if [ -d /var/lib/gems/1.8/bin/ ]; then
+    PATH=/var/lib/gems/1.8/bin/:$PATH
+fi;
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
