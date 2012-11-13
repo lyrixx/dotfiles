@@ -57,7 +57,7 @@ PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, trainging
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
-# Bash symfony1 completion
+# symfony1 autocompletion
 _symfony()
 {
     local cmds cur colonprefixes
@@ -76,6 +76,11 @@ _symfony()
     return 0
 } &&
 complete -F _symfony symfony
+
+# Symfony2 autocompletion
+if [ -e ~/.symfony2-autocomplete.bash ]; then
+    . ~/.symfony2-autocomplete.bash
+fi
 
 if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then

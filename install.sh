@@ -14,6 +14,7 @@ ln -sf $DOTFILES/.vimrc               ~/.vimrc
 if type -t git &> /dev/null; then
   git submodule update --init
   ln -sf $DOTFILES/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
+  ln -sf $DOTFILES/symfony2-autocomplete/symfony2-autocomplete.bash  ~/.symfony2-autocomplete.bash
 fi
 
 . ~/.bashrc
