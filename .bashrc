@@ -9,6 +9,11 @@ fi
 if [ -d /var/lib/gems/1.8/bin/ ]; then
     PATH=/var/lib/gems/1.8/bin/:$PATH
 fi;
+
+if [ -d /usr/local/heroku/bin ]; then
+    PATH=/usr/local/heroku/bin:$PATH
+fi;
+
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
