@@ -71,7 +71,7 @@ alias ctags='ctags -f tags -h ".php" -R --exclude=".svn" --exclude="*.yml.php" -
 
 ## Cool shortcut
 #alias toLC="find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;" # does not work very well
-alias subl="/usr/bin/sublime-text-2 . > /dev/null 2>&1 &"
+alias subl="sublime-text-2 ."
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias mysql="mysql --sigint-ignore"
 alias whatsmyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' -e 's/<.*$//'"
