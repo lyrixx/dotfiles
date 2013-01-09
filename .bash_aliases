@@ -15,6 +15,7 @@ alias cp="cp -i"
 alias mv="mv -i"
 
 alias grep='grep -n --exclude-dir ".svn" --exclude-dir ".git" --exclude tagsi --color=tty'
+alias ack="ack-grep"
 alias sed="sed --follow-symlinks"
 
 ## Apt
