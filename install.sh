@@ -2,6 +2,7 @@
 
 DOTFILES=`pwd`
 
+ln -sf $DOTFILES/.ackrc               ~/.ackrc
 ln -sf $DOTFILES/.bash_aliases        ~/.bash_aliases
 ln -sf $DOTFILES/.bash_logout         ~/.bash_logout
 ln -sf $DOTFILES/.bashrc              ~/.bashrc
