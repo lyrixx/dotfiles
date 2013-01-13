@@ -122,7 +122,9 @@ exportDbus() {
     nautilus_pid=$(pgrep -u $LOGNAME -n nautilus)
 
     # Grab the DBUS_SESSION_BUS_ADDRESS variable from nautilus's environment
-    eval $(tr '\0' '\n' < /proc/$nautilus_pid/environ | \grep '^DBUS_SESSION_BUS_ADDRESS=')
+    if [ -f /proc/$nautilus_pid/environ ]; then
+        eval $(tr '\0' '\n' < /proc/$nautilus_pid/environ | \grep '^DBUS_SESSION_BUS_ADDRESS=')
+    fi
 
     # export it so that child processes will inherit it
     export DBUS_SESSION_BUS_ADDRESS
