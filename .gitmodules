@@ -4,3 +4,6 @@
 [submodule "symfony2-autocomplete"]
 	path = symfony2-autocomplete
 	url = https://github.com/KnpLabs/symfony2-autocomplete.git
+[submodule "mate-terminal-colors-solarized"]
+	path = mate-terminal-colors-solarized
+	url = git://github.com/michelefoga/mate-terminal-colors-solarized.git
