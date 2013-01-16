@@ -1,6 +1,3 @@
-[submodule "dircolors-solarized"]
-	path = dircolors-solarized
-	url = https://github.com/seebi/dircolors-solarized.git
 [submodule "symfony2-autocomplete"]
 	path = symfony2-autocomplete
 	url = https://github.com/KnpLabs/symfony2-autocomplete.git
