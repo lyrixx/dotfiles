@@ -32,9 +32,9 @@
     current         = yellow bold
     local           = yellow
 [color "diff"]
-    meta            = yellow bold
+    meta            = cyan
 [color "status"]
-    untracked = cyan
+    untracked       = cyan
 [core]
     autocrlf        = input
     excludesfile    = ~/.gitglobalexclude
