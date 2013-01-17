@@ -87,6 +87,12 @@ if [ -e ~/.symfony2-autocomplete.bash ]; then
     . ~/.symfony2-autocomplete.bash
 fi
 
+if [[ `which dircolors` ]]; then
+    if [ -f ~/.dir_colors ]; then
+        eval `dircolors --bourne-shell ~/.dir_colors`
+    fi
+fi
+
 # Autocomple with sudo
 complete -cf sudo
 
