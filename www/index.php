@@ -26,7 +26,7 @@ foreach ($finder as $dir) {
 
 $utils = array(
     'phpinfo' => '/phpinfo.php',
-    'RabbitMq' => 'http://192.168.2.117:15672/'
+    'RabbitMq' => 'http://127.0.0.1:15672/'
 )
 ?>
 <html>
