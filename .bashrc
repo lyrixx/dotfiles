@@ -115,7 +115,7 @@ function wget_mirror() { wget -r -l5 -k -E ${1} && cd $_;}
 toLowercase() { for i in "$@"; do mv -f "$i" "`echo $i| tr [A-Z] [a-z]`" &>/dev/null; done }
 toUpercase()  { for i in "$@"; do mv -f "$i" "`echo $i| tr [a-z] [A-Z]`" &>/dev/null; done }
 
-#Temp hack
+#Temp hack for dbus
 exportDbus() {
     # Get the pid of nautilus
     nautilus_pid=$(pgrep -u $LOGNAME -n nautilus)
@@ -130,3 +130,8 @@ exportDbus() {
 }
 exportDbus
 
+#Temp hack for dbus
+session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
+if [ -e $session ] ; then
+    . $session
+fi
