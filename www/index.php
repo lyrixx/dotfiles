@@ -26,7 +26,8 @@ foreach ($finder as $dir) {
 
 $utils = array(
     'phpinfo' => '/phpinfo.php',
-    'RabbitMq' => 'http://127.0.0.1:15672/'
+    'RabbitMq' => 'http://127.0.0.1:15672/',
+    'Graphite' => 'http://graphite.localhost:8080/',
 )
 ?>
 <html>
