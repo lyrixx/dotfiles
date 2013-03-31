@@ -10,6 +10,7 @@
     bra             = branch -v -a
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
+    lg-grep         = ! git rev-list --all | xargs git grep -F
     di              = diff
     sdi             = diff --cached
     dis             = diff --ignore-all-space
