@@ -10,6 +10,10 @@ if [ -d /var/lib/gems/1.8/bin/ ]; then
     PATH=/var/lib/gems/1.8/bin/:$PATH
 fi;
 
+if [ -f /usr/local/rvm/scripts/rvm ]; then
+    . /usr/local/rvm/scripts/rvm
+fi;
+
 if [ -d /usr/local/heroku/bin ]; then
     PATH=/usr/local/heroku/bin:$PATH
 fi;
