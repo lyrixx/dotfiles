@@ -6,12 +6,9 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-if [ -d /var/lib/gems/1.8/bin/ ]; then
-    PATH=/var/lib/gems/1.8/bin/:$PATH
-fi;
-
-if [ -f /usr/local/rvm/scripts/rvm ]; then
-    . /usr/local/rvm/scripts/rvm
+if [ -d $HOME/.rbenv/bin ]; then
+    PATH="$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init -)"
 fi;
 
 if [ -d /usr/local/heroku/bin ]; then
@@ -66,26 +63,6 @@ PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, trainging
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
-# symfony1 autocompletion
-_symfony()
-{
-    local cmds cur colonprefixes
-    cmds="$( ${COMP_WORDS[0]} | perl -ne 'if( /^([a-zA-Z0-9\-]+)/ ) { $first = $1; } elsif ( /^\s*(:[a-zA-Z0-9\-]+)/ ) { print $first . $1 . "\n"; }' )"
-    COMPREPLY=()
-    cur=${COMP_WORDS[COMP_CWORD]}
-    # Work-around bash_completion issue where bash interprets a colon as a separator.
-    # Work-around borrowed from the darcs work-around for the same issue.
-    colonprefixes=${cur%"${cur##*:}"}
-    COMPREPLY=( $(compgen -W '$cmds' -- $cur))
-    local i=${#COMPREPLY[*]}
-    while [ $((--i)) -ge 0 ]; do
-    COMPREPLY[$i]=${COMPREPLY[$i]#"$colonprefixes"}
-    done
-
-    return 0
-} &&
-complete -F _symfony symfony
-
 # Symfony2 autocompletion
 if [ -e ~/.symfony2-autocomplete.bash ]; then
     . ~/.symfony2-autocomplete.bash
@@ -116,8 +93,7 @@ function reset_perm(){
 
 function wget_mirror() { wget -r -l5 -k -E ${1} && cd $_;}
 
-toLowercase() { for i in "$@"; do mv -f "$i" "`echo $i| tr [A-Z] [a-z]`" &>/dev/null; done }
-toUpercase()  { for i in "$@"; do mv -f "$i" "`echo $i| tr [a-z] [A-Z]`" &>/dev/null; done }
+toLowercase() { find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \; ; }
 
 #Temp hack for dbus
 exportDbus() {
@@ -139,3 +115,4 @@ session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 
 if [ -e $session ] ; then
     . $session
 fi
+
