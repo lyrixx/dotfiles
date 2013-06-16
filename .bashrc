@@ -64,7 +64,7 @@ PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$PROMPT_PREFIX$Cyan
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
 # Symfony2 autocompletion
-if [ -e ~/.symfony2-autocomplete.bash ]; then
+if [ -f ~/.symfony2-autocomplete.bash ]; then
     . ~/.symfony2-autocomplete.bash
 fi
 
@@ -88,7 +88,7 @@ shopt -s nocaseglob     # Pour que bash ne soit pas sensible a la casse
 
 function reset_perm(){
     chmod -R u=rwX,go=rX "$@"
-    chown -R ${USER}:users "$@"
+    chown -R ${USER}: "$@"
 }
 
 function wget_mirror() { wget -r -l5 -k -E ${1} && cd $_;}
@@ -115,4 +115,3 @@ session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 
 if [ -e $session ] ; then
     . $session
 fi
-
