@@ -1,0 +1,23 @@
+{
+    "name": "lyrixx/dotfiles",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Grégoire Pineau",
+            "email": "lyrixx@lyrixx.info"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git@github.com:fabpot/gh.git"
+        }
+    ],
+    "require": {
+        "sismo/sismo": "~1.0",
+        "phpunit/phpunit": "~3.7",
+        "fabpot/php-cs-fixer": "@dev",
+        "fabpot/gh-merger": "@dev"
+    },
+    "minimum-stability": "dev"
+}

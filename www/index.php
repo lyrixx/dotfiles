@@ -26,11 +26,12 @@ foreach ($finder as $dir) {
 
 $utils = array(
     'phpinfo' => '/phpinfo.php',
+    'Sismo' => 'http://sismo.localhost',
     'RabbitMq' => 'http://127.0.0.1:15672/',
     'Graphite' => 'http://graphite.localhost:8080/',
     'Kibana' => 'http://localhost:5601',
-    'jetty' => 'http://127.0.0.1:8283',
-    'solr' => 'http://127.0.0.1:8983/solr/',
+    'Jetty' => 'http://127.0.0.1:8283',
+    'Solr' => 'http://127.0.0.1:8983/solr/',
 )
 ?>
 <html>
