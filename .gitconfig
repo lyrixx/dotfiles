@@ -51,3 +51,5 @@
     user            = lyrixx
 [push]
     default         = tracking
+[include]
+    path            = ~/.private-gitconfig

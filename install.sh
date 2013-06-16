@@ -2,12 +2,15 @@
 
 DOTFILES=`pwd`
 
+touch $DOTFILES/.private-gitconfig
+
 ln -sf $DOTFILES/.ackrc               ~/.ackrc
 ln -sf $DOTFILES/.bash_aliases        ~/.bash_aliases
 ln -sf $DOTFILES/.bash_logout         ~/.bash_logout
 ln -sf $DOTFILES/.bashrc              ~/.bashrc
 ln -sf $DOTFILES/.gitconfig           ~/.gitconfig
 ln -sf $DOTFILES/.gitglobalexclude    ~/.gitglobalexclude
+ln -sf $DOTFILES/.private-gitconfig   ~/.private-gitconfig
 ln -sf $DOTFILES/.profile             ~/.profile
 ln -sf $DOTFILES/.screenrc            ~/.screenrc
 ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
