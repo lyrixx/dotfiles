@@ -43,4 +43,7 @@ if [[ $IS_ROOT = 1 ]]; then
     ln -sf $DOTFILES/vendor/bin/phpunit             /usr/local/bin/phpunit
     ln -sf $DOTFILES/vendor/bin/sismo               /usr/local/bin/sismo
     ln -sf $DOTFILES/vendor/bin/gh                  /usr/local/bin/gh
+
+    echo 'Create custom bin symlink'
+    ln -sf $DOTFILES/bin/sismo-add                  /usr/local/bin/sismo-add
 fi
