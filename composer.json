@@ -15,7 +15,7 @@
     ],
     "require": {
         "sismo/sismo": "~1.0",
-        "phpunit/phpunit": "~3.7",
+        "phpunit/phpunit": "~3.7@stable",
         "fabpot/php-cs-fixer": "@dev",
         "fabpot/gh-merger": "@dev"
     },
