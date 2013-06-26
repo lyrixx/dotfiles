@@ -1,0 +1,5 @@
+#!/bin/bash
+#
+$PROJECT_NAME='PROJECT NAME HERE'
+
+sismo build PROJECT_NAME `git log -1 HEAD --pretty="%H"` --force --quiet &

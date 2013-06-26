@@ -23,6 +23,7 @@ ln -sf $DOTFILES/.profile             ~/.profile
 ln -sf $DOTFILES/.screenrc            ~/.screenrc
 ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
 ln -sf $DOTFILES/.vimrc               ~/.vimrc
+ln -sf $DOTFILES/git-template         ~/.git-template
 
 echo 'Install git submodule'
 if type -t git &> /dev/null; then

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+PREV_COMMIT=$1
+POST_COMMIT=$2
+
+NOCOLOR='\e[0m'
+REDCOLOR='\e[37;41m'
+
+if [[ -f composer.lock ]]; then
+    DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT composer.lock`
+    if [[ $DIFF != "" ]]; then
+        echo -e "$REDCOLOR composer.lock has changed. You must run composer install$NOCOLOR"
+    fi
+fi

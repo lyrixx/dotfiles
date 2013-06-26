@@ -54,3 +54,5 @@
     default         = tracking
 [include]
     path            = ~/.private-gitconfig
+[init]
+    templatedir     = ~/.git-template
