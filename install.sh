@@ -1,7 +1,10 @@
 #!/bin/bash
 
+NOCOLOR='\e[0m'
+REDCOLOR='\e[37;41m'
+
 if [[ $EUID -ne 0 ]]; then
-   echo -e "\e[00;31mThink to run this bash script as root\e[0m"
+   echo -e "$REDCOLOR Think to run this bash script as root$NOCOLOR"
     IS_ROOT=0
 else
     IS_ROOT=1
