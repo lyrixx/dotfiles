@@ -47,4 +47,5 @@ if [[ $IS_ROOT = 1 ]]; then
 
     echo 'Create custom bin symlink'
     ln -sf $DOTFILES/bin/sismo-add                  /usr/local/bin/sismo-add
+    ln -sf $DOTFILES/bin/tmux-start                 /usr/local/bin/tmux-start
 fi

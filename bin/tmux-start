@@ -1,0 +1,86 @@
+#/bin/sh
+
+# http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
+# http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
+
+SESSIONS="product labs research perso sensio training tmp"
+
+# Configure your sessions here
+
+function session-product {
+tmux new-session -d -s $1
+    tmux new-window -k -n CI            -t $1:0 "cd /home/greg/dev/product/ci && $SHELL"
+    tmux new-window -k -n SL            -t $1:1 "cd /home/greg/dev/product/sensiolabs-com && $SHELL"
+    tmux new-window -k -n Desktop       -t $1:2 "cd /home/greg/dev/product/desktop-website && $SHELL"
+    tmux new-window -k -n Live          -t $1:3 "cd /home/greg/dev/product/live-symfony-com && $SHELL"
+    tmux new-window -k -n Connect       -t $1:4 "cd /home/greg/dev/product/connect && $SHELL"
+    tmux new-window -k -n Insight       -t $1:6 "cd /home/greg/dev/product/insight && $SHELL"
+    tmux new-window -k -n InsightSDK    -t $1:5 "cd /home/greg/dev/product/insight-sdk && $SHELL"
+}
+
+function session-labs {
+    tmux new-session -d -s $1
+    tmux new-window -k -n buzz                       -t $1:0 "cd /home/greg/dev/labs/buzz && $SHELL"
+    tmux new-window -k -n composer                   -t $1:1 "cd /home/greg/dev/labs/composer && $SHELL"
+    tmux new-window -k -n framework-standard-edition -t $1:2 "cd /home/greg/dev/labs/se && $SHELL"
+    tmux new-window -k -n gh                         -t $1:3 "cd /home/greg/dev/labs/gh && $SHELL"
+    tmux new-window -k -n monolog                    -t $1:4 "cd /home/greg/dev/labs/monolog && $SHELL"
+    tmux new-window -k -n silex                      -t $1:5 "cd /home/greg/dev/labs/silex && $SHELL"
+    tmux new-window -k -n sismo                      -t $1:6 "cd /home/greg/dev/labs/sismo && $SHELL"
+    tmux new-window -k -n symfony                    -t $1:7 "cd /home/greg/dev/labs/symfony && $SHELL"
+    tmux new-window -k -n twig                       -t $1:8 "cd /home/greg/dev/labs/twig && $SHELL"
+}
+
+function session-perso {
+    tmux new-session -d -s $1
+    tmux new-window -k -n ske        -t $1:0 "cd /home/greg/dev/perso/ske && $SHELL"
+    tmux new-window -k -n blog       -t $1:1 "cd /home/greg/dev/perso/blog && $SHELL"
+    tmux new-window -k -n carew      -t $1:2 "cd /home/greg/dev/perso/carew && $SHELL"
+    tmux new-window -k -n carewBP    -t $1:3 "cd /home/greg/dev/perso/carew-boilerplate && $SHELL"
+    tmux new-window -k -n lifestream -t $1:4 "cd /home/greg/dev/perso/lifestream && $SHELL"
+    tmux new-window -k -n serie      -t $1:5 "cd /home/greg/dev/perso/series && $SHELL"
+    tmux new-window -k -n homepage   -t $1:6 "cd /home/greg/dev/perso/lyrixx-github-com && $SHELL"
+}
+
+function session-research {
+    tmux new-session -d -s $1
+    tmux new-window -k -n gito-brow -t $1:0 "cd /home/greg/dev/research/gitonomy/gito-brow && $SHELL"
+    tmux new-window -k -n gitonomy  -t $1:1 "cd /home/greg/dev/research/gitonomy/gitonomy && $SHELL"
+}
+
+function session-sensio {
+    tmux new-session -d -s $1
+    tmux new-window -k -n gitolite     -t $1:0 "cd /home/greg/dev/sensio/gitolite-admin && $SHELL"
+    tmux new-window -k -n dashboard    -t $1:1 "cd /home/greg/dev/sensio/sl-dashboard && $SHELL"
+}
+
+function session-training {
+    tmux new-session -d -s $1
+    tmux new-window -k -t $1:0 "cd /home/greg/dev/training && $SHELL"
+}
+
+function session-tmp {
+    tmux new-session -d -s $1
+    tmux new-window -k -t $1:0 "cd /home/greg/dev/tmp && $SHELL"
+}
+
+# Global
+function has-session {
+    tmux has-session -t $1 2>/dev/null
+}
+
+function except {
+    if [ "$?" -eq 1 ] ; then
+        $1
+    fi
+}
+
+#
+#MAIN
+for x in $SESSIONS
+do
+    echo $x
+    has-session $x
+    except "session-$x $x"
+done
+
