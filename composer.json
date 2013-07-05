@@ -14,10 +14,11 @@
         }
     ],
     "require": {
-        "sismo/sismo": "~1.0",
+        "fabpot/gh-merger": "dev-master@dev",
+        "fabpot/php-cs-fixer": "dev-master@dev",
         "phpunit/phpunit": "~3.7@stable",
-        "fabpot/php-cs-fixer": "@dev",
-        "fabpot/gh-merger": "@dev"
+        "sensiolabs/insight": "1.0.*@dev",
+        "sismo/sismo": "~1.0"
     },
     "minimum-stability": "dev"
 }
