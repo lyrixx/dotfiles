@@ -14,10 +14,11 @@
         }
     ],
     "require": {
-        "fabpot/gh-merger": "dev-master@dev",
-        "fabpot/php-cs-fixer": "dev-master@dev",
+        "fabpot/gh-merger": "dev-master",
+        "fabpot/php-cs-fixer": "dev-master",
+        "kherge/box": "~2.2.0",
         "phpunit/phpunit": "~3.7@stable",
-        "sensiolabs/insight": "1.0.*@dev",
+        "sensiolabs/insight": "1.0.*",
         "sismo/sismo": "~1.0"
     },
     "minimum-stability": "dev"
