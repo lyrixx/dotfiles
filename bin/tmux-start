@@ -14,8 +14,9 @@ tmux new-session -d -s $1
     tmux new-window -k -n Desktop       -t $1:2 "cd /home/greg/dev/product/desktop-website && $SHELL"
     tmux new-window -k -n Live          -t $1:3 "cd /home/greg/dev/product/live-symfony-com && $SHELL"
     tmux new-window -k -n Connect       -t $1:4 "cd /home/greg/dev/product/connect && $SHELL"
-    tmux new-window -k -n Insight       -t $1:6 "cd /home/greg/dev/product/insight && $SHELL"
-    tmux new-window -k -n InsightSDK    -t $1:5 "cd /home/greg/dev/product/insight-sdk && $SHELL"
+    tmux new-window -k -n Insight       -t $1:5 "cd /home/greg/dev/product/insight && $SHELL"
+    tmux new-window -k -n InsightSDK    -t $1:6 "cd /home/greg/dev/product/insight-sdk && $SHELL"
+    tmux new-window -k -n Git           -t $1:7 "cd /home/greg/dev/product/git && $SHELL"
 }
 
 function session-labs {
