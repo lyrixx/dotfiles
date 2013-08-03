@@ -1,3 +1,7 @@
+if [ -f ~/.parameters ]; then
+    source ~/.parameters
+fi
+
 if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi

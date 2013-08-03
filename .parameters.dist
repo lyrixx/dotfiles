@@ -1,0 +1,9 @@
+# Git credential name
+GIT_AUTHOR_NAME="Grégoire Pineau"
+GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
+git config --global user.name "$GIT_AUTHOR_NAME"
+
+# Git credential email
+GIT_AUTHOR_EMAIL="lyrixx@lyrixx.info"
+GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+git config --global user.email "$GIT_AUTHOR_EMAIL"
