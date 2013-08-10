@@ -1,8 +1,9 @@
+/*.sql
 /.tags
 /.tags_sorted_by_file
+/coverage
 /GPATH
 /GRTAGS
 /GSYMS
 /GTAGS
 /web/debug.*
-/*.sql
