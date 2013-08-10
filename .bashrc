@@ -90,14 +90,18 @@ shopt -s histappend     # Pour que bash ajoute au lieu d'écraser dans l'histo
 shopt -s hostcomplete   # Pour que bash tente de résoudre le nom pour les ip suivis d'un @
 shopt -s nocaseglob     # Pour que bash ne soit pas sensible a la casse
 
-function reset_perm(){
+function reset_perm() {
     chmod -R u=rwX,go=rX "$@"
     chown -R ${USER}: "$@"
 }
 
-function wget_mirror() { wget -r -l5 -k -E ${1} && cd $_;}
+function wget_mirror() {
+    wget -r -l5 -k -E ${1} && cd $_
+}
 
-toLowercase() { find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \; ; }
+function to_lower_case() {
+    find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
+}
 
 #Temp hack for dbus
 exportDbus() {
