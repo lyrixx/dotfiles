@@ -12,3 +12,10 @@ if [[ -f composer.lock ]]; then
         echo -e "$REDCOLOR composer.lock has changed. You must run composer install$NOCOLOR"
     fi
 fi
+
+if [[ -f chef/Cheffile.lock ]]; then
+    DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT chef/Cheffile.lock`
+    if [[ $DIFF != "" ]]; then
+        echo -e "$REDCOLOR chef/Cheffile.lock has changed. You must run librarian-chef install$NOCOLOR"
+    fi
+fi
