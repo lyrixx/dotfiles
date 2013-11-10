@@ -1,6 +1,3 @@
-[user]
-    name            = Grégoire Pineau
-    email           = lyrixx@lyrixx.info
 [alias]
     st              = status
     ci              = commit -v

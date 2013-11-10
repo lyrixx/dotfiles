@@ -30,6 +30,17 @@ if [[ ! -d ~/.git-template ]]; then
     ln -sf $DOTFILES/git-template ~/.git-template
 fi
 
+echo 'Configuration of your parameters'
+cp $DOTFILES/.parameters.dist ~/.parameters
+
+echo 'Please, type your git author name'
+read GIT_AUTHOR_NAME
+sed -i "s/Grégoire Pineau/$GIT_AUTHOR_NAME/g" ~/.parameters
+
+echo 'Please, type your git author email'
+read GIT_AUTHOR_EMAIL
+sed -i "s/lyrixx@lyrixx\.info/$GIT_AUTHOR_EMAIL/g" ~/.parameters
+
 echo 'Install git submodule'
 if type -t git &> /dev/null; then
   git submodule update --init
