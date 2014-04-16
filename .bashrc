@@ -43,7 +43,8 @@ if [[ $UID -eq 0 ]]; then
 elif [[ $SSH_CONNECTION ]]; then
     PROMPT_PREFIX="$Yellow\u@\H$NoColor"
 fi
-if [[ `which git` ]]; then
+
+if [[ `which git` && `which __git_ps1` ]]; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
 
@@ -60,7 +61,9 @@ function _truncate_pwd() {
 }
 
 function _todo_number() {
-    TODO_NB=`find ~/Desktop -maxdepth 1 -type f  | wc -l`
+    if [ -f ~/Desktop ] ; then
+        TODO_NB=`find ~/Desktop -maxdepth 1 -type f  | wc -l`
+    fi
 }
 
 PROMPT_COMMAND='_set_exit_color;_truncate_pwd;_todo_number;PS1="$EXITCOLOR$NoColor($TODO_NB)$PROMPT_PREFIX$Cyan[$PWD2]$NoColor$PS1GIT "'
@@ -119,7 +122,9 @@ exportDbus() {
 exportDbus
 
 #Temp hack for dbus
-session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
-if [ -e $session ] ; then
-    . $session
+if [[ `which dbus-uuidgen` ]] ; then
+    session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
+    if [ -e $session ] ; then
+        . $session
+    fi
 fi
