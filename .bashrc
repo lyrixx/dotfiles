@@ -44,9 +44,12 @@ elif [[ $SSH_CONNECTION ]]; then
     PROMPT_PREFIX="$Yellow\u@\H$NoColor"
 fi
 
-if [[ `which git` && `which __git_ps1` ]]; then
+type -t __git_ps1 &>/dev/null
+GIT=$?
+if [[ $GIT ]]; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
+unset GIT
 
 function _set_exit_color() {
     if [[ $? != "0" ]]; then EXITCOLOR=$Red\>$NoColor; else EXITCOLOR=$Green\>$Nocolor; fi
@@ -61,7 +64,7 @@ function _truncate_pwd() {
 }
 
 function _todo_number() {
-    if [ -f ~/Desktop ] ; then
+    if [ -d ~/Desktop ] ; then
         TODO_NB=`find ~/Desktop -maxdepth 1 -type f  | wc -l`
     fi
 }
