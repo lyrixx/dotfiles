@@ -9,16 +9,18 @@ SESSIONS="product labs research perso sensio training tmp"
 
 function session-product {
 tmux new-session -d -s $1
-    tmux new-window -k -n CI            -t $1:0  "cd /home/greg/dev/product/ci && $SHELL"
-    tmux new-window -k -n SL            -t $1:1  "cd /home/greg/dev/product/sensiolabs-com && $SHELL"
-    tmux new-window -k -n Desktop       -t $1:2  "cd /home/greg/dev/product/desktop-website && $SHELL"
-    tmux new-window -k -n Live          -t $1:3  "cd /home/greg/dev/product/live-symfony-com && $SHELL"
-    tmux new-window -k -n Connect       -t $1:4  "cd /home/greg/dev/product/connect && $SHELL"
-    tmux new-window -k -n Git           -t $1:5  "cd /home/greg/dev/product/git && $SHELL"
-    tmux new-window -k -n InsightSDK    -t $1:6  "cd /home/greg/dev/product/insight-sdk && $SHELL"
-    tmux new-window -k -n Insight       -t $1:7  "cd /home/greg/dev/product/insight && $SHELL"
-    tmux new-window -k -n WS            -t $1:8  "cd /home/greg/dev/product/ws && $SHELL"
-    tmux new-window -k -n Wax           -t $1:9  "cd /home/greg/dev/product/wax && $SHELL"
+    # tmux new-window -k -n CI            -t $1:0  "cd /home/greg/dev/product/ci && $SHELL"
+    # tmux new-window -k -n SL            -t $1:0  "cd /home/greg/dev/product/sensiolabs-com && $SHELL"
+    # tmux new-window -k -n Desktop       -t $1:0  "cd /home/greg/dev/product/desktop-website && $SHELL"
+    # tmux new-window -k -n InsightSDK    -t $1:0  "cd /home/greg/dev/product/insight-sdk && $SHELL"
+    # tmux new-window -k -n Live          -t $1:0  "cd /home/greg/dev/product/live-symfony-com && $SHELL"
+    # tmux new-window -k -n Git           -t $1:0  "cd /home/greg/dev/product/git && $SHELL"
+    # tmux new-window -k -n WS            -t $1:8  "cd /home/greg/dev/product/ws && $SHELL"
+    tmux new-window -k -n Connect        -t $1:0  "cd /home/greg/dev/product/connect && $SHELL"
+    tmux new-window -k -n Connect/Worker -t $1:1  "cd /home/greg/dev/product/connect && $SHELL"
+    tmux new-window -k -n Wax            -t $1:2  "cd /home/greg/dev/product/wax && $SHELL"
+    tmux new-window -k -n Wax/worker     -t $1:3  "cd /home/greg/dev/product/wax && $SHELL"
+    tmux new-window -k -n Insight        -t $1:4  "cd /home/greg/dev/product/insight && $SHELL"
 }
 
 function session-labs {
@@ -26,11 +28,11 @@ function session-labs {
     tmux new-window -k -n buzz                       -t $1:0 "cd /home/greg/dev/labs/buzz && $SHELL"
     tmux new-window -k -n composer                   -t $1:1 "cd /home/greg/dev/labs/composer && $SHELL"
     tmux new-window -k -n framework-standard-edition -t $1:2 "cd /home/greg/dev/labs/se && $SHELL"
-    tmux new-window -k -n gh                         -t $1:3 "cd /home/greg/dev/labs/gh && $SHELL"
-    tmux new-window -k -n monolog                    -t $1:4 "cd /home/greg/dev/labs/monolog && $SHELL"
-    tmux new-window -k -n silex                      -t $1:5 "cd /home/greg/dev/labs/silex && $SHELL"
-    tmux new-window -k -n sismo                      -t $1:6 "cd /home/greg/dev/labs/sismo && $SHELL"
-    tmux new-window -k -n symfony                    -t $1:7 "cd /home/greg/dev/labs/symfony && $SHELL"
+    tmux new-window -k -n symfony                    -t $1:3 "cd /home/greg/dev/labs/symfony && $SHELL"
+    tmux new-window -k -n gh                         -t $1:4 "cd /home/greg/dev/labs/gh && $SHELL"
+    tmux new-window -k -n monolog                    -t $1:5 "cd /home/greg/dev/labs/monolog && $SHELL"
+    tmux new-window -k -n silex                      -t $1:6 "cd /home/greg/dev/labs/silex && $SHELL"
+    tmux new-window -k -n sismo                      -t $1:7 "cd /home/greg/dev/labs/sismo && $SHELL"
     tmux new-window -k -n twig                       -t $1:8 "cd /home/greg/dev/labs/twig && $SHELL"
 }
 
@@ -47,8 +49,6 @@ function session-perso {
 
 function session-research {
     tmux new-session -d -s $1
-    tmux new-window -k -n gito-brow -t $1:0 "cd /home/greg/dev/research/gitonomy/gito-brow && $SHELL"
-    tmux new-window -k -n gitonomy  -t $1:1 "cd /home/greg/dev/research/gitonomy/gitonomy && $SHELL"
 }
 
 function session-sensio {
