@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+if [[ 'xroot' != "x$USER" ]] ; then
+    echo "Only root can use this command"
+
+    exit 1
+fi
+
+if [[ -z $1 ]] ; then
+    echo 'usage:'
+    echo '    post-install-cmd lxc-container-name'
+
+    exit 1
+fi
+
+DIR=/var/lib/lxc/$1/rootfs
+if [[ ! -d $DIR ]] ; then
+    echo "The container '$1' does not exist"
+
+    exit 1
+fi
+
+chroot $DIR sudo apt-get install -y htop vim git-core bash-completion python-software-properties
+chroot $DIR sudo apt-get update
+chroot $DIR sudo apt-get upgrade -y
