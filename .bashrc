@@ -110,24 +110,24 @@ function to_lower_case() {
 }
 
 #Temp hack for dbus
-exportDbus() {
-    # Get the pid of nautilus
-    nautilus_pid=$(pgrep -u $LOGNAME -n nautilus)
-
-    # Grab the DBUS_SESSION_BUS_ADDRESS variable from nautilus's environment
-    if [ -f /proc/$nautilus_pid/environ ]; then
-        eval $(tr '\0' '\n' < /proc/$nautilus_pid/environ | \grep '^DBUS_SESSION_BUS_ADDRESS=')
-    fi
-
-    # export it so that child processes will inherit it
-    export DBUS_SESSION_BUS_ADDRESS
-}
-exportDbus
+# exportDbus() {
+#     # Get the pid of nautilus
+#     nautilus_pid=$(pgrep -u $LOGNAME -n nautilus)
+#
+#     # Grab the DBUS_SESSION_BUS_ADDRESS variable from nautilus's environment
+#     if [ -f /proc/$nautilus_pid/environ ]; then
+#         eval $(tr '\0' '\n' < /proc/$nautilus_pid/environ | \grep '^DBUS_SESSION_BUS_ADDRESS=')
+#     fi
+#
+#     # export it so that child processes will inherit it
+#     export DBUS_SESSION_BUS_ADDRESS
+# }
+# exportDbus
 
 #Temp hack for dbus
-if [[ `which dbus-uuidgen` ]] ; then
-    session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
-    if [ -e $session ] ; then
-        . $session
-    fi
-fi
+# if [[ `which dbus-uuidgen` ]] ; then
+#     session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
+#     if [ -e $session ] ; then
+#         . $session
+#     fi
+# fi
