@@ -20,6 +20,6 @@ if [[ ! -d $DIR ]] ; then
     exit 1
 fi
 
-chroot $DIR sudo apt-get install -y htop vim git-core bash-completion python-software-properties
+chroot $DIR sudo apt-get install -y htop vim git-core bash-completion python-software-properties software-properties-common
 chroot $DIR sudo apt-get update
 chroot $DIR sudo apt-get upgrade -y
