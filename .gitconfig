@@ -32,8 +32,6 @@
     php-cs-fixer    = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs -L 1 php-cs-fixer fix
     notes-fetch     = fetch origin refs/notes/*:refs/notes/*
     notes-push      = push origin refs/notes/*
-[branch]
-    autosetupmerge  = true
 [color]
     ui              = true
 [color "branch"]
@@ -48,7 +46,10 @@
     excludesfile    = ~/.gitglobalexclude
     pager           = less
 [branch]
+    autosetupmerge  = true
     rebase          = true
+[merge]
+    summary         = true
 [rerere]
     enabled         = 1
 [github]
