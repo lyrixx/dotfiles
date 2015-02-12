@@ -73,10 +73,6 @@ PROMPT_COMMAND='_set_exit_color;_truncate_pwd;_todo_number;PS1="$EXITCOLOR$NoCol
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, training
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
-# Symfony2 autocompletion
-if [ -f ~/.symfony2-autocomplete.bash ]; then
-    . ~/.symfony2-autocomplete.bash
-fi
 
 if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then
@@ -108,26 +104,3 @@ function wget_mirror() {
 function to_lower_case() {
     find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
 }
-
-#Temp hack for dbus
-# exportDbus() {
-#     # Get the pid of nautilus
-#     nautilus_pid=$(pgrep -u $LOGNAME -n nautilus)
-#
-#     # Grab the DBUS_SESSION_BUS_ADDRESS variable from nautilus's environment
-#     if [ -f /proc/$nautilus_pid/environ ]; then
-#         eval $(tr '\0' '\n' < /proc/$nautilus_pid/environ | \grep '^DBUS_SESSION_BUS_ADDRESS=')
-#     fi
-#
-#     # export it so that child processes will inherit it
-#     export DBUS_SESSION_BUS_ADDRESS
-# }
-# exportDbus
-
-#Temp hack for dbus
-# if [[ `which dbus-uuidgen` ]] ; then
-#     session="$HOME/.dbus/session-bus/$(dbus-uuidgen --get)-$(echo $DISPLAY | sed -e 's/\([^:]*:\)//g' -e 's/\..*$//g')"
-#     if [ -e $session ] ; then
-#         . $session
-#     fi
-# fi
