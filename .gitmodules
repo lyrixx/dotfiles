@@ -1,3 +1,6 @@
 [submodule "dircolors-solarized"]
-	path = dircolors-solarized
+	path = vendor/dircolors-solarized
 	url = https://github.com/seebi/dircolors-solarized.git
+[submodule "vendor/solarized-mate-terminal"]
+	path = vendor/solarized-mate-terminal
+	url = https://github.com/oz123/solarized-mate-terminal

@@ -27,6 +27,7 @@ ln -sf $DOTFILES/.profile             ~/.profile
 ln -sf $DOTFILES/.screenrc            ~/.screenrc
 ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
 ln -sf $DOTFILES/.vimrc               ~/.vimrc
+
 if [[ ! -d ~/.git-template ]]; then
     ln -sf $DOTFILES/git-template ~/.git-template
 fi
@@ -34,8 +35,7 @@ fi
 echo 'Install git submodule'
 if type -t git &> /dev/null; then
   git submodule update --init
-  ln -sf $DOTFILES/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
-  ln -sf $DOTFILES/symfony2-autocomplete/symfony2-autocomplete.bash  ~/.symfony2-autocomplete.bash
+  ln -sf $DOTFILES/vendor/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
 fi
 
 if [[ $IS_ROOT = 1 ]]; then
