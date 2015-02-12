@@ -45,14 +45,6 @@ if [[ $IS_ROOT = 1 ]]; then
             curl -sS https://getcomposer.org/installer | php
             mv composer.phar /usr/local/bin/composer
         fi
-        composer install
-        echo 'Create /usr/local/bin/* symlink'
-        ln -sf $DOTFILES/vendor/bin/php-cs-fixer        /usr/local/bin/php-cs-fixer
-        ln -sf $DOTFILES/vendor/bin/phpunit             /usr/local/bin/phpunit
-        ln -sf $DOTFILES/vendor/bin/sismo               /usr/local/bin/sismo
-        ln -sf $DOTFILES/vendor/bin/gh                  /usr/local/bin/gh
-        ln -sf $DOTFILES/vendor/bin/insight             /usr/local/bin/insight
-        ln -sf $DOTFILES/vendor/bin/box                 /usr/local/bin/box-php
     fi
 
     echo 'Create custom bin symlink'
