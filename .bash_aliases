@@ -48,5 +48,3 @@ alias varnish_flush='varnishadm "ban.url .*"'
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias mysql="mysql --sigint-ignore"
 alias whatsmyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' -e 's/<.*$//'"
-alias reload_bash="source ~/.bashrc" # reload ~/.bashrc
-alias php_cov="php -S 127.0.0.1:9009 -t coverage"
