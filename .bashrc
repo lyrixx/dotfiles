@@ -17,10 +17,6 @@ if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
     PATH="$PATH:$GOROOT/bin"
 fi
 
-if [ -d /usr/local/heroku/bin ]; then
-    PATH=/usr/local/heroku/bin:$PATH
-fi;
-
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
@@ -97,16 +93,3 @@ shopt -s extglob        # Pour que bash, interprète les expressions générique
 shopt -s histappend     # Pour que bash ajoute au lieu d'écraser dans l'histo
 shopt -s hostcomplete   # Pour que bash tente de résoudre le nom pour les ip suivis d'un @
 shopt -s nocaseglob     # Pour que bash ne soit pas sensible a la casse
-
-function reset_perm() {
-    chmod -R u=rwX,go=rX "$@"
-    chown -R ${USER}: "$@"
-}
-
-function wget_mirror() {
-    wget -r -l5 -k -E ${1} && cd $_
-}
-
-function to_lower_case() {
-    find . -depth -exec rename 's/(.*)\/([^\/]*)/$1\/\L$2/' {} \;
-}
