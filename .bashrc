@@ -9,7 +9,13 @@ fi
 if [ -d $HOME/.rbenv/bin ]; then
     PATH="$HOME/.rbenv/bin:$PATH"
     eval "$(rbenv init -)"
-fi;
+fi
+
+if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
+    export GOROOT=$HOME/dev/tools/go-installer/go/
+    export GOPATH=$HOME/dev/go
+    PATH="$PATH:$GOROOT/bin"
+fi
 
 if [ -d /usr/local/heroku/bin ]; then
     PATH=/usr/local/heroku/bin:$PATH
