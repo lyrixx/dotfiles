@@ -1,6 +1,3 @@
 [submodule "dircolors-solarized"]
 	path = dircolors-solarized
 	url = https://github.com/seebi/dircolors-solarized.git
-[submodule "mate-terminal-colors-solarized"]
-	path = mate-terminal-colors-solarized
-	url = git://github.com/michelefoga/mate-terminal-colors-solarized.git
