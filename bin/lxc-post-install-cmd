@@ -13,13 +13,24 @@ if [[ -z $1 ]] ; then
     exit 1
 fi
 
-DIR=/var/lib/lxc/$1/rootfs
+NAME=$1
+DIR=/var/lib/lxc/$NAME/rootfs
 if [[ ! -d $DIR ]] ; then
-    echo "The container '$1' does not exist"
+    echo "The container '$NAME' does not exist"
 
     exit 1
 fi
 
-chroot $DIR sudo apt-get install -y htop vim git-core bash-completion python-software-properties software-properties-common
-chroot $DIR sudo apt-get update
-chroot $DIR sudo apt-get upgrade -y
+sudo lxc-attach -n $NAME -- locale-gen fr_FR.UTF-8
+
+sudo lxc-attach -n $NAME -- apt-get update
+sudo lxc-attach -n $NAME -- apt-get upgrade -y
+
+sudo lxc-attach -n $NAME -- apt-get install -y openssh-server
+sudo lxc-attach -n $NAME -- apt-get install -y python-software-properties software-properties-common
+sudo lxc-attach -n $NAME -- apt-get install -y htop vim git-core bash-completion tree
+
+mkdir -p $DIR/home/ubuntu/.ssh/
+cat $HOME/.ssh/id_rsa.pub >> $DIR/home/ubuntu/.ssh/authorized_keys
+
+sudo lxc-attach -n $NAME -- passwd ubuntu
