@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+sites=/home/greg/dev/tools/sites
+
+current=$(pwd)
+dirname=$(basename $current)
+
+NoColor="\e[0m"
+Red="\e[00;31m"
+Green="\e[00;32m"
+Yellow="\e[00;33m"
+Blue="\e[00;34m"
+Purple="\e[00;35m"
+Cyan="\e[00;36m"
+
+
+read -p "What is the site name? [$dirname] " sitename
+
+if [[ -z $sitename ]]; then
+    sitename=$dirname
+fi
+
+target="$sites/$sitename"
+
+if [[ -L $target ]]; then
+    echo -e "${Red}the site $sitename already exist${Nocolor}"
+
+    exit 1
+fi
+
+ln -s $current $target
+
+echo -e "${Green}Done${Nocolor} http://$sitename.localhost"

@@ -49,6 +49,7 @@ if [[ $IS_ROOT = 1 ]]; then
 
     echo 'Create custom bin symlink'
     ln -sf $DOTFILES/bin/tmux-start                 /usr/local/bin/tmux-start
+    ln -sf $DOTFILES/bin/nginx-expose               /usr/local/bin/nginx-expose
     ln -sf $DOTFILES/bin/todo                       /usr/local/bin/todo
     ln -sf $DOTFILES/bin/lxc-post-install-cmd       /usr/local/bin/lxc-post-install-cmd
 fi
