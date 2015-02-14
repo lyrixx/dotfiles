@@ -21,6 +21,12 @@ if [[ ! -d $DIR ]] ; then
     exit 1
 fi
 
+if [[ "xRUNNING" != x`lxc-info -n $NAME | grep State | awk '{print $2}'` ]]; then
+    echo "The container '$NAME' is not running"
+
+    exit 1
+fi
+
 sudo lxc-attach -n $NAME -- locale-gen fr_FR.UTF-8
 
 sudo lxc-attach -n $NAME -- apt-get update
@@ -28,7 +34,7 @@ sudo lxc-attach -n $NAME -- apt-get upgrade -y
 
 sudo lxc-attach -n $NAME -- apt-get install -y openssh-server
 sudo lxc-attach -n $NAME -- apt-get install -y python-software-properties software-properties-common
-sudo lxc-attach -n $NAME -- apt-get install -y htop vim git-core bash-completion tree
+sudo lxc-attach -n $NAME -- apt-get install -y htop vim git-core bash-completion tree curl
 
 mkdir -p $DIR/home/ubuntu/.ssh/
 cat $HOME/.ssh/id_rsa.pub >> $DIR/home/ubuntu/.ssh/authorized_keys
