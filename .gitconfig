@@ -8,11 +8,10 @@
     co              = checkout
     br              = branch -v
     bra             = branch -v -a
-    lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative
-    lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --date=relative --all
+    lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
+    lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
     lg-grep         = ! git rev-list --all | xargs git grep -F
     di              = diff -M
-    diff-highlight  = "!f() { git diff \"$@\" | ~/src/git/contrib/diff-highlight/diff-highlight; }; f"
     sdi             = diff --cached -M
     dis             = diff --ignore-all-space -M
     logfull         = log --pretty=fuller --graph --stat -p
@@ -26,6 +25,7 @@
     rebc            = rebase --continue
     rebt            = rebase --abort
     rebs            = rebase --skip
+    new             = checkout origin/master -b
     prev            = checkout HEAD^1
     next            = "!sh -c 'git log --reverse --pretty=%H master | awk \"/$(git rev-parse HEAD)/{getline;print}\" | xargs git checkout'"
     lint            = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs -L 1 php -l
@@ -60,3 +60,5 @@
     path            = ~/.private-gitconfig
 [init]
     templatedir     = ~/.git-template
+[status]
+    showUntrackedFiles = all
