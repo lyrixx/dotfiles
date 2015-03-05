@@ -46,7 +46,7 @@
     excludesfile    = ~/.gitglobalexclude
     pager           = less
 [branch]
-    autosetupmerge  = true
+    autosetupmerge  = false
     rebase          = true
 [merge]
     summary         = true
