@@ -39,4 +39,5 @@ sudo lxc-attach -n $NAME -- apt-get install -y htop vim git-core bash-completion
 mkdir -p $DIR/home/ubuntu/.ssh/
 cat $HOME/.ssh/id_rsa.pub >> $DIR/home/ubuntu/.ssh/authorized_keys
 
+sudo lxc-attach -n $NAME -- sh -c "echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/lxc"
 sudo lxc-attach -n $NAME -- passwd ubuntu
