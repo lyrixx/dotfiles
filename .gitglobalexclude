@@ -2,5 +2,6 @@
 /*.sql.tgz
 /.tags
 /.tags_sorted_by_file
-/coverage
+/cov
 /web/debug.*
+/test.php
