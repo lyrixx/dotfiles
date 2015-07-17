@@ -16,9 +16,9 @@ if [ -d ./node_modules/.bin ]; then
 fi
 
 if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
-    export GOROOT=$HOME/dev/tools/go-installer/go/
+    export GOROOT=$HOME/dev/tools/go-installer/go
     export GOPATH=$HOME/dev/go
-    PATH="$PATH:$GOROOT/bin"
+    PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
 fi
 
 export GIT_PS1_SHOWDIRTYSTATE=true
