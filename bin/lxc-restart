@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+if [[ 'xroot' != "x$USER" ]] ; then
+    echo "Only root can use this command"
+
+    exit 1
+fi
+
+if [[ -z $1 ]] ; then
+    echo 'usage:'
+    echo '    lxc-restart lxc-container-name'
+
+    exit 1
+fi
+
+NAME=$1
+DIR=/var/lib/lxc/$NAME/rootfs
+if [[ ! -d $DIR ]] ; then
+    echo "The container '$NAME' does not exist"
+
+    exit 1
+fi
+
+if [[ "xRUNNING" != x`lxc-info -n $NAME | grep State | awk '{print $2}'` ]]; then
+    echo "The container '$NAME' is not running"
+
+    exit 1
+fi
+
+sudo lxc-stop -n $NAME
+sudo lxc-start -dn $NAME

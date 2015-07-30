@@ -52,4 +52,5 @@ if [[ $IS_ROOT = 1 ]]; then
     ln -sf $DOTFILES/bin/nginx-expose               /usr/local/bin/nginx-expose
     ln -sf $DOTFILES/bin/todo                       /usr/local/bin/todo
     ln -sf $DOTFILES/bin/lxc-post-install-cmd       /usr/local/bin/lxc-post-install-cmd
+    ln -sf $DOTFILES/bin/lxc-restart                /usr/local/bin/lxc-restart
 fi

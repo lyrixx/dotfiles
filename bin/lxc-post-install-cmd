@@ -8,7 +8,7 @@ fi
 
 if [[ -z $1 ]] ; then
     echo 'usage:'
-    echo '    post-install-cmd lxc-container-name'
+    echo '    lxc-post-install-cmd lxc-container-name'
 
     exit 1
 fi
