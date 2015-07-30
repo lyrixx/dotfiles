@@ -33,6 +33,7 @@
     php-cs-fixer    = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs -L 1 php-cs-fixer fix
     notes-fetch     = fetch origin refs/notes/*:refs/notes/*
     notes-push      = push origin refs/notes/*
+    daily           = log --no-merges --author='Grégoire Pineau' --since='30 hour' --format='%s'
 [color]
     ui              = true
 [color "branch"]
