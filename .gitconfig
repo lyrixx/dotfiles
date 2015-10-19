@@ -26,7 +26,7 @@
     rebc            = rebase --continue
     rebt            = rebase --abort
     rebs            = rebase --skip
-    new             = ! git checkout origin/master -b $(echo "$@" | sed 's/ /\\-/g') &&  echo $@ >/dev/null
+    new             = ! git checkout origin/master -b $(echo "$@" | sed 's/ /\\-/g') && echo $@ >/dev/null
     prev            = checkout HEAD^1
     next            = "!sh -c 'git log --reverse --pretty=%H master | awk \"/$(git rev-parse HEAD)/{getline;print}\" | xargs git checkout'"
     lint            = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
