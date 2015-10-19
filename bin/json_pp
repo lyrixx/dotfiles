@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+
+dump(json_decode(stream_get_contents(STDIN), true));
