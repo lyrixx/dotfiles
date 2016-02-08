@@ -15,6 +15,13 @@ if [[ -f composer.lock ]]; then
     fi
 fi
 
+if [[ -f package.json ]]; then
+    DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT package.json`
+    if [[ $DIFF != "" ]]; then
+        echo -e "$REDCOLOR package.json has changed. You must run npm install$NOCOLOR"
+    fi
+fi
+
 if [[ -f chef/Cheffile.lock ]]; then
     DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT chef/Cheffile.lock`
     if [[ $DIFF != "" ]]; then
