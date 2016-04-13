@@ -50,3 +50,6 @@ alias whatsmyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' 
 
 ## BF
 alias blackfire_local="blackfire --endpoint="http://blackfire.localhost/app_dev.php" --client-id=5630d6b4-e890-48f7-b0ff-f08173571861 --client-token=f5b81dd268f93ec0198845f057428f2f2fd73e367d9ebc973d2561b16a722491"
+
+## Fun
+alias meteo="curl wttr.in/Paris"
