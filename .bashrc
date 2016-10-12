@@ -11,9 +11,7 @@ if [ -d $HOME/.rbenv/bin ]; then
     eval "$(rbenv init -)"
 fi
 
-if [ -d ./node_modules/.bin ]; then
-    PATH="./node_modules/.bin:$PATH"
-fi
+PATH="./node_modules/.bin:$PATH"
 
 if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
     export GOROOT=$HOME/dev/tools/go-installer/go
@@ -69,13 +67,7 @@ function _truncate_pwd() {
     fi
 }
 
-function _todo_number() {
-    if [ -d ~/Desktop ] ; then
-        TODO_NB=`find ~/Desktop -maxdepth 1 -type f  | wc -l`
-    fi
-}
-
-PROMPT_COMMAND='_set_exit_color;_truncate_pwd;_todo_number;PS1="$EXITCOLOR$NoColor($TODO_NB)$PROMPT_PREFIX$Cyan[$PWD2]$NoColor$PS1GIT "'
+PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan[$PWD2]$NoColor$PS1GIT "'
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, training
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
