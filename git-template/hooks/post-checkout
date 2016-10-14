@@ -22,6 +22,13 @@ if [[ -f package.json ]]; then
     fi
 fi
 
+if [[ -f yarn.lock ]]; then
+    DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT yarn.lock`
+    if [[ $DIFF != "" ]]; then
+        echo -e "$REDCOLOR yarn.lock has changed. You must run yarn$NOCOLOR"
+    fi
+fi
+
 if [[ -f chef/Cheffile.lock ]]; then
     DIFF=`git diff --shortstat $PREV_COMMIT..$POST_COMMIT chef/Cheffile.lock`
     if [[ $DIFF != "" ]]; then
