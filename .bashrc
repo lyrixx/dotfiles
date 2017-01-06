@@ -19,6 +19,10 @@ if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
     PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
 fi
 
+if [[ -d $HOME/dev/github.com ]]; then
+    export CDPATH=".:$HOME/dev/github.com"
+fi
+
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
