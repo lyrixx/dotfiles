@@ -20,7 +20,7 @@ if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then
-    export CDPATH=".:$HOME/dev/github.com"
+    export CDPATH=".:$HOME:$HOME/dev/github.com"
 fi
 
 export GIT_PS1_SHOWDIRTYSTATE=true
