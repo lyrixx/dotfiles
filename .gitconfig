@@ -37,13 +37,6 @@
     reopen          = ! git diff-tree --no-commit-id -r HEAD | cut -d ' ' -f 5-6 | grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty subl
 [color]
     ui              = true
-;[color "branch"]
-;    current         = yellow bold
-;    local           = yellow
-;[color "diff"]
-;    meta            = cyan
-;[color "status"]
-;    untracked       = cyan
 [core]
     autocrlf        = input
     excludesfile    = ~/.gitglobalexclude
