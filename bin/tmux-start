@@ -3,15 +3,11 @@
 # http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
 # http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
 
-SESSIONS="product"
+SESSIONS="work"
 
-function session-product {
+function session-work {
     tmux new-session -d -s $1
-    tmux new-window -k -n postgres       -t $1:0 "ssh postgres-9.lxc"
-    tmux new-window -k -n Connect        -t $1:1 "cd $HOME/dev/github.com/sensiolabs/connect.sensiolabs.com && $SHELL"
-    tmux new-window -k -n Insight        -t $1:2 "cd $HOME/dev/github.com/sensiolabs/insight.sensiolabs.com && $SHELL"
-    tmux new-window -k -n Wax            -t $1:3 "cd $HOME/dev/github.com/sensiolabs/wax.sensiolabs.com && $SHELL"
-    tmux new-window -k -n BF             -t $1:4 "cd $HOME/dev/github.com/blackfireio/blackfire.io && $SHELL"
+    tmux new-window -k -n Connect        -t $1:0 "cd $HOME/dev/github.com && $SHELL"
 }
 
 # Global
