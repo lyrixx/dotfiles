@@ -53,3 +53,5 @@ alias blackfire_local="blackfire --endpoint="http://blackfire.localhost/app_dev.
 
 ## Fun
 alias meteo="curl wttr.in/Paris"
+
+alias p=processing
