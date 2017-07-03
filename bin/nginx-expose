@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-sites=/home/greg/dev/tools/sites
+sites=/home/gregoire/dev/tools/sites
 
 current=$(pwd)
 dirname=$(basename $current)
