@@ -6,17 +6,25 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
+PATH="./node_modules/.bin:$PATH"
+
 if [ -d $HOME/.rbenv/bin ]; then
     PATH="$HOME/.rbenv/bin:$PATH"
     eval "$(rbenv init -)"
 fi
 
-PATH="./node_modules/.bin:$PATH"
-
 if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
     export GOROOT=$HOME/dev/tools/go-installer/go
     export GOPATH=$HOME/dev/go
     PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
+fi
+
+if [[ -d $HOME/.cargo/bin/ ]]; then
+    PATH="$PATH:$HOME/.cargo/bin/"
+fi
+
+if [[ -d $HOME/.local/bin/ ]]; then
+    PATH="$PATH:$HOME/.local/bin/"
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then

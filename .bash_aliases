@@ -47,11 +47,11 @@ alias varnish_flush='varnishadm "ban.url .*"'
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias mysql="mysql --sigint-ignore"
 alias whatsmyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' -e 's/<.*$//'"
-
-## BF
-alias blackfire_local="blackfire --endpoint="http://blackfire.localhost/app_dev.php" --client-id=5630d6b4-e890-48f7-b0ff-f08173571861 --client-token=f5b81dd268f93ec0198845f057428f2f2fd73e367d9ebc973d2561b16a722491"
+alias whatsmypc="inxi -Fxz"
 
 ## Fun
 alias meteo="curl wttr.in/Paris"
-
 alias p=processing
+
+## php
+alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute=0"'
