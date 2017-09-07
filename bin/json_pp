@@ -1,6 +1,10 @@
 #!/usr/bin/env php
 <?php
 
+// Usage:
+//  curl http://localhost -sq | json_php
+//  cat file.json | json_php
+
 use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
 
