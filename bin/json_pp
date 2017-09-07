@@ -1,4 +1,21 @@
 #!/usr/bin/env php
 <?php
 
-dump(json_decode(stream_get_contents(STDIN), true));
+use Symfony\Component\VarDumper\Cloner\VarCloner;
+use Symfony\Component\VarDumper\Dumper\CliDumper;
+
+$content = stream_get_contents(STDIN);
+$json = json_decode($content, true);
+
+if (null === $json) {
+    echo $content;
+
+    exit();
+}
+
+$cloner = new VarCloner();
+$cloner->setMaxItems(-1);
+
+$dumper = new CliDumper();
+$dumper->setColors(true);
+$dumper->dump($cloner->cloneVar($json));
