@@ -3,22 +3,25 @@
 # http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
 # http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
 
-SESSIONS="work"
+SESSIONS="rio"
 
-function session-work {
+function session-rio {
     tmux new-session -d -s $1
-    tmux new-window -k -n Connect        -t $1:0 "cd $HOME/dev/github.com && $SHELL"
+    tmux new-window -t $1 -n base        -c $HOME/dev/github.com/jolicode/redirection.io/server/backend/
+    tmux new-window -t $1 -n base        -c $HOME/dev/github.com/jolicode/redirection.io/server/manager/
 }
 
 # Global
 
-for session in $SESSIONS
-do
-    echo $session
-    if [[ `tmux has-session -t $session 2>/dev/null` ]]; then
+for session in $SESSIONS; do
+    echo -n "$session ... "
+    tmux has-session -t $session 2>/dev/null
+    if [[ $? == 0 ]]; then
+        echo "already exist."
         continue
     fi
 
     session-$session $session
+    echo "created."
 done
 
