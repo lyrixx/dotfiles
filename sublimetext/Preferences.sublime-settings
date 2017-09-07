@@ -1,80 +1,84 @@
 {
-    "added_words":
-    [
-        "amqp",
-        "Ansible",
-        "backend",
-        "Blackfire",
-        "cancelled",
-        "elasticsearch",
-        "errored",
-        "frontend",
-        "Magento",
-        "playbook",
-        "rabbitmq",
-        "scenari",
-        "Symfony",
-        "Vagrantfile",
-        "validator",
-        "workflow"
-    ],
-    "caret_style": "phase",
-    "close_windows_when_empty": false,
-    "color_scheme": "Packages/User/SublimeLinter/Solarized (Dark) (SL).tmTheme",
-    "default_line_ending": "unix",
-    "detect_indentation": true,
-    "draw_white_space": "all",
-    "ensure_newline_at_eof_on_save": true,
-    "file_exclude_patterns":
-    [
-        ".tags*",
-        "*.pyc",
-        "resources/data/",
-        "cov/",
-        "coverage/",
-        "app/cache/*/doctrine/",
-        "node_modules/"
-    ],
-    "folder_exclude_patterns":
-    [
-        ".git"
-    ],
-    "font_face": "consolas",
-    "font_size": 13,
-    "gutter": true,
-    "highlight_line": true,
-    "highlight_modified_tabs": false,
-    "hot_exit": false,
-    "ignored_packages":
-    [
-        "GoOracle",
-        "Puppet",
-        "RestructuredText",
-        "Vintage"
-    ],
-    "indent_guide_options":
-    [
-    ],
-    "match_brackets_angle": true,
-    "phoenix_color_expanded_folder": true,
-    "phoenix_color_green": true,
-    "phoenix_dirty_bottom_bar": true,
-    "phoenix_dirty_bottom_bar_green": true,
-    "phoenix_highlight_current_tab": true,
-    "phoenix_solid_current_tab": true,
-    "phoenix_tabs_small": true,
-    "reveal-on-activate": true,
-    "rulers":
-    [
-        80,
-        120
-    ],
-    "show_tab_close_buttons": true,
-    "spell_check": true,
-    "tab_size": 4,
-    "theme": "Phoenix Dark.sublime-theme",
-    "translate_tabs_to_spaces": true,
-    "trim_trailing_white_space_on_save": true,
-    "word_separators": "./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}`~? ",
-    "word_wrap": false
+	"added_words":
+	[
+		"amqp",
+		"Ansible",
+		"backend",
+		"Blackfire",
+		"cancelled",
+		"elasticsearch",
+		"errored",
+		"frontend",
+		"Magento",
+		"playbook",
+		"rabbitmq",
+		"scenari",
+		"Symfony",
+		"Vagrantfile",
+		"validator",
+		"workflow"
+	],
+	"caret_style": "phase",
+	"close_windows_when_empty": false,
+	"color_scheme": "Packages/User/SublimeLinter/Solarized (Dark) (SL).tmTheme",
+	"default_line_ending": "unix",
+	"detect_indentation": true,
+	"draw_white_space": "all",
+	"ensure_newline_at_eof_on_save": true,
+	"file_exclude_patterns":
+	[
+		".tags*",
+		"*.pyc",
+		"resources/data/",
+		"cov/",
+		"coverage/",
+		"app/cache/*/doctrine/",
+		"node_modules/"
+	],
+	"folder_exclude_patterns":
+	[
+		".git"
+	],
+	"font_face": "consolas",
+	"font_size": 18,
+	"gutter": true,
+	"highlight_line": true,
+	"highlight_modified_tabs": false,
+	"hot_exit": false,
+	"ignored_packages":
+	[
+		"GoOracle",
+		"Puppet",
+		"RestructuredText",
+		"Vintage"
+	],
+	"ignored_words":
+	[
+		"iframe"
+	],
+	"indent_guide_options":
+	[
+	],
+	"match_brackets_angle": true,
+	"phoenix_color_expanded_folder": true,
+	"phoenix_color_green": true,
+	"phoenix_dirty_bottom_bar": true,
+	"phoenix_dirty_bottom_bar_green": true,
+	"phoenix_highlight_current_tab": true,
+	"phoenix_solid_current_tab": true,
+	"phoenix_tabs_small": true,
+	"reveal-on-activate": true,
+	"rulers":
+	[
+		80,
+		120
+	],
+	"show_tab_close_buttons": true,
+	"spell_check": true,
+	"tab_size": 4,
+	"theme": "Phoenix Dark.sublime-theme",
+	"translate_tabs_to_spaces": true,
+	"trim_trailing_white_space_on_save": true,
+	"word_separators": "./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}`~? ",
+	"word_wrap": false
 }
