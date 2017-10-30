@@ -7,6 +7,7 @@
 
 use Symfony\Component\VarDumper\Cloner\VarCloner;
 use Symfony\Component\VarDumper\Dumper\CliDumper;
+use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 
 $content = stream_get_contents(STDIN);
 $json = json_decode($content, true);
@@ -20,6 +21,11 @@ if (null === $json) {
 $cloner = new VarCloner();
 $cloner->setMaxItems(-1);
 
-$dumper = new CliDumper();
+if ($_SERVER['HTML'] ?? false) {
+    $dumper = new HtmlDumper();
+} else {
+    $dumper = new CliDumper();
+}
+
 $dumper->setColors(true);
 $dumper->dump($cloner->cloneVar($json));
