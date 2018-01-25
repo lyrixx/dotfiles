@@ -14,8 +14,7 @@ alias free="free -m"
 alias cp="cp -i"
 alias mv="mv -i"
 
-alias grep='grep --exclude-dir ".svn" --exclude-dir ".git" --exclude tagsi --color=tty'
-alias ack="ack-grep"
+alias grep='grep --color=tty'
 
 ## notification
 
@@ -45,13 +44,13 @@ alias varnish_flush='varnishadm "ban.url .*"'
 
 ## Cool shortcut
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
-alias mysql="mysql --sigint-ignore"
-alias whatsmyip="curl -s checkip.dyndns.org|sed -e 's/.*Current IP Address: //' -e 's/<.*$//'"
+alias mysql="mysql --sigint-ignore --default-character-set=utf8 --auto-vertical-output"
+alias http="http --pretty=all"
+alias whatsmyip="curl https://ifconfig.co/"
 alias whatsmypc="inxi -Fxz"
 
 ## Fun
 alias meteo="curl wttr.in/Paris"
-alias p=processing
 
-## php
+## PHP
 alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute=0"'
