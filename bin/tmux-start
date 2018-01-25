@@ -3,12 +3,21 @@
 # http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
 # http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
 
-SESSIONS="rio"
+SESSIONS="rio ouibus"
 
 function session-rio {
-    tmux new-session -d -s $1
-    tmux new-window -t $1 -n base        -c $HOME/dev/github.com/jolicode/redirection.io/server/backend/
-    tmux new-window -t $1 -n base        -c $HOME/dev/github.com/jolicode/redirection.io/server/manager/
+    tmux new-session -d -s $1 -n root   -c $HOME/dev/github.com/jolicode/redirection.io
+    tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/redirection.io
+    tmux new-window -t $1 -n DB         -c $HOME/dev/github.com/jolicode/redirection.io
+    tmux new-window -t $1 -n backend    -c $HOME/dev/github.com/jolicode/redirection.io/server/backend
+    tmux new-window -t $1 -n manager    -c $HOME/dev/github.com/jolicode/redirection.io/server/manager
+    tmux new-window -t $1 -n test       -c $HOME/dev/github.com/jolicode/redirection.io/tests
+    tmux new-window -t $1 -n infra      -c $HOME/dev/github.com/jolicode/redirection.io/infrastructure
+}
+
+function session-ouibus {
+    tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/jolicode/ouibus
+    tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/ouibus
 }
 
 # Global
