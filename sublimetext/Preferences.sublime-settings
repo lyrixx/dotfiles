@@ -16,7 +16,8 @@
 		"Symfony",
 		"Vagrantfile",
 		"validator",
-		"workflow"
+		"workflow",
+		"plugins"
 	],
 	"caret_style": "phase",
 	"close_windows_when_empty": false,
@@ -31,9 +32,8 @@
 		"*.pyc",
 		"resources/data/",
 		"cov/",
-		"coverage/",
 		"app/cache/*/doctrine/",
-		"node_modules/"
+		"var/cache/*/doctrine/"
 	],
 	"folder_exclude_patterns":
 	[
