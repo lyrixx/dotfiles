@@ -22,12 +22,12 @@ alias n="notify-send"
 function m() { echo "Hi" | mail -s "$*" lyrixx@lyrixx.info ; }
 
 ## Apt
-alias agi="apt-get install"
-alias agua="apt-get update"
-alias agup="apt-get upgrade"
-alias aguap="apt-get update && apt-get upgrade"
-alias adel=" apt-get remove"
-alias asearch="apt-cache search"
+alias agi="apt install"
+alias agua="apt update"
+alias agup="apt upgrade"
+alias aguap="apt update && apt upgrade"
+alias adel=" apt remove"
+alias asearch="apt search"
 
 ## Archive
 alias untar="tar xvf"
@@ -46,6 +46,7 @@ alias varnish_flush='varnishadm "ban.url .*"'
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias mysql="mysql --sigint-ignore --default-character-set=utf8 --auto-vertical-output"
 alias http="http --pretty=all"
+alias https="http --verify=no"
 alias whatsmyip="curl https://ifconfig.co/"
 alias whatsmypc="inxi -Fxz"
 
