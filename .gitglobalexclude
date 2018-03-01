@@ -2,7 +2,8 @@
 *.sql
 *.sql.tgz
 .fab_tasks~
-/cov/
+cov/
+coverage/
 issue.md
 public/debug.*
 test.js
