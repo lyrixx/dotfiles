@@ -19,9 +19,10 @@
 		"workflow",
 		"plugins"
 	],
+	"always_show_minimap_viewport": true,
 	"caret_style": "phase",
 	"close_windows_when_empty": false,
-	"color_scheme": "Packages/User/SublimeLinter/Solarized (Dark) (SL).tmTheme",
+	"color_scheme": "Packages/Color Scheme - Default/Monokai.sublime-color-scheme",
 	"default_line_ending": "unix",
 	"detect_indentation": true,
 	"draw_white_space": "all",
@@ -40,7 +41,7 @@
 		".git"
 	],
 	"font_face": "consolas",
-	"font_size": 18,
+	"font_size": 15,
 	"gutter": true,
 	"highlight_line": true,
 	"highlight_modified_tabs": false,
@@ -76,9 +77,10 @@
 	"show_tab_close_buttons": true,
 	"spell_check": true,
 	"tab_size": 4,
-	"theme": "Phoenix Dark.sublime-theme",
+	"theme": "Adaptive.sublime-theme",
 	"translate_tabs_to_spaces": true,
 	"trim_trailing_white_space_on_save": true,
+	"ui_scale": 1.2,
 	"word_separators": "./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}`~? ",
 	"word_wrap": false
 }

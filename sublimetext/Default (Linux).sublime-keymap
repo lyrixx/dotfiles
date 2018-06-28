@@ -1,0 +1,24 @@
+[
+
+    { "keys": ["ctrl+shift+s"], "command": "save_all" },
+    { "keys": ["ctrl+shift+c"], "command": "toggle_comment", "args": { "block": false } },
+    { "keys": ["ctrl+e"], "command": "run_macro_file", "args": {"file": "res://Packages/Default/Delete Line.sublime-macro"} },
+    { "keys": ["shift+enter"], "command": "run_macro_file", "args": {"file": "res://Packages/Default/Add Line.sublime-macro"} },
+
+    { "keys": ["alt+shift+up"], "command": "swap_line_up" },
+    { "keys": ["alt+shift+down"], "command": "swap_line_down" },
+
+    { "keys": ["alt+shift+right"], "command": "indent" },
+    { "keys": ["alt+shift+left"], "command": "unindent" },
+
+    { "keys": ["ctrl+shift+up"], "command": "duplicate_line" },
+    { "keys": ["ctrl+shift+down"], "command": "duplicate_line" },
+
+    { "keys": ["ctrl+b"], "command": "goto_definition_scope" },
+
+    { "keys": ["f4"], "command": "import_namespace" },
+    { "keys": ["f5"], "command": "find_use" },
+    { "keys": ["f6"], "command": "expand_fqcn" },
+
+    { "keys": ["ctrl+shift+&"], "command": "reveal_in_side_bar" },
+]
