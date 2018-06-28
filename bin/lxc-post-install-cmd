@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 if [[ 'xroot' != "x$USER" ]] ; then
     echo "Only root can use this command"
 
@@ -14,30 +16,35 @@ if [[ -z $1 ]] ; then
 fi
 
 NAME=$1
-DIR=/var/lib/lxc/$NAME/rootfs
-if [[ ! -d $DIR ]] ; then
+
+lxc info $NAME 2>&1 > /dev/null
+if [[ 0 != $? ]] ; then
     echo "The container '$NAME' does not exist"
 
     exit 1
 fi
 
-if [[ "xRUNNING" != x`lxc-info -n $NAME | grep State | awk '{print $2}'` ]]; then
+if [[ "xRunning" != x`lxc info $NAME | grep Status | awk '{print $2}'` ]]; then
     echo "The container '$NAME' is not running"
 
     exit 1
 fi
 
-sudo lxc-attach -n $NAME -- locale-gen fr_FR.UTF-8
+lxc exec $NAME -- locale-gen fr_FR.UTF-8
 
-sudo lxc-attach -n $NAME -- apt-get update
-sudo lxc-attach -n $NAME -- apt-get upgrade -y
+lxc exec $NAME -- apt-get update
+lxc exec $NAME -- apt-get upgrade -y
 
-sudo lxc-attach -n $NAME -- apt-get install -y openssh-server
-sudo lxc-attach -n $NAME -- apt-get install -y python-software-properties software-properties-common
-sudo lxc-attach -n $NAME -- apt-get install -y htop vim git-core bash-completion tree curl
+lxc exec $NAME -- apt-get install -y openssh-server
+lxc exec $NAME -- apt-get install -y software-properties-common
+lxc exec $NAME -- apt-get install -y htop vim git bash-completion tree curl
 
-mkdir -p $DIR/home/ubuntu/.ssh/
-cat $HOME/.ssh/id_rsa.pub >> $DIR/home/ubuntu/.ssh/authorized_keys
+lxc exec $NAME -- mkdir -p /home/ubuntu/.ssh/
+lxc file push /home/gregoire/.ssh/id_rsa.pub $NAME/home/ubuntu/.ssh/authorized_keys
 
-sudo lxc-attach -n $NAME -- sh -c "echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/lxc"
-sudo lxc-attach -n $NAME -- passwd ubuntu
+lxc exec $NAME -- sh -c "echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/lxc"
+lxc exec $NAME -- sh -c "echo 'ubuntu:ubuntu' | chpasswd"
+lxc exec $NAME -- sh -c "cd /etc && git init && git add . && git commit -m 'init'"
+lxc exec $NAME -- sh -c "cd /home/ubuntu && git clone https://github.com/lyrixx/dotfiles || true"
+lxc exec $NAME -- sh -c "cd /home/ubuntu/dotfiles && ./install.sh"
+
