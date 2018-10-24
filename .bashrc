@@ -13,10 +13,12 @@ if [ -d $HOME/.rbenv/bin ]; then
     eval "$(rbenv init -)"
 fi
 
-if [[ -d $HOME/dev/tools/go-installer/go/bin ]]; then
-    export GOROOT=$HOME/dev/tools/go-installer/go
+
+
+if [[ -d /usr/local/go/bin ]]; then
     export GOPATH=$HOME/dev/go
-    PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
+    export PATH=$PATH:/usr/local/go/bin
+    export PATH=$PATH:$GOPATH/bin
 fi
 
 if [[ -d $HOME/.cargo/bin/ ]]; then
@@ -25,6 +27,10 @@ fi
 
 if [[ -d $HOME/.local/bin/ ]]; then
     PATH="$PATH:$HOME/.local/bin/"
+fi
+
+if [[ -d $HOME/.yarn/bin/ ]]; then
+    PATH="$PATH:$HOME/.yarn/bin/"
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then
