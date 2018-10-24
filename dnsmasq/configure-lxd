@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+IFS=$'\t\n'
+
+lxd_bridge="lxdbr0"
+lxd_ipv4_addr="$(
+  lxc network get "${lxd_bridge}" ipv4.address |
+  cut \
+    --delimiter='/' \
+    --fields=1
+)"
+
+echo "# Tell any system-wide dnsmasq instance to make sure to bind to interfaces
+# instead of listening on 0.0.0.0
+# WARNING: changes to this file will get lost if lxd is removed.
+server=/lxd/${lxd_ipv4_addr}
+bind-interfaces
+except-interface=${lxd_bridge}
+" > /etc/dnsmasq.d/lxd
+
+systemctl restart dnsmasq.service
