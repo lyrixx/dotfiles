@@ -17,7 +17,22 @@
 		"Vagrantfile",
 		"validator",
 		"workflow",
-		"plugins"
+		"plugins",
+		"itérateur",
+		"batchs",
+		"fixtures",
+		"model",
+		"template",
+		"débugger",
+		"Twig",
+		"Event",
+		"Kernel",
+		"mapping",
+		"Serializer",
+		"Decoder",
+		"Desérialisation",
+		"desérialise",
+		"desérialiser"
 	],
 	"always_show_minimap_viewport": true,
 	"caret_style": "phase",
@@ -25,23 +40,25 @@
 	"color_scheme": "Packages/Color Scheme - Default/Monokai.sublime-color-scheme",
 	"default_line_ending": "unix",
 	"detect_indentation": true,
+	"dictionary": "Packages/Language - English/en_US.dic",
 	"draw_white_space": "all",
 	"ensure_newline_at_eof_on_save": true,
 	"file_exclude_patterns":
 	[
-		".tags*",
 		"*.pyc",
-		"resources/data/",
-		"cov/",
-		"app/cache/*/doctrine/",
-		"var/cache/*/doctrine/"
+		".tags*",
+		"cov/"
 	],
 	"folder_exclude_patterns":
 	[
-		".git"
+		".git",
+		"app/cache/*/doctrine/",
+		"node_modules",
+		"resources/data",
+		"var/cache/*/doctrine/"
 	],
 	"font_face": "consolas",
-	"font_size": 15,
+	"font_size": 13,
 	"gutter": true,
 	"highlight_line": true,
 	"highlight_modified_tabs": false,

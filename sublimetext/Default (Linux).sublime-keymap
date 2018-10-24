@@ -11,8 +11,8 @@
     { "keys": ["alt+shift+right"], "command": "indent" },
     { "keys": ["alt+shift+left"], "command": "unindent" },
 
-    { "keys": ["ctrl+shift+up"], "command": "duplicate_line" },
-    { "keys": ["ctrl+shift+down"], "command": "duplicate_line" },
+    { "keys": ["ctrl+shift+up"], "command": "duplicate_lines", "args": { "up": true } },
+    { "keys": ["ctrl+shift+down"], "command": "duplicate_lines" },
 
     { "keys": ["ctrl+b"], "command": "goto_definition_scope" },
 
@@ -20,5 +20,16 @@
     { "keys": ["f5"], "command": "find_use" },
     { "keys": ["f6"], "command": "expand_fqcn" },
 
+    { "keys": ["ctrl+&"], "command": "focus_side_bar" },
     { "keys": ["ctrl+shift+&"], "command": "reveal_in_side_bar" },
+
+    { "keys": ["ctrl+left"], "command": "move", "args": {"by": "subwords", "forward": false} },
+    { "keys": ["ctrl+right"], "command": "move", "args": {"by": "subword_ends", "forward": true} },
+    { "keys": ["ctrl+shift+left"], "command": "move", "args": {"by": "subwords", "forward": false, "extend": true} },
+    { "keys": ["ctrl+shift+right"], "command": "move", "args": {"by": "subword_ends", "forward": true, "extend": true} },
+
+
+    // GoLang
+    { "keys": ["ctrl+b"], "command": "go_guru_goto_definition", "args": {"output": false}, "context": [{ "key": "selector", "operator": "equal", "operand": "source.go" }] },
+    {"button": "button2", "modifiers": ["ctrl"], "press_command": "drag_select", "command": "go_guru", "args": {"mode": "definition", "output": false }}
 ]
