@@ -2,6 +2,7 @@
 *.sql
 *.sql.tgz
 .fab_tasks~
+.php_cs.cache
 cov/
 coverage/
 issue.md
