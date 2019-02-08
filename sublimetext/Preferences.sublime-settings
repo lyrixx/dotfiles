@@ -58,7 +58,7 @@
 		"var/cache/*/doctrine/"
 	],
 	"font_face": "consolas",
-	"font_size": 13,
+	"font_size": 14,
 	"gutter": true,
 	"highlight_line": true,
 	"highlight_modified_tabs": false,
