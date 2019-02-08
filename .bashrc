@@ -79,7 +79,7 @@ function _truncate_pwd() {
     PWD2="${PWD/#$HOME/~}"
     local pwdmaxlen=$((${COLUMNS:-20}/5))
     if [ ${#PWD2} -gt $pwdmaxlen ] ; then
-        PWD2="..${PWD2: -$pwdmaxlen}"
+        PWD2="…${PWD2: -$pwdmaxlen}"
     fi
 }
 
