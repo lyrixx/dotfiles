@@ -13,8 +13,6 @@ if [ -d $HOME/.rbenv/bin ]; then
     eval "$(rbenv init -)"
 fi
 
-
-
 if [[ -d /usr/local/go/bin ]]; then
     export GOPATH=$HOME/dev/go
     export PATH=$PATH:/usr/local/go/bin
@@ -81,11 +79,11 @@ function _truncate_pwd() {
     PWD2="${PWD/#$HOME/~}"
     local pwdmaxlen=$((${COLUMNS:-20}/5))
     if [ ${#PWD2} -gt $pwdmaxlen ] ; then
-        PWD2="{..}${PWD2: -$pwdmaxlen}"
+        PWD2="..${PWD2: -$pwdmaxlen}"
     fi
 }
 
-PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan[$PWD2]$NoColor$PS1GIT "'
+PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
 #PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, training
 #PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
 
