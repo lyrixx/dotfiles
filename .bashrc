@@ -84,8 +84,8 @@ function _truncate_pwd() {
 }
 
 PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
-#PS1='[\W]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, training
-#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Oneline, Old
+#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Old
+#PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
 
 
 if [[ `which dircolors` ]]; then
@@ -105,3 +105,15 @@ shopt -s extglob        # Pour que bash, interprète les expressions générique
 shopt -s histappend     # Pour que bash ajoute au lieu d'écraser dans l'histo
 shopt -s hostcomplete   # Pour que bash tente de résoudre le nom pour les ip suivis d'un @
 shopt -s nocaseglob     # Pour que bash ne soit pas sensible a la casse
+
+man() {
+    env \
+        LESS_TERMCAP_mb=$(printf "\e[1;31m") \
+        LESS_TERMCAP_md=$(printf "\e[1;31m") \
+        LESS_TERMCAP_me=$(printf "\e[0m") \
+        LESS_TERMCAP_se=$(printf "\e[0m") \
+        LESS_TERMCAP_so=$(printf "\e[1;41;37m") \
+        LESS_TERMCAP_ue=$(printf "\e[0m") \
+        LESS_TERMCAP_us=$(printf "\e[1;35m") \
+            man "$@"
+}
