@@ -55,3 +55,6 @@ alias meteo="curl wttr.in/Paris"
 
 ## PHP
 alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute=0"'
+
+## OS
+alias huge_page_disable_transparent="hugeadm --thp-never"
