@@ -43,6 +43,8 @@ export HISTFILESIZE=${HISTSIZE}
 export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
 
+export ANSIBLE_STDOUT_CALLBACK=debug
+
 if [[ `which most` ]]; then export PAGER=`which most` ; fi
 export LESS="FRSX"
 
@@ -84,9 +86,7 @@ function _truncate_pwd() {
 }
 
 PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
-#PS1='\[\e[01;33m\]\u@\H\[\e[00;32m\][\w]\[\e[0m\]\[\e[01;34m\]$(__git_ps1 "(%s)")\[\e[0m\] ' # Old
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
-
 
 if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then
