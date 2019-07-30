@@ -16,6 +16,8 @@ alias mv="mv -i"
 
 alias grep='grep --color=tty'
 
+alias PS1="grep '#PS1' ~/.bashrc | sed 's/^#\(.*\)/\1/'"
+
 ## notification
 
 alias n="notify-send"
@@ -49,6 +51,7 @@ alias http="http --pretty=all"
 alias https="http --verify=no"
 alias whatsmyip="curl https://ifconfig.co/"
 alias whatsmypc="inxi -Fxz"
+alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
 
 ## Fun
 alias meteo="curl wttr.in/Paris"

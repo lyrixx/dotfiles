@@ -11,7 +11,6 @@
     set wildignore=.svn,CVS,.git,.hg,*.o,*.a,*.class,*.mo,*.la,*.so,*.obj,*.swp,*.jpg,*.png,*.xpm,*.gif,*.pyc,*.pyo,*/cache/**,*/logs/** " Ignore certain files
     syntax on
 
-
 " UI
     set background=dark
     set cursorline                  " Highlight the current line

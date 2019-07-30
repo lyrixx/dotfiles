@@ -6,6 +6,10 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
+if [ -f /home/gregoire/.local/bin/aws_completer ] && ! shopt -oq posix; then
+    complete -C /home/gregoire/.local/bin/aws_completer aws
+fi
+
 PATH="./node_modules/.bin:$PATH"
 
 if [ -d $HOME/.rbenv/bin ]; then
