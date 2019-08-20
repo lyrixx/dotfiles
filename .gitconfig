@@ -6,41 +6,35 @@
     ci              = commit -v
     cim             = commit -v -m "--"
     co              = checkout
-;    cos             = ! git branch | grep '$@' | grep -v '*' | awk '{print $1}' | head -n 1 | xargs --no-run-if-empty git checkout
     br              = branch -v
     bra             = branch -v -a
-    brc             = ! git branch --no-color  --merged  | grep -v '*' | grep -v master | xargs --no-run-if-empty git branch -d
+    brc             = ! git branch --no-color --merged | /bin/grep -v '*' | /bin/grep -v master | xargs --no-run-if-empty git branch -d
     brcc            = ! git br | ag -Q '[gone]' | awk '{ print $1 }' | xargs --no-run-if-empty git br -D
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
-    lg-grep         = ! git rev-list --all | xargs git grep -F
     di              = diff -M
     sdi             = diff --cached -M
     dis             = diff --ignore-all-space -M
-    logfull         = log --pretty=fuller --graph --stat -p
     cat             = cat-file -p
     unstage         = reset HEAD
     uncommit        = update-ref HEAD HEAD^
     uncommithard    = reset --hard HEAD^
     oups            = commit --amend -C HEAD
-    tagg            = ! git fetch origin -t && git tag -f -a -m 'created tag : `cat VERSION`' `cat VERSION` && git push origin --tags
-    tagc            = ! TAG=`git describe --tags $(git rev-list --tags --max-count=1) | sed 's/v//' | awk -F . '{ printf "v%d.%d.%d", $1, $2, $3 + 1 }'` && echo $TAG > VERSION && git ci -m "Bumped to version : $TAG" VERSION && git tag -a -m "Created tag $TAG" $TAG
     rebc            = rebase --continue
     rebt            = rebase --abort
     rebs            = rebase --skip
     new             = ! git checkout origin/master -b $(echo "$@" | sed 's/ /\\-/g') && echo $@ >/dev/null
-    prev            = checkout HEAD^1
-    next            = "!sh -c 'git log --reverse --pretty=%H master | awk \"/$(git rev-parse HEAD)/{getline;print}\" | xargs git checkout'"
     lint            = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
     php-cs-fixer    = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
-    eslint          = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
+    eslint          = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.js$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
     notes-fetch     = fetch origin refs/notes/*:refs/notes/*
     notes-push      = push origin refs/notes/*
     daily           = log --no-merges --all --author='Grégoire Pineau' --since='midnight today' --format='%s'
-    reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty subl
-    reopens         = ! git log --grep=$1 -1 --format=   --name-only  | xargs --no-run-if-empty subl
-    open            = ! git status -s | grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty subl
-    ignored         = ! git ls-files -v | grep '^[[:lower:]]'
+    reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty subl
+    reopens         = ! "f() { git log -1 --format= --name-only --grep=$1 | xargs --no-run-if-empty subl ;}; f"
+    open            = ! git status -s | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty subl
+    shows           = log -1 --format= -p --grep
+    ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
 [color]
     ui              = true
 [core]
