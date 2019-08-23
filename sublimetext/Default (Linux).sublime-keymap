@@ -28,6 +28,7 @@
     { "keys": ["ctrl+shift+left"], "command": "move", "args": {"by": "subwords", "forward": false, "extend": true} },
     { "keys": ["ctrl+shift+right"], "command": "move", "args": {"by": "subword_ends", "forward": true, "extend": true} },
 
+    { "keys": ["ctrl+shift+o"], "command": "cheat_sheet_input_panel", "args": {"with_comments": false} },
 
     // GoLang
     { "keys": ["ctrl+b"], "command": "go_guru_goto_definition", "args": {"output": false}, "context": [{ "key": "selector", "operator": "equal", "operand": "source.go" }] },

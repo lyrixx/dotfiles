@@ -32,7 +32,24 @@
 		"Decoder",
 		"Desérialisation",
 		"desérialise",
-		"desérialiser"
+		"desérialiser",
+		"anymore",
+		"Setup",
+		"Anonymise",
+		"git",
+		"framework",
+		"Ubuntu",
+		"Debian",
+		"everytime",
+		"segfault",
+		"sitemap",
+		"Redis",
+		"deeplink",
+		"crawlable",
+		"wildcard",
+		"php",
+		"fallback",
+		"Lua"
 	],
 	"always_show_minimap_viewport": true,
 	"caret_style": "phase",
@@ -55,19 +72,22 @@
 		"app/cache/*/doctrine/",
 		"node_modules",
 		"resources/data",
-		"var/cache/*/doctrine/"
+		"var/cache/*/doctrine/",
+		"vendor/*/vendor"
 	],
 	"font_face": "consolas",
-	"font_size": 14,
+	"font_size": 12,
 	"gutter": true,
 	"highlight_line": true,
 	"highlight_modified_tabs": false,
 	"hot_exit": false,
 	"ignored_packages":
 	[
+		"AnsibleSnippets",
 		"GoOracle",
 		"Puppet",
 		"RestructuredText",
+		"Stino",
 		"Vintage"
 	],
 	"ignored_words":

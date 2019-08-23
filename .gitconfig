@@ -60,3 +60,5 @@
     showUntrackedFiles = all
 [fetch]
     prune = true
+[tag]
+	sort = version:refname
