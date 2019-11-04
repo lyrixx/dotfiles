@@ -54,7 +54,7 @@ alias whatsmypc="inxi -Fxz"
 alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
 
 ## Fun
-alias meteo="curl wttr.in/Paris"
+alias meteo="curl wttr.in/Paris?format=v2"
 
 ## PHP
 alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute=0"'

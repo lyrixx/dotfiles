@@ -121,3 +121,13 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
+
+# tabtab source for serverless package
+# uninstall by removing these lines or running `tabtab uninstall serverless`
+[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash
+# tabtab source for sls package
+# uninstall by removing these lines or running `tabtab uninstall sls`
+[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/sls.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/sls.bash
+# tabtab source for slss package
+# uninstall by removing these lines or running `tabtab uninstall slss`
+[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash
