@@ -11,3 +11,4 @@ test.js
 test.php
 test.sh
 web/debug.*
+secrets.md
