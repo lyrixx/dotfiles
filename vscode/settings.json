@@ -1,0 +1,56 @@
+{
+    "window.zoomLevel": 2,
+    "workbench.activityBar.visible": true,
+    "editor.renderControlCharacters": true,
+    "editor.renderWhitespace": "all",
+    "editor.multiCursorModifier": "alt",
+    "editor.fontFamily": "consolas,'Droid Sans Mono', 'monospace', monospace, 'Droid Sans Fallback'",
+    "editor.wordWrapColumn": 120,
+    "files.exclude": {
+        "**/app/cache/**/doctrine/": true,
+        "**/node_modules/": true,
+        "**/resources/data/": true,
+        "**/var/cache/**/doctrine/": true,
+        "**/vendor/**/vendor": true
+    },
+    "editor.cursorBlinking": "phase",
+    "search.useIgnoreFiles": false,
+    "workbench.colorTheme": "Monokai",
+    "namespaceResolver.leadingSeparator": false,
+    "namespaceResolver.sortAlphabetically": true,
+    "namespaceResolver.sortNatural": true,
+    "files.trimTrailingWhitespace": true,
+    "cSpell.userWords": [
+        "Swarrot",
+        "amqp",
+        "crawlable",
+        "errored",
+        "joli",
+        "libsodium",
+        "ouibus",
+        "pecl",
+        "rabbitmq",
+        "redirection",
+        "redirectionio",
+        "segmentations",
+        "streadway",
+        "symfony",
+        "timeouted"
+    ],
+    "workbench.iconTheme": "vscode-icons",
+    "vsicons.dontShowNewVersionMessage": true,
+    "go.formatTool": "goimports",
+    "go.useLanguageServer": true,
+    "files.insertFinalNewline": true,
+    "explorer.confirmDelete": false,
+    "python.jediEnabled": false,
+    "auto-close-tag.SublimeText3Mode": true,
+    "auto-close-tag.activationOnLanguage": [
+        "*"
+    ],
+    "emmet.includeLanguages": {
+        "twig": "html"
+    },
+    "cSpell.language": "en,fr",
+    "C_Cpp.updateChannel": "Insiders",
+}
