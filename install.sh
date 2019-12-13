@@ -53,4 +53,5 @@ if [[ $IS_ROOT = 1 ]]; then
     ln -sf $DOTFILES/bin/nginx-expose               /usr/local/bin/nginx-expose
     ln -sf $DOTFILES/bin/tmux-start                 /usr/local/bin/tmux-start
     ln -sf $DOTFILES/bin/todo                       /usr/local/bin/todo
+    ln -sf $DOTFILES/bin/\$                         /usr/local/bin/\$
 fi
