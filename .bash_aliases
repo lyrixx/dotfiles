@@ -18,7 +18,7 @@ alias grep='grep --color=tty'
 
 alias PS1="grep '#PS1' ~/.bashrc | sed 's/^#\(.*\)/\1/'"
 
-## notification
+## Notification
 
 alias n="notify-send"
 function m() { echo "Hi" | mail -s "$*" lyrixx@lyrixx.info ; }
@@ -40,6 +40,9 @@ alias untarbz1="tar jxvf"
 alias ungz2="bunzip2 -k"
 
 ## Services
+alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
+alias docker-clear-logs='sudo sh -c "truncate -s 0 /var/lib/docker/containers/*/*-json.log"'
+
 ### Flush
 alias memcached_flush='echo "flush_all" | nc localhost 11211'
 alias varnish_flush='varnishadm "ban.url .*"'
@@ -51,7 +54,6 @@ alias http="http --pretty=all"
 alias https="http --verify=no"
 alias whatsmyip="curl https://ifconfig.co/"
 alias whatsmypc="inxi -Fxz"
-alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
 
 ## Fun
 alias meteo="curl wttr.in/Paris?format=v2"
