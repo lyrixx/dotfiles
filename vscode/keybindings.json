@@ -181,10 +181,6 @@
         "command": "-editor.action.toggleTabFocusMode"
     },
     {
-        "key": "ctrl+m",
-        "command": "editor.action.jumpToBracket"
-    },
-    {
         "key": "alt+left",
         "command": "workbench.action.navigateBack"
     },
@@ -219,5 +215,20 @@
         "key": "ctrl+shift+right",
         "command": "cursorWordPartRightSelect",
         "when": "textInputFocus"
+    },
+    {
+        "key": "ctrl+m",
+        "command": "editor.action.smartSelect.expand",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "shift+alt+right",
+        "command": "-editor.action.smartSelect.expand",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "shift+alt+right",
+        "command": "-editor.action.smartSelect.expand",
+        "when": "editorTextFocus"
     }
 ]
