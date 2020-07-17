@@ -64,6 +64,7 @@
         "denormalize",
         "deps",
         "errored",
+        "fulltext",
         "geojson",
         "goroutines",
         "grafana",
@@ -80,6 +81,7 @@
         "libsodium",
         "loadbalancer",
         "metatag",
+        "multisearch",
         "nyholm",
         "opengraph",
         "ouibus",
@@ -216,4 +218,5 @@
         "zlib"
     ],
     "files.autoSave": "off",
+    "python.languageServer": "Microsoft",
 }
