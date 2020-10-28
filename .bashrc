@@ -131,3 +131,6 @@ man() {
 # tabtab source for slss package
 # uninstall by removing these lines or running `tabtab uninstall slss`
 [ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash
+
+# heroku autocomplete setup
+HEROKU_AC_BASH_SETUP_PATH=/home/gregoire/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
