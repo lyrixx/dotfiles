@@ -174,7 +174,6 @@
     "workbench.editor.enablePreview": false,
     "editor.autoIndent": false,
     "editor.suggestFontSize": 18,
-    "window.zoomLevel": -1,
     "editor.fontSize": 18,
     "debug.console.fontSize": 16,
     "terminal.integrated.fontSize": 16,
@@ -260,4 +259,5 @@
     "files.autoSave": "off",
     "python.languageServer": "Microsoft",
     "editor.suggest.showStatusBar": true,
+    "window.zoomLevel": -1,
 }
