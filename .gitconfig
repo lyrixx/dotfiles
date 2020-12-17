@@ -61,6 +61,6 @@
 [fetch]
     prune = true
 [tag]
-	sort = version:refname
+    sort = version:refname
 [remote "origin"]
-	fetch = +refs/pull/*:refs/remotes/origin/pull/*
+    fetch = +refs/pull/*:refs/remotes/origin/pull/*
