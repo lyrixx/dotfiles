@@ -48,7 +48,7 @@ alias memcached_flush='echo "flush_all" | nc localhost 11211'
 alias varnish_flush='varnishadm "ban.url .*"'
 
 ## Cool shortcut
-alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
+alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r -n | head -10"
 alias mysql="mysql --sigint-ignore --default-character-set=utf8 --auto-vertical-output"
 alias http="http --pretty=all"
 alias https="http --verify=no"
