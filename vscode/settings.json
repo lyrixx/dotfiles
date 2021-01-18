@@ -71,6 +71,7 @@
         "aujourd'hui",
         "authentifiable",
         "autoconfigure",
+        "autoload",
         "autowire",
         "behat",
         "cobranding",
@@ -85,7 +86,9 @@
         "deps",
         "deserialization",
         "errored",
+        "etag",
         "fulltext",
+        "geohash",
         "geojson",
         "goroutines",
         "grafana",
@@ -135,6 +138,7 @@
         "scrollable",
         "segmentations",
         "sendgrid",
+        "snapshoter",
         "stastd",
         "streadway",
         "suffisament",
@@ -268,4 +272,7 @@
     "python.languageServer": "Microsoft",
     "editor.suggest.showStatusBar": true,
     "window.zoomLevel": -1,
+    "cSpell.enableFiletypes": [
+        "ini"
+    ],
 }
