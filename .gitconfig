@@ -24,9 +24,9 @@
     rebt            = rebase --abort
     rebs            = rebase --skip
     new             = ! git checkout origin/master -b $(echo "$@" | sed 's/ /\\-/g') && echo $@ >/dev/null
-    lint            = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
-    php-cs-fixer    = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
-    eslint          = ! git status --porcelain | /bin/grep -e '^[AUM ][UM ].*\\.js$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
+    lint            = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
+    php-cs-fixer    = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
+    eslint          = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.js$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
     notes-fetch     = fetch origin refs/notes/*:refs/notes/*
     notes-push      = push origin refs/notes/*
     daily           = log --no-merges --all --author='Grégoire Pineau' --since='midnight today' --format='%s'
