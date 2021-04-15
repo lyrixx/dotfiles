@@ -12,10 +12,10 @@ fi
 
 PATH="./node_modules/.bin:$PATH"
 
-if [ -d $HOME/.rbenv/bin ]; then
-    PATH="$HOME/.rbenv/bin:$PATH"
-    eval "$(rbenv init -)"
-fi
+# if [ -d $HOME/.rbenv/bin ]; then
+#     PATH="$HOME/.rbenv/bin:$PATH"
+#     eval "$(rbenv init -)"
+# fi
 
 if [[ -d /usr/local/go/bin ]]; then
     export GOPATH=$HOME/dev/go

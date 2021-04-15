@@ -63,3 +63,7 @@ alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute
 
 ## OS
 alias huge_page_disable_transparent="hugeadm --thp-never"
+alias battery='sudo bash -c "echo deep > /sys/power/mem_sleep"'
+
+## other stuff
+alias arte-vpn='sudo vpnc /root/vpnc.conf'
