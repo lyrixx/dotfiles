@@ -8,7 +8,7 @@
     co              = checkout
     br              = branch -v
     bra             = branch -v -a
-    brc             = ! git branch --no-color --merged | /bin/grep -v '*' | /bin/grep -v master | xargs --no-run-if-empty git branch -d
+    brc             = ! git branch --no-color --merged | /bin/grep -v '*' | /bin/grep -v master | /bin/grep -v main | xargs --no-run-if-empty git branch -d
     brcc            = ! git br | ag -Q '[gone]' | awk '{ print $1 }' | xargs --no-run-if-empty git br -D
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
@@ -64,3 +64,5 @@
     sort = version:refname
 [remote "origin"]
     fetch = +refs/pull/*:refs/remotes/origin/pull/*
+# [remote "upstream"]
+#     fetch = +refs/pull/*:refs/remotes/upstream/pull/*
