@@ -66,4 +66,5 @@ alias huge_page_disable_transparent="hugeadm --thp-never"
 alias battery='sudo bash -c "echo deep > /sys/power/mem_sleep"'
 
 ## other stuff
-alias arte-vpn='sudo vpnc /root/vpnc.conf'
+alias arte-vpn-sdf='sudo vpnc /root/vpnc.conf'
+alias arte-vpn-internal='snx -s vpn.arte.tv -u vpn-prestanewtech_gpineau'

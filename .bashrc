@@ -134,3 +134,5 @@ man() {
 
 # heroku autocomplete setup
 HEROKU_AC_BASH_SETUP_PATH=/home/gregoire/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
+
+complete -C /usr/bin/terraform terraform
