@@ -9,6 +9,7 @@
         "**/*.pyc": true,
         "**/app/cache/**/doctrine/": true,
         "**/docker*snapshot": true,
+        "**/greg/": true,
         "**/node_modules/": true,
         "**/resources/data/": true,
         "**/var/cache/**/doctrine/": true,
@@ -22,6 +23,7 @@
     "namespaceResolver.sortNatural": true,
     "files.trimTrailingWhitespace": true,
     "cSpell.userWords": [
+        "Acker",
         "Apios",
         "Autowired",
         "Blackfire",
@@ -38,6 +40,7 @@
         "EOTXT",
         "EOXML",
         "EXTS",
+        "Elastica",
         "Encodable",
         "FQCN",
         "Flattenizer",
@@ -60,14 +63,17 @@
         "SIGTERM",
         "SSID",
         "Sensio",
+        "Serializers",
         "Serp",
         "Signalable",
         "Spotify",
         "Sqills",
+        "Stringable",
         "Styleguide",
         "Swarrot",
         "Toggleable",
         "Tracef",
+        "Unpublish",
         "VCLs",
         "Videostreams",
         "aggs",
@@ -85,14 +91,18 @@
         "blablacar",
         "clevercloud",
         "cobranding",
+        "codemirror",
         "commited",
         "compatibily",
         "covfefe",
         "crawlable",
+        "datadog",
         "dbal",
         "dbname",
+        "deeplink",
         "denormalization",
         "denormalize",
+        "denormalized",
         "deps",
         "deserialization",
         "errored",
@@ -150,6 +160,7 @@
         "recrawling",
         "redirection",
         "redirectionio",
+        "reindex",
         "routable",
         "schedulable",
         "scrollable",
@@ -179,7 +190,8 @@
         "uuid",
         "videofutur",
         "videostream",
-        "webassembly"
+        "webassembly",
+        "zxcvbn"
     ],
     "workbench.iconTheme": "vscode-icons",
     "vsicons.dontShowNewVersionMessage": true,
@@ -297,17 +309,15 @@
     "cSpell.enableFiletypes": [
         "ini"
     ],
-    "workbench.editorAssociations": [
-        {
-            "viewType": "jupyter.notebook.ipynb",
-            "filenamePattern": "*.ipynb"
-        }
-    ],
+    "workbench.editorAssociations": {
+        "*.ipynb": "jupyter.notebook.ipynb"
+    },
     "go.toolsManagement.autoUpdate": true,
-    "window.zoomLevel": -1,
     "yaml.customTags": [
         "!tagged_iterator",
         "!tagged_locator",
         "!php/const"
     ],
+    "redhat.telemetry.enabled": false,
+    "window.zoomLevel": -1,
 }
