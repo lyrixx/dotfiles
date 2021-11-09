@@ -66,3 +66,5 @@
     fetch = +refs/pull/*:refs/remotes/origin/pull/*
 # [remote "upstream"]
 #     fetch = +refs/pull/*:refs/remotes/upstream/pull/*
+[pull]
+    rebase = true
