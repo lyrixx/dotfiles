@@ -12,7 +12,13 @@
 	"Dump Backtrace": {
 		"prefix": "bt",
 		"body": [
-			"dd(new \\Exception);"
+			"dd(new \\Exception());"
+		],
+	},
+	"Log to file": {
+		"prefix": "lf",
+		"body": [
+			"file_put_contents('log',  __METHOD__ . ': ' . \\$$1 . \"\\n\", FILE_APPEND);"
 		],
 	}
 }

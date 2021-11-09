@@ -88,7 +88,7 @@
 		"Puppet",
 		"RestructuredText",
 		"Stino",
-		"Vintage"
+		"Vintage",
 	],
 	"ignored_words":
 	[
@@ -119,5 +119,5 @@
 	"trim_trailing_white_space_on_save": true,
 	"ui_scale": 1.2,
 	"word_separators": "./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}`~? ",
-	"word_wrap": false
+	"word_wrap": false,
 }
