@@ -46,10 +46,11 @@ fi
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
-export HISTSIZE=10000
+export HISTSIZE=50000
 export HISTFILESIZE=${HISTSIZE}
 export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
+export PROMPT_COMMAND='history -a'
 
 export ANSIBLE_STDOUT_CALLBACK=debug
 
@@ -109,7 +110,7 @@ shopt -s cdspell        # Pour que bash corrige automatiquement les fautes de fr
 shopt -s checkwinsize   # Pour que bash vérifie la taille de la fenêtre après chaque commande
 shopt -s cmdhist        # Pour que bash sauve dans l'historique les commandes qui prennent plusieurs lignes sur une seule ligne.
 shopt -s expand_aliases # Pour que bash montre la commande complete au lieu de l'alias
-shopt -s extglob        # Pour que bash, interprète les expressions génériques
+shopt -s extglob        # Pour que bash interprète les expressions génériques
 shopt -s histappend     # Pour que bash ajoute au lieu d'écraser dans l'histo
 shopt -s hostcomplete   # Pour que bash tente de résoudre le nom pour les ip suivis d'un @
 shopt -s nocaseglob     # Pour que bash ne soit pas sensible a la casse
