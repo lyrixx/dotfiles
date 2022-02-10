@@ -27,6 +27,10 @@ if [[ -d /usr/local/go/bin ]]; then
     export PATH=$PATH:$GOPATH/bin
 fi
 
+if [[ -d $HOME/.cargo ]]; then
+    . "$HOME/.cargo/env"
+fi
+
 if [[ -d $HOME/.cargo/bin/ ]]; then
     PATH="$PATH:$HOME/.cargo/bin/"
 fi
@@ -43,6 +47,10 @@ if [[ -d $HOME/dev/github.com ]]; then
     export CDPATH=".:$HOME:$HOME/dev/github.com"
 fi
 
+if [[ -f /usr/bin/terraform ]]; then
+    complete -C /usr/bin/terraform terraform
+fi
+
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
@@ -50,7 +58,6 @@ export HISTSIZE=50000
 export HISTFILESIZE=${HISTSIZE}
 export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
-export PROMPT_COMMAND='history -a'
 
 export ANSIBLE_STDOUT_CALLBACK=debug
 
@@ -94,7 +101,7 @@ function _truncate_pwd() {
     fi
 }
 
-PROMPT_COMMAND='_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
+PROMPT_COMMAND='history -a;_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
 
 if [[ `which dircolors` ]]; then
@@ -139,5 +146,3 @@ man() {
 
 # heroku autocomplete setup
 HEROKU_AC_BASH_SETUP_PATH=/home/gregoire/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
-
-complete -C /usr/bin/terraform terraform
