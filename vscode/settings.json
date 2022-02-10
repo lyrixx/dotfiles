@@ -69,6 +69,7 @@
         "Derussé",
         "deserialization",
         "Elastica",
+        "elif",
         "Encodable",
         "Entrypoint",
         "EOFTXT",
@@ -84,10 +85,12 @@
         "FQCN",
         "Froms",
         "fulltext",
+        "gelf",
         "geohash",
         "geojson",
         "gifs",
         "giphy",
+        "GOOGLEBOT",
         "goroutines",
         "grafana",
         "Gregoire",
@@ -321,7 +324,7 @@
         "zlib"
     ],
     "files.autoSave": "off",
-    "python.languageServer": "Microsoft",
+    "python.languageServer": "Default",
     "editor.suggest.showStatusBar": true,
     "cSpell.enableFiletypes": [
         "ini"
@@ -343,11 +346,12 @@
     },
     "editor.suggest.preview": true,
     "editor.inlineSuggest.enabled": true,
-    "window.zoomLevel": -1,
     "github.copilot.enable": {
         "*": true,
         "yaml": true,
         "plaintext": false,
-        "markdown": false
-    }
+        "markdown": true
+    },
+    "diffEditor.renderSideBySide": false,
+    "rust-analyzer.cargo.allFeatures": true
 }

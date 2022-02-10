@@ -1,0 +1,6 @@
+{
+	"Dump value" : {
+		"prefix": "vvv",
+		"body": "dbg!($1);"
+	}
+}
