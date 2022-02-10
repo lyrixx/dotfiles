@@ -8,7 +8,7 @@
     co              = checkout
     br              = branch -v
     bra             = branch -v -a
-    brc             = ! git branch --no-color --merged | /bin/grep -v '*' | /bin/grep -v master | /bin/grep -v main | xargs --no-run-if-empty git branch -d
+    brc             = ! git branch --no-color --merged | /bin/grep -v '*' | /bin/grep -v master | /bin/grep -v main | /bin/grep -v develop | xargs --no-run-if-empty git branch -d
     brcc            = ! git br | ag -Q '[gone]' | awk '{ print $1 }' | xargs --no-run-if-empty git br -D
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
@@ -56,6 +56,7 @@
     path            = ~/.private-gitconfig
 [init]
     templatedir     = ~/.git-template
+    defaultBranch = main
 [status]
     showUntrackedFiles = all
 [fetch]
