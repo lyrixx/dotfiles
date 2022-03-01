@@ -101,7 +101,7 @@ function _truncate_pwd() {
     fi
 }
 
-PROMPT_COMMAND='history -a;_set_exit_color;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
+PROMPT_COMMAND='_set_exit_color;history -a;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
 
 if [[ `which dircolors` ]]; then
