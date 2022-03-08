@@ -40,6 +40,7 @@
         "autowire",
         "Autowired",
         "behat",
+        "bindgen",
         "blablacar",
         "Blackfire",
         "Cacheable",
@@ -81,6 +82,7 @@
         "errored",
         "etag",
         "EXTS",
+        "fastly",
         "Flattenizer",
         "FQCN",
         "Froms",
@@ -354,5 +356,6 @@
         "markdown": true
     },
     "diffEditor.renderSideBySide": false,
-    "rust-analyzer.cargo.allFeatures": true
+    "rust-analyzer.cargo.allFeatures": true,
+    "window.titleBarStyle": "custom"
 }
