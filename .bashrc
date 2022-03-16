@@ -10,8 +10,12 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-if [ -f /home/gregoire/.local/bin/aws_completer ] && ! shopt -oq posix; then
-    complete -C /home/gregoire/.local/bin/aws_completer aws
+if [ -f $HOME/.local/bin/aws_completer ] && ! shopt -oq posix; then
+    complete -C $HOME/.local/bin/aws_completer aws
+fi
+
+if [ -f $HOME/.ripgreprc ] ; then
+    export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 fi
 
 PATH="./node_modules/.bin:$PATH"
@@ -60,6 +64,9 @@ export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
 
 export ANSIBLE_STDOUT_CALLBACK=debug
+
+export COMPOSE_DOCKER_CLI_BUILD=1
+export DOCKER_BUILDKIT=1
 
 if [[ `which most` ]]; then export PAGER=`which most` ; fi
 export LESS="FRSX"
@@ -136,13 +143,13 @@ man() {
 
 # tabtab source for serverless package
 # uninstall by removing these lines or running `tabtab uninstall serverless`
-[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash
+[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash
 # tabtab source for sls package
 # uninstall by removing these lines or running `tabtab uninstall sls`
-[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/sls.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/sls.bash
+[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/sls.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/sls.bash
 # tabtab source for slss package
 # uninstall by removing these lines or running `tabtab uninstall slss`
-[ -f /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash ] && . /home/gregoire/.config/yarn/global/node_modules/tabtab/.completions/slss.bash
+[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/slss.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/slss.bash
 
 # heroku autocomplete setup
-HEROKU_AC_BASH_SETUP_PATH=/home/gregoire/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
+HEROKU_AC_BASH_SETUP_PATH=$HOME/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
