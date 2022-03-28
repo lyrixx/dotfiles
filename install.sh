@@ -40,19 +40,17 @@ if type -t git &> /dev/null; then
 fi
 
 if [[ $IS_ROOT = 1 ]]; then
-    if [[ `which php` ]] ; then
-        if [[ ! -f /usr/local/bin/composer ]]; then
-            echo 'Install composer'
-            curl -sS https://getcomposer.org/installer | php
-            mv composer.phar /usr/local/bin/composer
-        fi
-    fi
-
     echo 'Create custom bin symlink'
     ln -sf $DOTFILES/bin/json_pp                    /usr/local/bin/json_pp
-    ln -sf $DOTFILES/bin/lxc-post-install-cmd       /usr/local/bin/lxc-post-install-cmd
-    ln -sf $DOTFILES/bin/nginx-expose               /usr/local/bin/nginx-expose
     ln -sf $DOTFILES/bin/tmux-start                 /usr/local/bin/tmux-start
-    ln -sf $DOTFILES/bin/todo                       /usr/local/bin/todo
     ln -sf $DOTFILES/bin/\$                         /usr/local/bin/\$
+else
+    mkdir -p $HOME/.local/bin
+    if [[ `which php` ]] ; then
+        if [[ ! -f $HOME/.local/bin/composer ]]; then
+            echo 'Install composer'
+            curl -sS https://getcomposer.org/installer | php
+            mv composer.phar $HOME/.local/bin/composer
+        fi
+    fi
 fi

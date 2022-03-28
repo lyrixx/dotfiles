@@ -10,25 +10,10 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-if [ -f $HOME/.local/bin/aws_completer ] && ! shopt -oq posix; then
-    complete -C $HOME/.local/bin/aws_completer aws
-fi
-
-if [ -f $HOME/.ripgreprc ] ; then
-    export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
-fi
-
 PATH="./node_modules/.bin:$PATH"
 
-# if [ -d $HOME/.rbenv/bin ]; then
-#     PATH="$HOME/.rbenv/bin:$PATH"
-#     eval "$(rbenv init -)"
-# fi
-
 if [[ -d /usr/local/go/bin ]]; then
-    export GOPATH=$HOME/dev/go
-    export PATH=$PATH:/usr/local/go/bin
-    export PATH=$PATH:$GOPATH/bin
+    PATH=$PATH:/usr/local/go/bin
 fi
 
 if [[ -d $HOME/.cargo ]]; then
@@ -53,6 +38,10 @@ fi
 
 if [[ -f /usr/bin/terraform ]]; then
     complete -C /usr/bin/terraform terraform
+fi
+
+if [ -f $HOME/.ripgreprc ] ; then
+    export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 fi
 
 export GIT_PS1_SHOWDIRTYSTATE=true
@@ -140,16 +129,3 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
-
-# tabtab source for serverless package
-# uninstall by removing these lines or running `tabtab uninstall serverless`
-[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/serverless.bash
-# tabtab source for sls package
-# uninstall by removing these lines or running `tabtab uninstall sls`
-[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/sls.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/sls.bash
-# tabtab source for slss package
-# uninstall by removing these lines or running `tabtab uninstall slss`
-[ -f $HOME/.config/yarn/global/node_modules/tabtab/.completions/slss.bash ] && . $HOME/.config/yarn/global/node_modules/tabtab/.completions/slss.bash
-
-# heroku autocomplete setup
-HEROKU_AC_BASH_SETUP_PATH=$HOME/.cache/heroku/autocomplete/bash_setup && test -f $HEROKU_AC_BASH_SETUP_PATH && source $HEROKU_AC_BASH_SETUP_PATH;
