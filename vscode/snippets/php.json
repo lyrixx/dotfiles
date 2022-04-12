@@ -20,5 +20,11 @@
 		"body": [
 			"file_put_contents('log',  __METHOD__ . ': ' . \\$$1 . \"\\n\", FILE_APPEND);"
 		],
+	},
+	"Constructor": {
+		"prefix": "construct",
+		"body": [
+			"public function __construct(\n    $1\n) {\n}\n"
+		],
 	}
 }

@@ -12,8 +12,7 @@
         "**/greg/": true,
         "**/node_modules/": true,
         "**/resources/data/": true,
-        "**/var/cache/**/doctrine/": true,
-        "**/vendor/**/vendor": true
+        "**/var/cache/**/doctrine/": true
     },
     "editor.cursorBlinking": "phase",
     "search.useIgnoreFiles": false,
@@ -207,6 +206,7 @@
         "unsortable",
         "unstyled",
         "untrusted",
+        "Upgrader",
         "upsert",
         "userland",
         "uuid",
@@ -215,6 +215,7 @@
         "videostream",
         "Videostreams",
         "webassembly",
+        "xiti",
         "zxcvbn"
     ],
     "workbench.iconTheme": "vscode-icons",
@@ -240,8 +241,8 @@
     "editor.minimap.showSlider": "always",
     "workbench.editor.enablePreview": false,
     "editor.autoIndent": "keep",
-    "editor.suggestFontSize": 18,
-    "editor.fontSize": 16,
+    "editor.suggestFontSize": 16,
+    "editor.fontSize": 18,
     "debug.console.fontSize": 16,
     "terminal.integrated.fontSize": 16,
     "window.title": "${dirty}${activeEditorMedium}${separator}${rootName}",
