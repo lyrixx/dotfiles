@@ -9,14 +9,12 @@ function session-rio {
     tmux new-session -d -s $1 -n root   -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n DB         -c $HOME/dev/github.com/jolicode/redirection.io
     tmux split-window -v                -c $HOME/dev/github.com/jolicode/redirection.io
-    tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/redirection.io
-    tmux split-window -v                -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n backend    -c $HOME/dev/github.com/jolicode/redirection.io/server/backend
     tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n manager    -c $HOME/dev/github.com/jolicode/redirection.io/server/manager
-    tmux new-window -t $1 -n manager    -c $HOME/dev/github.com/jolicode/redirection.io/server/manager
+    tmux new-window -t $1 -n agent    -c $HOME/dev/github.com/jolicode/redirection.io/agent
+    tmux split-window -v                -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n test       -c $HOME/dev/github.com/jolicode/redirection.io/
-    tmux new-window -t $1 -n test       -c $HOME/dev/github.com/jolicode/redirection.io/tests/integration
     tmux new-window -t $1 -n infra      -c $HOME/dev/github.com/jolicode/redirection.io/infrastructure
 }
 
