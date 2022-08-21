@@ -12,7 +12,8 @@
         "**/greg/": true,
         "**/node_modules/": true,
         "**/resources/data/": true,
-        "**/var/cache/**/doctrine/": true
+        "**/var/cache/**/doctrine/": true,
+        "**/vendor/**/vendor": true
     },
     "editor.cursorBlinking": "phase",
     "search.useIgnoreFiles": false,
@@ -23,8 +24,10 @@
     "files.trimTrailingWhitespace": true,
     "cSpell.userWords": [
         "Acker",
+        "actix",
         "aggs",
         "amqp",
+        "ansible",
         "Apios",
         "Apip",
         "appart",
@@ -71,6 +74,7 @@
         "Elastica",
         "elif",
         "Encodable",
+        "endgroup",
         "Entrypoint",
         "EOFTXT",
         "EOJSON",
@@ -94,6 +98,7 @@
         "GOOGLEBOT",
         "goroutines",
         "grafana",
+        "greg",
         "Gregoire",
         "gspt",
         "hasher",
@@ -151,6 +156,7 @@
         "preprod",
         "Preproduction",
         "println",
+        "prometheus",
         "prophesize",
         "rabbitmq",
         "Rebootable",
@@ -176,6 +182,7 @@
         "Signalable",
         "SIGTERM",
         "snapshoter",
+        "spotify",
         "Spotify",
         "Sqills",
         "SSID",
@@ -189,10 +196,12 @@
         "Swarrot",
         "symfony",
         "symlink",
+        "templating",
         "thumbor",
         "timeouted",
         "timeseries",
         "Toggleable",
+        "tokio",
         "totp",
         "Tracef",
         "traefik",
@@ -350,10 +359,12 @@
     "github.copilot.enable": {
         "*": true,
         "yaml": true,
-        "plaintext": false,
-        "markdown": true
+        "plaintext": true,
+        "markdown": true,
+        "rust": true
     },
     "diffEditor.renderSideBySide": false,
     "rust-analyzer.cargo.allFeatures": true,
-    "window.titleBarStyle": "custom"
+    "window.titleBarStyle": "custom",
+    "git.mergeEditor": false
 }
