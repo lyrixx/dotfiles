@@ -16,6 +16,10 @@ if [[ -d /usr/local/go/bin ]]; then
     PATH=$PATH:/usr/local/go/bin
 fi
 
+if [[ -d $HOME/dev/go ]]; then
+    export GOPATH=$HOME/dev/go
+fi
+
 if [[ -d $HOME/.cargo ]]; then
     . "$HOME/.cargo/env"
 fi
