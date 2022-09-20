@@ -23,7 +23,7 @@
     rebc            = rebase --continue
     rebt            = rebase --abort
     rebs            = rebase --skip
-    new             = ! git checkout origin/master -b $(echo "$@" | sed 's/ /\\-/g') && echo $@ >/dev/null
+    new             = ! git checkout origin/master -b $(echo "$@" | slug) && echo $@ >/dev/null
     php-lint        = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
     php-cs-fixer    = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
     eslint          = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.\\(js\\|jsx\\|ts\\|tsx\\)$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix

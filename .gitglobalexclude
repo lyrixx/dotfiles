@@ -3,7 +3,7 @@
 *.backup
 *.sql
 *.sql.tgz
-/.vscode
+.vscode
 cov/
 coverage/
 greg
