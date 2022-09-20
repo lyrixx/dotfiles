@@ -123,6 +123,7 @@
         "labelledby",
         "libsodium",
         "loadbalancer",
+        "Loïck",
         "lucene",
         "lyrixx",
         "makasim",
@@ -366,5 +367,6 @@
     "diffEditor.renderSideBySide": false,
     "rust-analyzer.cargo.allFeatures": true,
     "window.titleBarStyle": "custom",
-    "git.mergeEditor": false
+    "git.mergeEditor": false,
+    "search.followSymlinks": false
 }
