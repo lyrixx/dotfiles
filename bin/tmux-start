@@ -18,16 +18,6 @@ function session-rio {
     tmux new-window -t $1 -n infra      -c $HOME/dev/github.com/jolicode/redirection.io/infrastructure
 }
 
-function session-ouibus {
-    tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/jolicode/ouibus
-    tmux new-window -t $1 -n assets     -c $HOME/dev/github.com/jolicode/ouibus
-    tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/ouibus
-}
-
-function session-trainings {
-    tmux new-session -d -s $1 -n base   -c $HOME/dev/trainings
-}
-
 function session-labs {
     tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/lyrixx/symfony
 }
