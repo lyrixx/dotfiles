@@ -8,6 +8,7 @@
     "files.exclude": {
         "**/*.pyc": true,
         "**/app/cache/**/doctrine/": true,
+        "**/cov/": true,
         "**/docker*snapshot": true,
         "**/greg/": true,
         "**/node_modules/": true,
@@ -143,6 +144,7 @@
         "onelogin",
         "openapi",
         "opengraph",
+        "orpi",
         "ouibus",
         "outlink",
         "outlinks",
@@ -226,6 +228,7 @@
         "Videostreams",
         "webassembly",
         "xiti",
+        "Yolo",
         "zxcvbn"
     ],
     "workbench.iconTheme": "vscode-icons",
