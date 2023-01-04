@@ -32,6 +32,7 @@
     daily           = log --no-merges --all --author='Grégoire Pineau' --since='midnight yesterday' --format='%s'
     reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
     open            = ! git status -s --no-renames | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
+    open-conflict   = ! git status -s | /bin/grep ^UU | awk '{print $2}' | xargs --no-run-if-empty code
     ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
 [color]
     ui              = true
