@@ -31,9 +31,7 @@
     notes-push      = push origin refs/notes/*
     daily           = log --no-merges --all --author='Grégoire Pineau' --since='midnight yesterday' --format='%s'
     reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
-    reopens         = ! "f() { git log -1 --format= --name-only --grep=$1 | xargs --no-run-if-empty code ;}; f"
-    open            = ! git status -s | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
-    shows           = log -1 --format= -p --grep
+    open            = ! git status -s --no-renames | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
     ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
 [color]
     ui              = true
