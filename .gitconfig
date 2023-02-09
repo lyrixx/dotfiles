@@ -69,3 +69,5 @@
 #     fetch = +refs/pull/*:refs/remotes/upstream/pull/*
 [pull]
     rebase = true
+[rebase]
+    updateRefs = true
