@@ -57,7 +57,7 @@ export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
 
 export ANSIBLE_STDOUT_CALLBACK=debug
-# export BUILDKIT_PROGRESS=plain
+export BUILDKIT_PROGRESS=plain
 
 export COMPOSE_DOCKER_CLI_BUILD=1
 export DOCKER_BUILDKIT=1
