@@ -139,3 +139,7 @@ man() {
 HOME=${HOME:-'/home/gregoire'}
 export PATH="$HOME/"'.platformsh/bin':"$PATH"
 if [ -f "$HOME/"'.platformsh/shell-config.rc' ]; then . "$HOME/"'.platformsh/shell-config.rc'; fi # END SNIPPET
+
+# >>>> Vagrant command completion (start)
+. /opt/vagrant/embedded/gems/2.3.4/gems/vagrant-2.3.4/contrib/bash/completion.sh
+# <<<<  Vagrant command completion (end)
