@@ -7,9 +7,8 @@
     "editor.wordWrapColumn": 120,
     "files.exclude": {
         "**/*.pyc": true,
-        "**/app/cache/**/doctrine/": true,
         "**/cov/": true,
-        "**/docker*snapshot": true,
+        "**/docker*snapshot/": true,
         "**/greg/": true,
         "**/node_modules/": true,
         "**/resources/data/": true,
@@ -48,6 +47,7 @@
         "bindgen",
         "blablacar",
         "Blackfire",
+        "buildkit",
         "Cacheable",
         "camelize",
         "classmap",
@@ -202,6 +202,7 @@
         "Stringable",
         "struppi",
         "Styleguide",
+        "subsubchapter",
         "suffisament",
         "Swarrot",
         "symfony",
@@ -378,5 +379,16 @@
     "rust-analyzer.cargo.allFeatures": true,
     "window.titleBarStyle": "custom",
     "git.mergeEditor": false,
-    "search.followSymlinks": false
+    "search.followSymlinks": false,
+    "extensions.experimental.affinity": {
+        "ms-toolsai.jupyter": 1,
+        "ms-toolsai.jupyter-renderers": 1,
+        "ms-python.python": 1,
+        "ms-python.vscode-pylance": 1
+    },
+    "[python]": {
+        "editor.formatOnType": true
+    },
+    "arduino.useArduinoCli": true,
+    "python.defaultInterpreterPath": "/home/gregoire/.local/share/virtualenvs/redirection.io-N6VtXRbV"
 }
