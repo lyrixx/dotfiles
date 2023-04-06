@@ -1,5 +1,3 @@
-## Common bash function
-
 alias sudo="sudo " # Hack, for sudo an aliases
 
 alias ls="ls --color"
@@ -21,7 +19,6 @@ alias PS1="grep '#PS1' ~/.bashrc | sed 's/^#\(.*\)/\1/'"
 ## Notification
 
 alias n="notify-send"
-function m() { echo "Hi" | mail -s "$*" lyrixx@lyrixx.info ; }
 
 ## Apt
 alias agi="apt install"
@@ -43,10 +40,6 @@ alias ungz2="bunzip2 -k"
 alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
 alias docker-clear-logs='sudo sh -c "truncate -s 0 /var/lib/docker/containers/*/*-json.log"'
 
-### Flush
-alias memcached_flush='echo "flush_all" | nc localhost 11211'
-alias varnish_flush='varnishadm "ban.url .*"'
-
 ## Cool shortcut
 alias top_process="ps -eo pcpu,pid,user,args | sort -k 1 -r -n | head -10"
 alias mysql="mysql --sigint-ignore --default-character-set=utf8 --auto-vertical-output"
@@ -65,3 +58,6 @@ alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute
 alias huge_page_disable_transparent="hugeadm --thp-never"
 alias battery='sudo bash -c "echo deep > /sys/power/mem_sleep"'
 
+## Random
+
+alias protips="code /home/gregoire/Dropbox/doc/CFP/idea/Protips.md"
