@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+NoColor="\e[0m"
+Yellow="\e[00;33m"
+
+branches=`git branch --format='%(refname:short)'`
+
+for branch in $branches
+do
+    echo -e "Branch $Yellow\"$branch\"$NoColor Checks:"
+    gh pr view  $branch --json url -q .url
+    gh pr checks $branch
+
+    echo
+done
