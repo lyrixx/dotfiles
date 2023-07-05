@@ -71,3 +71,5 @@
     rebase = true
 [rebase]
     updateRefs = true
+[help]
+    autocorrect = 1
