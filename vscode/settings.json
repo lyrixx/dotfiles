@@ -65,6 +65,7 @@
         "dbal",
         "dbname",
         "debug",
+        "Debugf",
         "deeplink",
         "denormalizable",
         "denormalization",
@@ -88,7 +89,9 @@
         "errored",
         "etag",
         "EXTS",
+        "fanout",
         "fastly",
+        "Faume",
         "Flattenizer",
         "FQCN",
         "Froms",
@@ -124,6 +127,7 @@
         "jsonld",
         "Keycloak",
         "kibana",
+        "l'impersonification",
         "labelledby",
         "libsodium",
         "loadbalancer",
@@ -154,6 +158,7 @@
         "outlink",
         "outlinks",
         "pecl",
+        "phar",
         "PHAR",
         "phpunit",
         "pipenv",
@@ -390,5 +395,9 @@
         "editor.formatOnType": true
     },
     "arduino.useArduinoCli": true,
-    "python.defaultInterpreterPath": "/home/gregoire/.local/share/virtualenvs/redirection.io-N6VtXRbV"
+    "python.defaultInterpreterPath": "/home/gregoire/.local/share/virtualenvs/redirection.io-N6VtXRbV",
+    "editor.unicodeHighlight.invisibleCharacters": false,
+    "editor.unicodeHighlight.ambiguousCharacters": false,
+    "markdown-pdf.highlightStyle": "github-gist.css",
+    "git.openRepositoryInParentFolders": "never"
 }
