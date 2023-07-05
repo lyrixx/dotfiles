@@ -3,7 +3,7 @@
 # http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
 # http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
 
-SESSIONS="rio labs"
+SESSIONS="rio labs faume orpi"
 
 function session-rio {
     tmux new-session -d -s $1 -n root   -c $HOME/dev/github.com/jolicode/redirection.io
@@ -20,6 +20,17 @@ function session-rio {
 
 function session-labs {
     tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/lyrixx/symfony
+}
+
+function session-orpi {
+    tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/jolicode/orpi
+    tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/orpi
+}
+
+function session-faume {
+    tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/Faume-co/modules-shopify
+    tmux new-window -t $1 -n DB         -c $HOME/dev/github.com/Faume-co/modules-shopify
+    tmux new-window -t $1 -n docker     -c $HOME/dev/github.com/Faume-co/docker-stack
 }
 
 # Global
