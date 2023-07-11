@@ -12,14 +12,19 @@ function session-rio {
     tmux new-window -t $1 -n backend    -c $HOME/dev/github.com/jolicode/redirection.io/server/backend
     tmux new-window -t $1 -n shell      -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n manager    -c $HOME/dev/github.com/jolicode/redirection.io/server/manager
-    tmux new-window -t $1 -n agent    -c $HOME/dev/github.com/jolicode/redirection.io/agent
+    tmux new-window -t $1 -n agent      -c $HOME/dev/github.com/jolicode/redirection.io/agent
     tmux split-window -v                -c $HOME/dev/github.com/jolicode/redirection.io
     tmux new-window -t $1 -n test       -c $HOME/dev/github.com/jolicode/redirection.io/
     tmux new-window -t $1 -n infra      -c $HOME/dev/github.com/jolicode/redirection.io/infrastructure
 }
 
 function session-labs {
-    tmux new-session -d -s $1 -n base   -c $HOME/dev/github.com/lyrixx/symfony
+    tmux new-session -d -s $1 -n castor -c $HOME/dev/github.com/jolicode/castor
+    tmux new-window -t $1 -n DS         -c $HOME/dev/github.com/jolicode/docker-starter
+    tmux new-window -t $1 -n monologue  -c $HOME/dev/github.com/jolicode/monologue
+    tmux new-window -t $1 -n qotd       -c $HOME/dev/github.com/jolicode/qotd
+    tmux new-window -t $1 -n SF         -c $HOME/dev/github.com/lyrixx/symfony
+    tmux new-window -t $1 -n SF/app     -c $HOME/dev/labs/symfony/symfony-6.4/
 }
 
 function session-orpi {
