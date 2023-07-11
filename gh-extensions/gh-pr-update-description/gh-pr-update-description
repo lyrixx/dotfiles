@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -e
+
+keepBody=true
+if [ "$1" == "--wipe" ] ; then
+    keepBody=false
+fi
+
+details=`gh pr view  --json baseRefName,body`
+
+baseBranch=`echo $details | jq -r '.baseRefName'`
+activity=`git log origin/$baseBranch... --format="* %s" | tac`
+activity="<!--SUMMARY-->"$'\n'$activity$'\n'"<!--ENDSUMMARY-->"
+
+if [ "$keepBody" = true ] ; then
+    body=`echo $details | jq -r '.body'`
+    body=`sed ':a;N;$!ba;s/<!--SUMMARY.*ENDSUMMARY-->//g' <<< $body`
+    body="$body"$'\n'"$activity"
+else
+    body="$activity"
+fi
+
+gh pr edit -b "$body"
