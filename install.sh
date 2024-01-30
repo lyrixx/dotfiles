@@ -15,7 +15,7 @@ DOTFILES=`pwd`
 touch $DOTFILES/.private-gitconfig
 
 echo 'Create $HOME symlink'
-ln -sf $DOTFILES/.ackrc               ~/.ackrc
+
 ln -sf $DOTFILES/.bash_aliases        ~/.bash_aliases
 ln -sf $DOTFILES/.bash_logout         ~/.bash_logout
 ln -sf $DOTFILES/.bashrc              ~/.bashrc
@@ -24,17 +24,14 @@ ln -sf $DOTFILES/.gitglobalexclude    ~/.gitglobalexclude
 ln -sf $DOTFILES/.private-gitconfig   ~/.private-gitconfig
 ln -sf $DOTFILES/.profile             ~/.profile
 ln -sf $DOTFILES/.psqlrc              ~/.psqlrc
-ln -sf $DOTFILES/.ripgreprc            ~/.ripgreprc
+ln -sf $DOTFILES/.ripgreprc           ~/.ripgreprc
 ln -sf $DOTFILES/.screenrc            ~/.screenrc
 ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
 ln -sf $DOTFILES/.vimrc               ~/.vimrc
-
-if [[ ! -d ~/.git-template ]]; then
-    ln -sf $DOTFILES/git-template ~/.git-template
-fi
+ln -sf $DOTFILES/git-template ~/.git-template
 
 echo 'Install git submodule'
-if type -t git &> /dev/null; then
+if [[ `which git` ]] ; then
   git submodule update --init
   ln -sf $DOTFILES/vendor/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
 fi

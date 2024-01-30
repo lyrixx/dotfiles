@@ -25,8 +25,6 @@ alias agi="apt install"
 alias agua="apt update"
 alias agup="apt upgrade"
 alias aguap="apt update && apt upgrade"
-alias adel=" apt remove"
-alias asearch="apt search"
 
 ## Archive
 alias untar="tar xvf"
@@ -36,7 +34,7 @@ alias untargz="tar zxvf"
 alias untarbz1="tar jxvf"
 alias ungz2="bunzip2 -k"
 
-## Services
+## Docker
 alias docker-ip="docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"
 alias docker-ips="docker ps -q | xargs -n 1 docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}} {{ .Name }}' | sed 's/ \// /' | sort -n"
 alias docker-clear-logs='sudo sh -c "truncate -s 0 /var/lib/docker/containers/*/*-json.log"'
@@ -55,10 +53,5 @@ alias meteo="curl wttr.in/Paris?format=v2"
 ## PHP
 alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute=0"'
 
-## OS
-alias huge_page_disable_transparent="hugeadm --thp-never"
-alias battery='sudo bash -c "echo deep > /sys/power/mem_sleep"'
-
 ## Random
-
 alias protips="code /home/gregoire/Dropbox/doc/CFP/idea/Protips.md"

@@ -25,7 +25,7 @@
     set showmatch                   " Show matching bracket
     set sidescrolloff=8             " same same
 
-" EDITING
+" Editing
     set encoding=UTF-8              " Display UTF-8
     set expandtab                   " We do not want tabs, do we?
     set ff=unix                     " Unix EOL

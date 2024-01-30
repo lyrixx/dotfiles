@@ -1,9 +1,7 @@
-#global
+# Global
 altscreen       on
 autodetach      on
 startup_message off
-
-#vbell
 vbell           off
 
 # Change default scrollback value for new windows
