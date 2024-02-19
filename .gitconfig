@@ -3,8 +3,8 @@
     email           = lyrixx@lyrixx.info
 [alias]
     st              = status
-    ci              = commit -v
-    cim             = commit -v -m "--"
+    ci              = commit
+    cim             = commit -m "--"
     co              = checkout
     br              = branch -v
     bra             = branch -v -a
@@ -39,14 +39,23 @@
 [core]
     autocrlf        = input
     excludesfile    = ~/.gitglobalexclude
-    pager           = less
+    pager           = less -F -X
 [branch]
     autosetupmerge  = false
     rebase          = true
+[diff]
+    algorithm       = histogram
+[commit]
+    verbose         = true
 [merge]
     summary         = true
+    conflictstyle   = zdiff3
+[rebase]
+    updateRefs      = true
+    autosquash      = true
+    autostash       = true
 [rerere]
-    enabled         = 1
+    enabled         = true
 [github]
     user            = lyrixx
 [push]
@@ -56,7 +65,7 @@
     path            = ~/.private-gitconfig
 [init]
     templatedir     = ~/.git-template
-    defaultBranch = main
+    defaultBranch   = main
 [status]
     showUntrackedFiles = all
 [fetch]
@@ -68,8 +77,6 @@
 # [remote "upstream"]
 #     fetch = +refs/pull/*:refs/remotes/upstream/pull/*
 [pull]
-    rebase = true
-[rebase]
-    updateRefs = true
+    rebase          = true
 [help]
-    autocorrect = 1
+    autocorrect     = 1
