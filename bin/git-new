@@ -1,0 +1,19 @@
+#!/bin/env bash
+
+git rev-parse --verify  -q main >/dev/null
+if [ $? -eq 0 ]; then
+  base=main
+else
+  base=master
+fi
+
+doSlug() {
+    if [[ `which slug` ]]; then
+        echo "$@" | slug
+    else
+        echo "$@" | tr '[:upper:]' '[:lower:]' | tr ' ' '-'
+    fi
+}
+
+branch=$(doSlug "$@")
+git checkout origin/$base -b $branch

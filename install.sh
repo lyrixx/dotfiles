@@ -5,9 +5,6 @@ REDCOLOR='\e[37;41m'
 
 if [[ $EUID -ne 0 ]]; then
    echo -e "$REDCOLOR Think to run this bash script as root$NOCOLOR"
-    IS_ROOT=0
-else
-    IS_ROOT=1
 fi
 
 DOTFILES=`pwd`
@@ -36,18 +33,20 @@ if [[ `which git` ]] ; then
   ln -sf $DOTFILES/vendor/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
 fi
 
-if [[ $IS_ROOT = 1 ]]; then
-    echo 'Create custom bin symlink'
-    ln -sf $DOTFILES/bin/json_pp                    /usr/local/bin/json_pp
-    ln -sf $DOTFILES/bin/tmux-start                 /usr/local/bin/tmux-start
-    ln -sf $DOTFILES/bin/\$                         /usr/local/bin/\$
-else
-    mkdir -p $HOME/.local/bin
-    if [[ `which php` ]] ; then
-        if [[ ! -f $HOME/.local/bin/composer ]]; then
-            echo 'Install composer'
-            curl -sS https://getcomposer.org/installer | php
-            mv composer.phar $HOME/.local/bin/composer
-        fi
+echo 'Create custom bin symlink'
+mkdir -p $HOME/.local/bin
+
+ln -sf $DOTFILES/bin/\$                         /$HOME/.local/bin/\$
+ln -sf $DOTFILES/bin/git-new                    /$HOME/.local/bin/git-new
+ln -sf $DOTFILES/bin/json_pp                    /$HOME/.local/bin/json_pp
+ln -sf $DOTFILES/bin/remove-csi                 /$HOME/.local/bin/remove-csi
+ln -sf $DOTFILES/bin/tmux-start                 /$HOME/.local/bin/tmux-start
+ln -sf $DOTFILES/bin/slug                       /$HOME/.local/bin/slug
+
+if [[ `which php` ]] ; then
+    if [[ ! -f $HOME/.local/bin/composer ]]; then
+        echo 'Install composer'
+        curl -sS https://getcomposer.org/installer | php
+        mv composer.phar $HOME/.local/bin/composer
     fi
 fi

@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+
+require '/home/gregoire/dev/github.com/symfony/string/vendor/autoload.php';
+
+use Symfony\Component\String\Slugger\AsciiSlugger;
+
+echo (new AsciiSlugger($_SERVER['LOCALE'] ?? 'en'))->withEmoji('en')->slug(stream_get_contents(STDIN));
