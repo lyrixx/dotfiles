@@ -13,30 +13,24 @@ fi
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 PATH="./node_modules/.bin:$PATH"
-
-if [[ -d /usr/local/go/bin ]]; then
-    PATH=$PATH:/usr/local/go/bin
+if [[ -d $HOME/.yarn/bin/ ]]; then
+    PATH="$HOME/.yarn/bin:$PATH"
 fi
 
+if [[ -d /usr/local/go/bin ]]; then
+    PATH="/usr/local/go/bin:$PATH"
+fi
 if [[ -d $HOME/dev/go ]]; then
     export GOPATH=$HOME/dev/go
-    PATH=$PATH:/$GOPATH/bin
+    PATH="$GOPATH/bin:$PATH"
 fi
 
 if [[ -d $HOME/.cargo ]]; then
     . "$HOME/.cargo/env"
 fi
 
-if [[ -d $HOME/.cargo/bin/ ]]; then
-    PATH="$PATH:$HOME/.cargo/bin/"
-fi
-
 if [[ -d $HOME/.local/bin/ ]]; then
-    PATH="$PATH:$HOME/.local/bin/"
-fi
-
-if [[ -d $HOME/.yarn/bin/ ]]; then
-    PATH="$PATH:$HOME/.yarn/bin/"
+    PATH="$HOME/.local/bin:$PATH"
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then
@@ -107,6 +101,7 @@ function _truncate_pwd() {
 
 PROMPT_COMMAND='_set_exit_color;history -a;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
+#PS1='\[\e[01;31m\]\u@\H \[\e[00;32m\]\w\[\e[0m\] ' # simple - prod
 
 if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then
