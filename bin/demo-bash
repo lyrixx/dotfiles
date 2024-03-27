@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+bash --rcfile <(cat <<EOT
+
+PS1='\n\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] '
+
+export BAT_THEME="Monokai Extended Light"
+
+function bat()
+{
+    /home/gregoire/.cargo/bin/bat --terminal-width 100 \$@;
+    echo -e "\n\n"
+}
+
+EOT
+)

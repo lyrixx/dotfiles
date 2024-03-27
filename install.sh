@@ -37,6 +37,7 @@ echo 'Create custom bin symlink'
 mkdir -p $HOME/.local/bin
 
 ln -sf $DOTFILES/bin/\$                         /$HOME/.local/bin/\$
+ln -sf $DOTFILES/bin/demo-bash                  /$HOME/.local/bin/demo-bash
 ln -sf $DOTFILES/bin/git-new                    /$HOME/.local/bin/git-new
 ln -sf $DOTFILES/bin/json_pp                    /$HOME/.local/bin/json_pp
 ln -sf $DOTFILES/bin/remove-csi                 /$HOME/.local/bin/remove-csi
