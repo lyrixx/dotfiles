@@ -34,6 +34,7 @@
     open            = ! git status -s --no-renames | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
     open-conflict   = ! git status -s | /bin/grep ^UU | awk '{print $2}' | xargs --no-run-if-empty code
     ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
+    ghost           = commit --allow-empty --allow-empty-message -m ""
 [color]
     ui              = true
 [core]
