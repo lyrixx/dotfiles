@@ -9,7 +9,7 @@ export BAT_THEME="Monokai Extended Light"
 function bat()
 {
     /home/gregoire/.cargo/bin/bat --terminal-width 100 \$@;
-    echo -e "\n\n"
+    echo -e "\n"
 }
 
 EOT

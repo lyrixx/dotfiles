@@ -1,8 +1,29 @@
 #!/usr/bin/env php
 <?php
 
-require '/home/gregoire/dev/github.com/symfony/string/vendor/autoload.php';
+// # Installation instruction
+// # Clone the symfony/string repository
+// $ git clone git@github.com:symfony/string $HOME/dev/github.com/symfony/string
+// $ cd $HOME/dev/github.com/symfony/string
+// # Install the dependencies
+// $ composer up
+// # Then create a file slug.php with the content of this file.
+// # Make it executable
+// $ chmod +x slug.php
+// # Create a symlink in your $PATH with
+// $ ln -s $HOME/dev/github.com/symfony/string/slug.php $HOME/.local/bin/slug
+
+// # Usage
+// $ echo "Hello my little 🐰" | slug
+// hello-my-little-rabbit
+// $ echo "Bonjour mon petit 🐰" | LOCALE=fr slug
+// bonjour-mon-petit-lapin
+
+require "{$_SERVER['HOME']}/dev/github.com/symfony/string/vendor/autoload.php";
 
 use Symfony\Component\String\Slugger\AsciiSlugger;
 
-echo (new AsciiSlugger($_SERVER['LOCALE'] ?? 'en'))->withEmoji('en')->slug(stream_get_contents(STDIN));
+echo (new AsciiSlugger($_SERVER['LOCALE'] ?? 'en'))
+    ->withEmoji($_SERVER['LOCALE'] ?? 'text')
+    ->slug(stream_get_contents(STDIN))
+;
