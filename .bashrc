@@ -132,3 +132,15 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
+
+# >>>> Vagrant command completion (start)
+. /opt/vagrant/embedded/gems/gems/vagrant-2.4.1/contrib/bash/completion.sh
+# <<<<  Vagrant command completion (end)
+
+# pnpm
+export PNPM_HOME="/home/gregoire/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
