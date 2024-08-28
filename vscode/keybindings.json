@@ -230,5 +230,9 @@
         "key": "shift+alt+right",
         "command": "-editor.action.smartSelect.expand",
         "when": "editorTextFocus"
+    },
+    {
+        "key": "ctrl+enter",
+        "command": "sqltools.executeCurrentQuery"
     }
 ]

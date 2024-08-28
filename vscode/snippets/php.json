@@ -21,6 +21,23 @@
 			"file_put_contents('log',  __METHOD__ . ': ' . \\$$1 . \"\\n\", FILE_APPEND);"
 		],
 	},
+	"Log to file ++": {
+		"prefix": "lf++",
+		"body": [
+			"file_put_contents(",
+			"    'debug',",
+			"    sprintf(",
+			"        \"%s::%s()\\n%s:%s\\n%s\\n\\n\",",
+			"        __CLASS__,",
+			"        __FUNCTION__,",
+			"        __FILE__,",
+			"        __LINE__,",
+			"        $1",
+			"    ),",
+			"    FILE_APPEND",
+			");",
+		],
+	},
 	"Constructor": {
 		"prefix": "construct",
 		"body": [
