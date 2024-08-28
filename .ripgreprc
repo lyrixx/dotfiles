@@ -1,3 +1,4 @@
 --smart-case
 --hidden
 --glob=!.git
+--sort=path
