@@ -35,6 +35,7 @@
     open-conflict   = ! git status -s | /bin/grep ^UU | awk '{print $2}' | xargs --no-run-if-empty code
     ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
     ghost           = commit --allow-empty --allow-empty-message -m ""
+    fetch           = fetch --all --prune
 [color]
     ui              = true
 [core]

@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-git rev-parse --verify  -q main >/dev/null
+git rev-parse --verify -q origin/main >/dev/null
 if [ $? -eq 0 ]; then
   base=main
 else
