@@ -27,6 +27,8 @@
     "cSpell.userWords": [
         "Acker",
         "actix",
+        "AFSY",
+        "AFUP",
         "aggs",
         "amqp",
         "ansible",
@@ -48,6 +50,7 @@
         "behat",
         "bindgen",
         "blablacar",
+        "blackfire",
         "Blackfire",
         "buildkit",
         "Cacheable",
@@ -107,6 +110,7 @@
         "FQCN",
         "Froms",
         "fulltext",
+        "Gedmo",
         "gelf",
         "geohash",
         "geojson",
@@ -118,6 +122,7 @@
         "goroutines",
         "grafana",
         "greg",
+        "gregoire",
         "Gregoire",
         "gspt",
         "hasher",
@@ -139,6 +144,7 @@
         "inversed",
         "invitable",
         "joli",
+        "jolicampus",
         "jolicode",
         "jolitypo",
         "jsonld",
@@ -174,6 +180,7 @@
         "nyholm",
         "offithings",
         "onelogin",
+        "opcache",
         "openapi",
         "opengraph",
         "orpi",
@@ -247,6 +254,7 @@
         "thumbor",
         "timeouted",
         "timeseries",
+        "Timestampable",
         "Toggleable",
         "tokio",
         "totp",
@@ -273,6 +281,7 @@
         "videostream",
         "Videostreams",
         "webassembly",
+        "xdebug",
         "xiti",
         "Yolo",
         "zxcvbn"
@@ -438,5 +447,8 @@
     "markdown-pdf.styles": [
         "/home/gregoire/dev/gitlab.com/carb0n/tech.carbon.green/rapport.css"
     ],
-    "github.copilot.editor.enableAutoCompletions": true
+    "github.copilot.editor.enableAutoCompletions": true,
+    "settingsSync.ignoredExtensions": [],
+    "settingsSync.ignoredSettings": [],
+    "editor.find.seedSearchStringFromSelection": "never"
 }
