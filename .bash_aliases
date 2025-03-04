@@ -56,3 +56,4 @@ alias php_opcode='php -n -d "extension=vld.so" -d "vld.active=1" -d "vld.execute
 
 ## Random
 alias protips="code /home/gregoire/Dropbox/doc/CFP/idea/Protips.md"
+alias cloc_alternative="scc" # I never remember the name of the command
