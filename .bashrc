@@ -64,6 +64,8 @@ export LESS="FRSX"
 
 export EDITOR=`which vim`
 
+export JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;33"
+
 # 0 : normal, 1 : bold, 4 underline, nothing : background
 NoColor="\[\e[0m\]"
 Black="\[\e[00;30m\]"
