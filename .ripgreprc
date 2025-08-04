@@ -2,3 +2,4 @@
 --hidden
 --glob=!.git
 --sort=path
+--no-ignore-exclude
