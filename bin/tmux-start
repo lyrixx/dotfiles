@@ -3,7 +3,7 @@
 # http://stackoverflow.com/questions/3432536/create-session-if-none-exists/7231728#7231728
 # http://stackoverflow.com/questions/5447278/bash-scripts-with-tmux-to-launch-a-4-paned-window/7720881#7720881
 
-SESSIONS="rio labs orpi"
+SESSIONS="rio labs orpi arsol"
 
 function session-rio {
     tmux new-session -d -s $1 -n root   -c $HOME/dev/github.com/jolicode/redirection.io
@@ -48,6 +48,12 @@ function session-cer {
     tmux new-session -d -s $1 -n root   -c $HOME/dev/cerfrance/heisenberg-master
     tmux new-window -t $1 -n docker     -c $HOME/dev/cerfrance/heisenberg-master
     tmux new-window -t $1 -n DB         -c $HOME/dev/cerfrance/heisenberg-master
+}
+
+function session-arsol {
+    tmux new-session -d -s $1 -n root   -c $HOME/dev/arsol/arsol
+    tmux new-window -t $1 -n docker     -c $HOME/dev/arsol/arsol
+    tmux new-window -t $1 -n DB         -c $HOME/dev/arsol/arsol
 }
 
 # Global
