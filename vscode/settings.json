@@ -489,5 +489,6 @@
     },
     "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
     "github.copilot.nextEditSuggestions.enabled": false,
-    "docker.extension.enableComposeLanguageServer": false
+    "docker.extension.enableComposeLanguageServer": false,
+    "chat.agent.maxRequests": 250
 }
