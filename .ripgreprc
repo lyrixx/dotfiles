@@ -3,3 +3,4 @@
 --glob=!.git
 --sort=path
 --no-ignore-exclude
+--hyperlink-format=vscode

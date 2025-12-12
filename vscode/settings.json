@@ -13,8 +13,8 @@
         "**/resources/data/": true,
         "**/tools/**/vendor": true,
         "**/var/cache/**/doctrine/": true,
-        "**/.phpunit/": true,
-        "**/vendor": false,
+        "**/.phpunit/**/vendor/": true,
+        "/home/gregoire/dev/github.com/jolicode/redirection.io/server/ai/**/vendor": true,
     },
     "editor.cursorBlinking": "phase",
     "search.useIgnoreFiles": false,
@@ -175,6 +175,7 @@
         "loggable",
         "Loggable",
         "logrus",
+        "loïck",
         "Loïck",
         "lucene",
         "lyrixx",
@@ -182,6 +183,7 @@
         "Mailgun",
         "makasim",
         "Makita",
+        "meilisearch",
         "melissandre",
         "mergé",
         "Mergé",
@@ -198,6 +200,7 @@
         "nosnippet",
         "nyholm",
         "offithings",
+        "ollama",
         "onelogin",
         "opcache",
         "openapi",
@@ -242,6 +245,7 @@
         "rjwt",
         "routable",
         "ruleset",
+        "scaleflex",
         "schedulable",
         "scrollable",
         "segmentations",
@@ -480,7 +484,6 @@
     "markdown-pdf.styles": [
         "/home/gregoire/dev/gitlab.com/carb0n/tech.carbon.green/rapport.css"
     ],
-    "github.copilot.editor.enableAutoCompletions": true,
     "settingsSync.ignoredExtensions": [],
     "settingsSync.ignoredSettings": [],
     "editor.find.seedSearchStringFromSelection": "never",
@@ -489,6 +492,27 @@
     },
     "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
     "github.copilot.nextEditSuggestions.enabled": false,
-    "docker.extension.enableComposeLanguageServer": false,
-    "chat.agent.maxRequests": 250
+    "chat.agent.maxRequests": 250,
+    "workbench.secondarySideBar.defaultVisibility": "visible",
+    "[dockercompose]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "chat.tools.terminal.autoApprove": {
+        "cd /home/gregoire/dev/github.com/lyrixx/symfony/src/Symfony/Component/Workflow/Tests/Configuration && php debug_config.php": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "cd /home/gregoire/dev/github.com/lyrixx/symfony && ./phpunit src/Symfony/Component/Workflow/Tests/Configuration/AttributeReaderTest.php": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    },
+    "window.confirmSaveUntitledWorkspace": false,
+    "php.suggest.basic": false
 }
