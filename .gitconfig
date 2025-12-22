@@ -60,7 +60,7 @@
 [github]
     user            = lyrixx
 [push]
-    default         = tracking
+    default         = simple
     autoSetupRemote = true
 [include]
     path            = ~/.private-gitconfig
