@@ -74,32 +74,32 @@
     },
     {
         "key": "f6",
-        "command": "namespaceResolver.expand",
+        "command": "phpNamespaceResolver.expand",
         "when": "editorTextFocus"
     },
     {
         "key": "ctrl+alt+e",
-        "command": "-namespaceResolver.expand",
+        "command": "-phpNamespaceResolver.expand",
         "when": "editorTextFocus"
     },
     {
         "key": "f4",
-        "command": "namespaceResolver.generateNamespace",
+        "command": "phpNamespaceResolver.generateNamespace",
         "when": "editorTextFocus"
     },
     {
         "key": "ctrl+alt+g",
-        "command": "-namespaceResolver.generateNamespace",
+        "command": "-phpNamespaceResolver.generateNamespace",
         "when": "editorTextFocus"
     },
     {
         "key": "f5",
-        "command": "namespaceResolver.import",
+        "command": "phpNamespaceResolver.import",
         "when": "editorTextFocus"
     },
     {
         "key": "ctrl+alt+i",
-        "command": "-namespaceResolver.import",
+        "command": "-phpNamespaceResolver.import",
         "when": "editorTextFocus"
     },
     {

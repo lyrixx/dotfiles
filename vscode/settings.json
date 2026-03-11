@@ -17,11 +17,14 @@
         "/home/gregoire/dev/github.com/jolicode/redirection.io/server/ai/**/vendor": true,
     },
     "editor.cursorBlinking": "phase",
-    "search.useIgnoreFiles": false,
     "workbench.colorTheme": "Monokai",
-    "namespaceResolver.leadingSeparator": false,
-    "namespaceResolver.sortAlphabetically": true,
-    "namespaceResolver.sortNatural": true,
+    "workbench.colorCustomizations": {
+        "[Monokai]": {
+            "tab.activeBackground": "#1e1e1e",
+            "tab.activeForeground": "#e6db74",
+            "tab.activeBorder": "#f92672",
+        }
+    },
     "files.trimTrailingWhitespace": true,
     "cSpell.userWords": [
         "Acker",
@@ -94,6 +97,7 @@
         "Disableable",
         "discoverability",
         "Discoverability",
+        "easyadmin",
         "Elastica",
         "elif",
         "elts",
@@ -196,6 +200,7 @@
         "MQTT",
         "multisearch",
         "mutex",
+        "mysql",
         "Nofollow",
         "nopadding",
         "NOPARAM",
@@ -212,6 +217,8 @@
         "outlink",
         "outlinks",
         "pactols",
+        "Pagerfanta",
+        "passthru",
         "pecl",
         "phar",
         "PHAR",
@@ -247,6 +254,7 @@
         "rjwt",
         "routable",
         "ruleset",
+        "saas",
         "scaleflex",
         "schedulable",
         "scrollable",
@@ -492,7 +500,8 @@
     "settingsSync.ignoredSettings": [],
     "editor.find.seedSearchStringFromSelection": "never",
     "files.associations": {
-        "ssh-config": "ssh_config"
+        "ssh-config": "ssh_config",
+        "*.neon": "toml"
     },
     "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
     "github.copilot.nextEditSuggestions.enabled": false,
@@ -508,15 +517,33 @@
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
     "chat.tools.terminal.autoApprove": {
-        "cd /home/gregoire/dev/github.com/lyrixx/symfony/src/Symfony/Component/Workflow/Tests/Configuration && php debug_config.php": {
+        "/usr/bin/env": true,
+        "/^symfony php bin/phpunit tests/MyOverview/MessengerBundle/Services/Mail/Html/HtmlConverterTest\\.php$/": {
             "approve": true,
             "matchCommandLine": true
         },
-        "cd /home/gregoire/dev/github.com/lyrixx/symfony && ./phpunit src/Symfony/Component/Workflow/Tests/Configuration/AttributeReaderTest.php": {
+        "docker cp": true,
+        "docker ps": true,
+        "docker compose": true,
+        "castor": true,
+        "composer": true,
+        "/^bin/phpunit/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        "/^symfony php bin/phpunit/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^symfony console/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "uniq": true
     },
     "window.confirmSaveUntitledWorkspace": false,
-    "php.suggest.basic": false
+    "php.suggest.basic": false,
+    "chat.viewSessions.orientation": "stacked",
+    "chat.mcp.gallery.enabled": true,
+    "search.useIgnoreFiles": false
 }
