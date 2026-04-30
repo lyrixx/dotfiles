@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -e
+
+COMMIT_REF="${1:-}"
+
+if [[ -z "$COMMIT_REF" ]]; then
+    echo "Usage: gh commit2pr <commit-ref>" >&2
+    exit 1
+fi
+
+# Resolve the full commit SHA
+COMMIT_SHA=$(git rev-parse --verify "$COMMIT_REF^{commit}" 2>/dev/null) || {
+    echo "Error: Could not resolve commit reference: $COMMIT_REF" >&2
+    exit 1
+}
+
+# Get commit info
+COMMIT_SUBJECT=$(git log -1 --format="%s" "$COMMIT_SHA")
+COMMIT_BODY=$(git log -1 --format="%b" "$COMMIT_SHA")
+
+# Get the default branch and remote
+DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
+REMOTE="origin"
+ORIGINAL_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+
+# Generate a branch name from the commit subject
+BRANCH_NAME="commit2pr/$(echo "$COMMIT_SUBJECT" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed 's/[^a-z0-9]/-/g' \
+    | sed 's/-\+/-/g' \
+    | sed 's/^-//;s/-$//' \
+    | cut -c1-50)-${COMMIT_SHA:0:7}"
+
+# Cleanup on error: go back to original branch and delete created branch
+cleanup() {
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        echo "An error occurred, cleaning up..." >&2
+        if [[ -n "$ORIGINAL_BRANCH" ]]; then
+            git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
+        fi
+        git branch -D "$BRANCH_NAME" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+# Fetch latest changes
+echo "Fetching latest changes from $REMOTE..."
+git fetch "$REMOTE"
+
+# Create a new branch from the up-to-date default branch
+echo "Creating branch '$BRANCH_NAME' from $REMOTE/$DEFAULT_BRANCH..."
+git checkout -b "$BRANCH_NAME" "$REMOTE/$DEFAULT_BRANCH"
+
+# Cherry-pick the commit
+echo "Cherry-picking $COMMIT_SHA..."
+git cherry-pick "$COMMIT_SHA"
+
+# Push the branch
+echo "Pushing $BRANCH_NAME..."
+git push "$REMOTE" "$BRANCH_NAME"
+
+# Create the PR
+echo "Creating PR..."
+gh pr create \
+    --title "$COMMIT_SUBJECT" \
+    --body "$COMMIT_BODY" \
+    --base "$DEFAULT_BRANCH" \
+    --head "$BRANCH_NAME"
