@@ -9,13 +9,16 @@ alias df="df -h"
 alias du="du -h"
 alias free="free -m"
 
+alias fd="fdfind"
+
 alias cp="cp -i"
 alias mv="mv -i"
 
 alias grep='grep --color=tty'
 
 alias PS1="grep '#PS1' ~/.bashrc | sed 's/^#\(.*\)/\1/'"
-alias SYMFONY_IDE="echo SYMFONY_IDE=vscode://file%f:%l\\&/var/www\\>`pwd`"
+
+alias SYMFONY_IDE="echo SYMFONY_IDE=vscode://file%f:%l\\&/var/www\>\\$(pwd)"
 
 ## Notification
 

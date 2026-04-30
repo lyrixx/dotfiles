@@ -20,6 +20,7 @@ fi
 if [[ -d /usr/local/go/bin ]]; then
     PATH="/usr/local/go/bin:$PATH"
 fi
+
 if [[ -d $HOME/dev/go ]]; then
     export GOPATH=$HOME/dev/go
     PATH="$GOPATH/bin:$PATH"
@@ -45,6 +46,25 @@ if [ -f $HOME/.ripgreprc ] ; then
     export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 fi
 
+
+# pnpm
+export PNPM_HOME="/home/gregoire/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
 
@@ -62,7 +82,7 @@ export DOCKER_BUILDKIT=1
 if [[ `which most` ]]; then export PAGER=`which most` ; fi
 export LESS="FRSX"
 
-export EDITOR=`which vim`
+export EDITOR=`/usr/bin/which vim`
 
 export JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;33"
 
@@ -134,15 +154,3 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
-
-# pnpm
-export PNPM_HOME="/home/gregoire/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
