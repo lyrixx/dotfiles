@@ -46,7 +46,6 @@ if [ -f $HOME/.ripgreprc ] ; then
     export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 fi
 
-
 # pnpm
 export PNPM_HOME="/home/gregoire/.local/share/pnpm"
 case ":$PATH:" in
@@ -64,6 +63,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
+# Gcloud
+if [ -f '/usr/share/google-cloud-sdk/completion.bash.inc' ]; then . '/usr/share/google-cloud-sdk/completion.bash.inc'; fi
 
 export GIT_PS1_SHOWDIRTYSTATE=true
 export GIT_PS1_SHOWUNTRACKEDFILES=true
@@ -154,3 +155,4 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
+

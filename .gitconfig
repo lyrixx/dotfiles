@@ -81,3 +81,5 @@
     rebase          = true
 [help]
     autocorrect     = 1
+[credential]
+	helper = store
