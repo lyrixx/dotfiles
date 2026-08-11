@@ -27,12 +27,6 @@ ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
 ln -sf $DOTFILES/.vimrc               ~/.vimrc
 ln -sf $DOTFILES/git-template ~/.git-template
 
-# echo 'Install git submodule'
-# if [[ `which git` ]] ; then
-#   git submodule update --init
-#   ln -sf $DOTFILES/vendor/dircolors-solarized/dircolors.ansi-dark  ~/.dir_colors
-# fi
-
 echo 'Create custom bin symlink'
 mkdir -p $HOME/.local/bin
 
@@ -50,4 +44,9 @@ if [[ `which php` ]] ; then
         curl -sS https://getcomposer.org/installer | php
         mv composer.phar $HOME/.local/bin/composer
     fi
+fi
+
+if [[ `which fzf` ]] ; then
+    echo 'Install fzf'
+    fzf --bash > ~/.fzf.bash
 fi

@@ -1,6 +1,0 @@
-{
-	"Dump value" : {
-		"prefix": "vvv",
-		"body": "fmt.Printf(\"%#+v\\n\", $1)"
-	}
-}
