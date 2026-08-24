@@ -35,7 +35,7 @@ if [[ -d $HOME/.local/bin/ ]]; then
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then
-    export CDPATH=".:$HOME:$HOME/dev/github.com"
+    export CDPATH="$HOME:$HOME/dev/github.com:."
 fi
 
 if [[ -f /usr/bin/terraform ]]; then
@@ -155,4 +155,9 @@ man() {
         LESS_TERMCAP_us=$(printf "\e[1;35m") \
             man "$@"
 }
+
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/home/gregoire/.lmstudio/bin"
+# End of LM Studio CLI section
 

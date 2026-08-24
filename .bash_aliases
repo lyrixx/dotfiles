@@ -11,9 +11,6 @@ alias free="free -m"
 
 alias fd="fdfind"
 
-alias cp="cp -i"
-alias mv="mv -i"
-
 alias grep='grep --color=tty'
 
 alias PS1="grep '#PS1' ~/.bashrc | sed 's/^#\(.*\)/\1/'"
