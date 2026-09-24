@@ -21,8 +21,8 @@ if [[ -d /usr/local/go/bin ]]; then
     PATH="/usr/local/go/bin:$PATH"
 fi
 
-if [[ -d $HOME/dev/go ]]; then
-    export GOPATH=$HOME/dev/go
+if [[ -d $HOME/go ]]; then
+    export GOPATH=$HOME/go
     PATH="$GOPATH/bin:$PATH"
 fi
 
@@ -161,3 +161,10 @@ man() {
 export PATH="$PATH:/home/gregoire/.lmstudio/bin"
 # End of LM Studio CLI section
 
+
+# opencode
+export PATH=/home/gregoire/.opencode/bin:$PATH
+
+# >>>> Vagrant command completion (start)
+. /opt/vagrant/embedded/gems/gems/vagrant-2.4.9/contrib/bash/completion.sh
+# <<<<  Vagrant command completion (end)
