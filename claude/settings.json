@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash --version)",
+      "Bash(castor *)",
+      "Bash(composer *)",
+      "Bash(corepack --version)",
+      "Bash(corepack use *)",
+      "Bash(docker kill *)",
+      "Bash(docker rm *)",
+      "Bash(docker stats *)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh secret *)",
+      "Bash(git *)",
+      "Bash(grep -v *)",
+      "Bash(php --version)",
+      "Bash(php -r \"echo PHP_VERSION;\")",
+      "Bash(xargs -I{} basename {})",
+      "Bash(xargs -I{} echo {})",
+      "Bash(xargs cat)",
+      "Bash(yarn *)",
+      "Read(//home/gregoire/dev/github.com/**)",
+      "Skill(code-review:*)",
+      "Skill(code-review)",
+      "Skill(update-config:*)",
+      "Skill(update-config)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:github.com)"
+    ],
+    "additionalDirectories": [
+      "/home/gregoire/.claude",
+      "/tmp"
+    ]
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "xhigh",
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    }
+  },
+  "theme": "auto",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}

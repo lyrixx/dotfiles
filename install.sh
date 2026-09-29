@@ -27,6 +27,27 @@ ln -sf $DOTFILES/.tmux.conf           ~/.tmux.conf
 ln -sf $DOTFILES/.vimrc               ~/.vimrc
 ln -sf $DOTFILES/git-template ~/.git-template
 
+echo 'Setup Claude Code'
+mkdir -p ~/.claude/skills
+
+ln -sf $DOTFILES/claude/CLAUDE.md             ~/.claude/CLAUDE.md
+for skill in $DOTFILES/claude/skills/*/; do
+    ln -sfn "${skill%/}" ~/.claude/skills/"$(basename "$skill")"
+done
+# https://letape-dapres.fr/ressources/skills/writing-unslop#installation
+mkdir -p ~/.claude/skills/writing:unslop && \
+    curl -sSL https://letape-dapres.fr/api/skills/writing-unslop/raw \
+        -o ~/.claude/skills/writing:unslop/SKILL.md
+
+if [[ ! -f ~/.claude/settings.json ]]; then
+    cp $DOTFILES/claude/settings.json ~/.claude/settings.json
+fi
+
+if [[ `which rtk` ]] ; then
+    echo 'Install rtk for Claude Code'
+    rtk init -g --auto-patch
+fi
+
 echo 'Create custom bin symlink'
 mkdir -p $HOME/.local/bin
 
