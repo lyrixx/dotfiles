@@ -20,3 +20,5 @@ test.sh
 
 **/.claude/settings.local.json
 **/.claude/worktrees
+**/.claude/tmp
+
