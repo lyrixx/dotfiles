@@ -31,6 +31,7 @@ echo 'Setup Claude Code'
 mkdir -p ~/.claude/skills
 
 ln -sf $DOTFILES/claude/CLAUDE.md             ~/.claude/CLAUDE.md
+ln -sfn $DOTFILES/claude/rules                 ~/.claude/rules
 for skill in $DOTFILES/claude/skills/*/; do
     ln -sfn "${skill%/}" ~/.claude/skills/"$(basename "$skill")"
 done
