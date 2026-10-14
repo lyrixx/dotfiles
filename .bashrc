@@ -35,7 +35,8 @@ if [[ -d $HOME/.local/bin/ ]]; then
 fi
 
 if [[ -d $HOME/dev/github.com ]]; then
-    export CDPATH="$HOME:$HOME/dev/github.com:."
+    # Leading empty entry = current directory first, without echoing the path like "." does
+    export CDPATH=":$HOME:$HOME/dev/github.com"
 fi
 
 if [[ -f /usr/bin/terraform ]]; then
