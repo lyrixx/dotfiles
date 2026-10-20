@@ -32,6 +32,21 @@ Ne jamais ajouter de mention d'attribution à Claude / Claude Code (`Co-Authored
 issues, commentaires, documentation, code… Pour les commits et les PR, c'est aussi coupé à la
 source par `attribution` dans `settings.json`.
 
+### Descriptions de PR et commentaires : courts, sauf si c'est compliqué
+
+La longueur suit la complexité du changement, pas le travail fourni. Le diff dit déjà ce qui
+change : la description dit pourquoi, et seulement ce que le diff ne montre pas.
+
+- PR triviale (correctif d'une ligne, renommage, montée de version, typo…) : une ou deux phrases,
+  sans titre ni section.
+- On ne développe que ce qui est vraiment compliqué : un choix qui ne va pas de soi, un risque, une
+  action à faire au déploiement (requête à lancer avant, ordre de déploiement…).
+- Même là, pas de roman : phrases courtes, pas de paraphrase du diff, pas de récit de la démarche
+  ni des pistes écartées, pas de section par habitude.
+- Les commentaires GitHub (réponse à une review, à une issue…) suivent la même règle : une ou deux
+  phrases, sauf nécessité.
+- Un projet peut imposer plus court encore : sa règle l'emporte.
+
 ### Images sur GitHub
 
 `gh` sait uploader des images et des vidéos directement (user-attachments) avec `--attach`, sur
