@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://dl.cloudsmith.io/public/symfony/stable/deb/ubuntu
+Suites: resolute
+Components: main
+Signed-By: /etc/apt/keyrings/symfony-cli.asc

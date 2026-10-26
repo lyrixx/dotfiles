@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://download.virtualbox.org/virtualbox/debian
+Suites: resolute
+Components: contrib
+Signed-By: /etc/apt/keyrings/virtualbox.asc

@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://updates.signal.org/desktop/apt
+Suites: xenial
+Components: main
+Signed-By: /etc/apt/keyrings/signal-desktop.asc

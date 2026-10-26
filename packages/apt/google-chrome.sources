@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://dl.google.com/linux/chrome-stable/deb/
+Suites: stable
+Components: main
+Signed-By: /etc/apt/keyrings/google-chrome.asc

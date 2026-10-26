@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Updates everything at once. Launched by hand only: nothing installed by
+# packages/ updates on its own.
+
+set -euo pipefail
+
+sudo apt update
+sudo apt upgrade -y
+deb-get update
+deb-get upgrade
+sudo flatpak update -y
+# --global: run from inside a project, mise would also upgrade the project's tools
+mise upgrade --global
+rustup update
+if [[ -x ~/.local/bin/composer ]]; then
+    ~/.local/bin/composer self-update
+fi

@@ -1,0 +1,10 @@
+DEFVER=1
+get_github_releases "tangency-labs/solidcraft" "latest"
+if [ "${ACTION}" != prettylist ]; then
+    # Each release also ships an unversioned solidcraft-linux-x86_64.deb: take the versioned one
+    URL=$(grep -m 1 "browser_download_url.*/solidcraft-[0-9][^/]*-linux-x86_64\.deb\"" "${CACHE_FILE}" | cut -d '"' -f 4)
+    VERSION_PUBLISHED=$(sed -E 's/^solidcraft-(.+)-linux-x86_64\.deb$/\1/' <<< "${URL##*/}")
+fi
+PRETTY_NAME="SolidCraft"
+WEBSITE="https://solidcraft.io/"
+SUMMARY="Parametric 3D CAD."
