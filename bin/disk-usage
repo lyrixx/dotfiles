@@ -1,0 +1,222 @@
+#!/bin/bash
+
+# Shows what takes room on disk: Docker, VMs, LLM models, the global caches of
+# the dev tools… Only what exists on this machine is listed.
+#
+# --projects also lists the biggest node_modules/, target/ and vendor/ of the
+# projects in ~/dev. It takes about 20 more seconds.
+
+set -euo pipefail
+
+NOCOLOR='\e[0m'
+TITLECOLOR='\e[1;34m'
+TOTALCOLOR='\e[1m'
+
+CACHE=${XDG_CACHE_HOME:-$HOME/.cache}
+CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}
+DATA=${XDG_DATA_HOME:-$HOME/.local/share}
+PROJECTS=$HOME/dev
+
+case ${1:-} in
+    '') scan_projects=false ;;
+    --projects) scan_projects=true ;;
+    *)
+        echo 'Usage: disk-usage [--projects]' >&2
+        exit 1
+        ;;
+esac
+
+grand_total=0
+# The paths already listed, so that "Other caches" skips them
+declare -A measured=()
+
+function title {
+    echo -e "\n$TITLECOLOR==> $1$NOCOLOR"
+    section_total=0
+    section_count=0
+}
+
+# The size is in bytes
+function entry { # size label detail
+    printf '%8s  %-22s %s\n' "$(numfmt --to=iec "$1")" "$2" "$3"
+    section_total=$((section_total + $1))
+    section_count=$((section_count + 1))
+    grand_total=$((grand_total + $1))
+}
+
+# Prints the size in bytes and the path to show, separated by a tab
+function measure { # path
+    local size
+    local detail=${1/#"$HOME"/'~'}
+    # du still sums the files it can read
+    size=$(du -s -B1 "$1" 2>/dev/null | cut -f1) || detail+=' (incomplete: some files are not readable)'
+    printf '%s\t%s\n' "$size" "$detail"
+}
+
+function dir { # label path
+    local size detail
+    [[ -e $2 ]] || return 0
+    measured[$2]=1
+    IFS=$'\t' read -r size detail < <(measure "$2")
+    entry "$size" "$1" "$detail"
+}
+
+function total {
+    if ((section_count == 0)); then
+        echo '  nothing found'
+    elif ((section_count > 1)); then
+        printf "$TOTALCOLOR%8s  Total$NOCOLOR\n" "$(numfmt --to=iec $section_total)"
+    fi
+}
+
+function docker_usage {
+    local output type size reclaimable
+    if ! output=$(docker system df --format '{{.Type}}\t{{.Size}}\t{{.Reclaimable}}' 2>&1); then
+        echo "  docker system df failed: $output"
+        return 1
+    fi
+    while IFS=$'\t' read -r type size reclaimable; do
+        entry "$(docker_size_to_bytes "$size")" "$type" "$(numfmt --to=iec "$(docker_size_to_bytes "$reclaimable")") reclaimable"
+    done <<< "$output"
+}
+
+# Docker prints SI sizes, sometimes followed by a percentage: "81.48GB (48%)"
+function docker_size_to_bytes {
+    local size=${1%% *}
+    numfmt --from=si "${size%B}"
+}
+
+# The folders of ~/.cache above 1G that no other section lists, biggest first
+function other_caches {
+    local path size detail label
+    while IFS=$'\t' read -r size detail label; do
+        ((size >= 1024 ** 3)) || break
+        entry "$size" "$label" "$detail"
+    done < <(
+        for path in "$CACHE"/*/; do
+            path=${path%/}
+            [[ -n ${measured[$path]:-} ]] || printf '%s\t%s\n' "$(measure "$path")" "${path##*/}"
+        done | sort -rn
+    )
+}
+
+# The 5 biggest dependency and build folders of the projects, then the others
+# summed up
+function project_folders {
+    local output size path rank=0 others=0 note=''
+    [[ -d $PROJECTS ]] || return 0
+    # du still sums the files it can read
+    output=$(
+        find "$PROJECTS" -name .git -prune -o \( -name node_modules -o -name target -o -name vendor \) -type d -prune -print0 2>/dev/null \
+            | du -s -B1 --files0-from=- 2>/dev/null \
+            | sort -rn
+    ) || note='(incomplete: some files are not readable)'
+    [[ -n $output ]] || return 0
+    while IFS=$'\t' read -r size path; do
+        if ((++rank <= 5)); then
+            entry "$size" "${path##*/}" "${path/#"$HOME"/'~'}"
+        else
+            others=$((others + size))
+        fi
+    done <<< "$output"
+    if ((rank > 5)); then
+        entry "$others" "$((rank - 5)) others" ''
+    fi
+    if [[ -n $note ]]; then
+        echo "  $note"
+    fi
+}
+
+if command -v docker >/dev/null; then
+    title 'Docker'
+    docker_usage && total
+fi
+
+title 'VMs'
+if command -v VBoxManage >/dev/null; then
+    dir 'VirtualBox' "$(VBoxManage list systemproperties | sed -n 's/^Default machine folder: *//p')"
+fi
+dir 'Vagrant boxes' "${VAGRANT_HOME:-$HOME/.vagrant.d}/boxes"
+total
+
+title 'LLM models'
+dir 'Hugging Face' "${HF_HOME:-$CACHE/huggingface}"
+dir 'Ollama' "${OLLAMA_MODELS:-$HOME/.ollama/models}"
+# Where the systemd service of the official installer stores them
+dir 'Ollama (service)' /usr/share/ollama/.ollama/models
+dir 'llama.cpp' "${LLAMA_CACHE:-$CACHE/llama.cpp}"
+# Models and runtimes
+dir 'LM Studio' "$HOME/.lmstudio"
+dir 'FastFlowLM' "$CONFIG/flm/models"
+total
+
+title 'Coding agents'
+dir 'Claude Code tmp' "$HOME/.claude/tmp"
+dir 'Claude Code sessions' "$HOME/.claude/projects"
+dir 'Claude Code versions' "$DATA/claude/versions"
+dir 'opencode' "$DATA/opencode"
+total
+
+title 'Rust'
+dir 'Cargo registry' "${CARGO_HOME:-$HOME/.cargo}/registry"
+dir 'Cargo git' "${CARGO_HOME:-$HOME/.cargo}/git"
+dir 'Rustup toolchains' "${RUSTUP_HOME:-$HOME/.rustup}/toolchains"
+total
+
+title 'PHP'
+dir 'Composer' "${COMPOSER_CACHE_DIR:-$CACHE/composer}"
+dir 'Castor' "$CACHE/castor"
+total
+
+title 'Go'
+dir 'Modules' "${GOMODCACHE:-${GOPATH:-$HOME/go}/pkg/mod}"
+dir 'Build cache' "${GOCACHE:-$CACHE/go-build}"
+total
+
+title 'Node'
+dir 'npm' "$HOME/.npm"
+dir 'Yarn' "$CACHE/yarn"
+dir 'Yarn Berry' "$HOME/.yarn/berry"
+dir 'pnpm store' "$DATA/pnpm/store"
+dir 'pnpm cache' "$CACHE/pnpm"
+dir 'node-gyp' "$CACHE/node-gyp"
+dir 'Playwright browsers' "${PLAYWRIGHT_BROWSERS_PATH:-$CACHE/ms-playwright}"
+total
+
+title 'Python'
+dir 'pip' "$CACHE/pip"
+dir 'uv cache' "${UV_CACHE_DIR:-$CACHE/uv}"
+dir 'uv Pythons' "${UV_PYTHON_INSTALL_DIR:-$DATA/uv/python}"
+dir 'uv tools' "${UV_TOOL_DIR:-$DATA/uv/tools}"
+dir 'Poetry' "$CACHE/pypoetry"
+total
+
+title 'Java'
+dir 'Gradle' "${GRADLE_USER_HOME:-$HOME/.gradle}"
+total
+
+title 'mise'
+dir 'Installed tools' "${MISE_DATA_DIR:-$DATA/mise}/installs"
+dir 'Cache' "${MISE_CACHE_DIR:-$CACHE/mise}"
+total
+
+title 'System'
+dir 'Trash' "$DATA/Trash"
+dir 'journald' /var/log/journal
+dir 'Flatpak (system)' /var/lib/flatpak
+dir 'Flatpak (user)' "$DATA/flatpak"
+dir 'Snap' /var/lib/snapd/snaps
+total
+
+title 'Other caches'
+other_caches
+total
+
+if $scan_projects; then
+    title "Projects (${PROJECTS/#"$HOME"/'~'})"
+    project_folders
+    total
+fi
+
+echo
+printf "$TOTALCOLOR%8s  Grand total$NOCOLOR\n" "$(numfmt --to=iec $grand_total)"
