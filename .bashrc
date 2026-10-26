@@ -142,6 +142,13 @@ export PATH="$PATH:/home/gregoire/.lmstudio/bin"
 # End of LM Studio CLI section
 
 
-# >>>> Vagrant command completion (start)
-. /opt/vagrant/embedded/gems/gems/vagrant-2.4.9/contrib/bash/completion.sh
-# <<<<  Vagrant command completion (end)
+# Vagrant completion: its path holds the version, which bin/maj upgrades
+for vagrant_completion in /opt/vagrant/embedded/gems/gems/vagrant-*/contrib/bash/completion.sh; do
+    if [ -f "$vagrant_completion" ]; then
+        . "$vagrant_completion"
+    fi
+done
+unset vagrant_completion
+
+
+export CASTOR_LOCAL_STDIO_INSTEAD_OF_PTY=1
