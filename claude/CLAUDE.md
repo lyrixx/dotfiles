@@ -65,3 +65,11 @@ et toutes les sessions. Mon `$HOME` est utilisable à la place.
 - Fichiers produits pour moi (exports, comptes rendus, scripts réutilisables…) : dans le
   `.claude/tmp/` du projet courant, ou dans `$HOME` s'il n'y a pas de projet adapté.
 - Ces fichiers ne sont pas à commiter (sauf demande explicite).
+
+## Conventions d'outillage
+
+- Les tâches du projet (build, test, deploy, release, sync) vont dans castor.php sous forme de tâches Castor avec namespace, jamais dans des scripts bin/ ad hoc.
+- Les tâches doivent marcher sur un clone vierge : vérifier que vendor/ et les sorties de build existent, et les construire s'ils manquent.
+- Les CLI interactives (wrangler, gh, etc.) se lancent avec leurs options non interactives.
+
+@RTK.md
