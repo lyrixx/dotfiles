@@ -85,6 +85,12 @@ function setup_claude_code {
     mkdir -p ~/.claude/skills/writing:unslop
     curl -fsSL --max-time 60 https://letape-dapres.fr/api/skills/writing-unslop/raw \
         -o ~/.claude/skills/writing:unslop/SKILL.md
+    # Generated from the installed hf, in ~/.agents/skills and linked into
+    # ~/.claude/skills: --force regenerates it
+    mise exec -- hf skills add --global --force
+    # DISABLE_TELEMETRY: otherwise the CLI reports each install to Vercel
+    DISABLE_TELEMETRY=1 mise exec -- skills add https://github.com/cloudflare/security-audit-skill \
+        --skill security-audit --global --agent claude-code --yes
 
     if [[ ! -f ~/.claude/settings.json ]]; then
         cp $DOTFILES/claude/settings.json ~/.claude/settings.json

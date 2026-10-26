@@ -27,6 +27,12 @@ title 'Update mise tools'
 # --global: run from inside a project, mise would also upgrade the project's tools
 mise upgrade --global
 
+title 'Update agent skills'
+# mise exec: the PATH of this shell still points to the tools before the upgrade.
+# hf-cli is generated from hf: it follows the version just installed
+mise exec -- hf skills update hf-cli --global
+DISABLE_TELEMETRY=1 mise exec -- skills update --global --yes
+
 title 'Update Rust toolchains'
 rustup update
 
