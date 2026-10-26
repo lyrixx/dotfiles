@@ -10,6 +10,7 @@ DOTFILES=$(dirname "$(realpath "$0")")
 
 NOCOLOR='\e[0m'
 REDCOLOR='\e[37;41m'
+TITLECOLOR='\e[1;34m'
 
 function main {
     if [[ $EUID -eq 0 ]]; then
@@ -28,7 +29,7 @@ function main {
 }
 
 function link_dotfiles {
-    echo 'Link the dotfiles into $HOME'
+    title 'Link the dotfiles into $HOME'
     # Not versioned: .gitconfig includes it for the identity
     touch $DOTFILES/.private-gitconfig
 
@@ -48,7 +49,7 @@ function link_dotfiles {
 }
 
 function link_bin {
-    echo 'Link the commands of bin/'
+    title 'Link the commands of bin/'
     mkdir -p ~/.local/bin
 
     local executable
@@ -60,15 +61,18 @@ function link_bin {
 }
 
 function install_packages {
-    echo 'Install packages'
+    title 'Install apt packages'
     $DOTFILES/packages/apt.sh
+    title 'Install deb-get packages'
     $DOTFILES/packages/deb-get.sh
+    title 'Install Flatpak apps'
     $DOTFILES/packages/flatpak.sh
+    title 'Install mise tools'
     $DOTFILES/packages/mise.sh
 }
 
 function setup_claude_code {
-    echo 'Setup Claude Code'
+    title 'Setup Claude Code'
     mkdir -p ~/.claude/skills
 
     ln -sf $DOTFILES/claude/CLAUDE.md     ~/.claude/CLAUDE.md
@@ -90,7 +94,7 @@ function setup_claude_code {
 }
 
 function setup_dnsmasq {
-    echo 'Setup dnsmasq: *.test resolves to 127.0.0.1'
+    title 'Setup dnsmasq: *.test resolves to 127.0.0.1'
     # dnsmasq answers on 127.0.0.1, systemd-resolved sends it the .test queries.
     # On a fresh install, dnsmasq only starts once its config is there: the
     # default one wants port 53 on every address, and systemd-resolved already
@@ -100,18 +104,18 @@ function setup_dnsmasq {
 }
 
 function setup_docker {
-    echo 'Setup Docker'
+    title 'Setup Docker'
     # docker without sudo, from the next login
     sudo usermod -aG docker "$USER"
 }
 
 function setup_fzf {
-    echo 'Setup fzf'
+    title 'Setup fzf'
     fzf --bash > ~/.fzf.bash
 }
 
 function setup_php {
-    echo 'Setup PHP'
+    title 'Setup PHP'
     if [[ ! -x ~/.local/bin/composer ]]; then
         curl -fsS --max-time 60 https://getcomposer.org/installer | php -- --install-dir="$HOME/.local/bin" --filename=composer
     fi
@@ -152,6 +156,10 @@ function install_symfony_component {
     if [[ ! -f $dir/vendor/autoload.php ]]; then
         ~/.local/bin/composer install --working-dir="$dir" --no-interaction
     fi
+}
+
+function title {
+    echo -e "\n$TITLECOLOR==> $1$NOCOLOR"
 }
 
 main

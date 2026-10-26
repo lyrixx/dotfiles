@@ -5,14 +5,30 @@
 
 set -euo pipefail
 
+NOCOLOR='\e[0m'
+TITLECOLOR='\e[1;34m'
+
+function title {
+    echo -e "\n$TITLECOLOR==> $1$NOCOLOR"
+}
+
+title 'Update apt packages'
 sudo apt update
 sudo apt upgrade -y
+
+title 'Update deb-get packages'
 deb-get update
 deb-get upgrade
+
+title 'Update Flatpak apps'
 sudo flatpak update -y
+
+title 'Update mise tools'
 # --global: run from inside a project, mise would also upgrade the project's tools
 mise upgrade --global
+
+title 'Update Rust toolchains'
 rustup update
-if [[ -x ~/.local/bin/composer ]]; then
-    ~/.local/bin/composer self-update
-fi
+
+title 'Update composer'
+~/.local/bin/composer self-update
