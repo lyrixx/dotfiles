@@ -1,82 +1,85 @@
 ---
 name: install-software
-description: Installe un logiciel sur le poste et le déclare dans les dotfiles (packages/), pour qu'une nouvelle machine l'ait avec install.sh. Choisit le canal (apt, dépôt de l'éditeur, mise, Flatpak, deb-get) et vérifie clés, noms de fichiers et versions avant d'écrire.
-argument-hint: "<logiciel>"
+description: Installs a piece of software on this machine and declares it in the dotfiles (packages/), so that a new machine gets it from install.sh. Picks the channel (apt, vendor repository, mise, Flatpak, deb-get) and checks keys, file names and versions before writing anything.
+argument-hint: "<software>"
 ---
 
-# Installer un logiciel et le suivre dans les dotfiles
+# Install a piece of software and track it in the dotfiles
 
-Logiciel demandé : `$ARGUMENTS`
+Requested software: `$ARGUMENTS`
 
-Tout ce qui est installé sur le poste est déclaré dans `packages/` de ce repo, et `install.sh`
-en appelle les scripts. Travaille dans le checkout principal
-(`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`), pas dans un worktree :
-`~/.bashrc` et `~/.config/mise/config.toml` sont des liens vers lui, ce qui est installé
-correspond donc à ce qui est versionné.
+Everything installed on this machine is declared in `packages/` of this repository, and
+`install.sh` runs its scripts. Work in the main checkout
+(`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`), not in a worktree:
+`~/.bashrc` and `~/.config/mise/config.toml` link to it, so what is installed matches what is
+versioned.
 
-## 1. Choisir le canal
+## 1. Pick the channel
 
-Le premier qui convient, dans cet ordre :
+The first one that fits, in this order:
 
-1. **Paquet Ubuntu**, si sa version convient (`apt-cache policy <paquet>`, comparée à la
-   dernière version publiée) : liste de `packages/apt.sh`.
-2. **Dépôt apt de l'éditeur** : fichier dans `packages/apt/`, appel à `add_repository` et liste
-   de `packages/apt.sh`.
-3. **Outil en ligne de commande ou langage** : mise, `packages/mise.toml`. Le registre d'abord
-   (`mise registry <outil>`), sinon un backend : `cargo:`, `go:`, `npm:`, `pypi:`,
-   `github:<owner>/<repo>`. `"latest"`, ou la version majeure là où ça compte (`node = "24"`).
-4. **Appli graphique sur Flathub** : `packages/flatpak.sh`. De préférence une appli vérifiée ;
-   sinon, le dire.
-5. **`.deb` publié sur les releases GitHub, sans dépôt** : deb-get, `packages/deb-get.sh`. Son
-   catalogue s'il a le paquet et prend la bonne version, sinon une définition locale dans
-   `packages/deb-get/<paquet>`.
+1. **Ubuntu package**, if its version is recent enough (`apt-cache policy <package>`, against
+   the latest release): the list of `packages/apt.sh`.
+2. **Vendor apt repository**: a file in `packages/apt/`, an `add_repository` call, and the list
+   of `packages/apt.sh`.
+3. **Command-line tool or language**: mise, `packages/mise.toml`. The registry first
+   (`mise registry <tool>`), then a backend: `cargo:`, `go:`, `npm:`, `pypi:`,
+   `github:<owner>/<repo>`. `"latest"`, or the major version where it matters (`node = "24"`).
+4. **Desktop application on Flathub**: `packages/flatpak.sh`. Preferably a verified app;
+   otherwise, say so.
+5. **`.deb` published on GitHub releases, without a repository**: deb-get,
+   `packages/deb-get.sh`. Its catalog if it has the package and picks the right version,
+   otherwise a local definition in `packages/deb-get/<package>`.
 
-Aucun ne convient (`curl | sh`, AppImage, binaire copié à la main) : demande avant d'installer,
-en expliquant pourquoi.
+None fits (`curl | sh`, AppImage, binary copied by hand): ask before installing, and explain
+why.
 
-## 2. Vérifier avant d'écrire
+## 2. Check before writing
 
-Fichiers téléchargés dans `~/.claude/tmp/`, supprimés à la fin.
+Download files to `~/.claude/tmp/`, and delete them at the end.
 
-- **Dépôt apt :**
-  - L'URL de la clé vient de la doc officielle de l'éditeur. Télécharge la clé et l'`InRelease`
-    de la suite : `gpgv --keyring <clé> InRelease` doit répondre « Good signature » (une clé
-    armurée passe d'abord par `gpg --dearmor`). Le paquet doit figurer dans l'index `Packages`.
-  - Suite : `resolute` si l'éditeur la publie, sinon la sienne (`stable`, `any`, `xenial`…).
-  - Nom du fichier : celui des instructions ou du paquet de l'éditeur, pour remplacer un fichier
-    déjà là plutôt qu'en ajouter un second. apt refuse deux entrées pour le même dépôt avec des
-    `Signed-By` différents, et `apt-get update` échoue.
-  - Regarde si le paquet réécrit sa source lui-même :
-    `grep -lE 'sources.list|trusted.gpg' /var/lib/dpkg/info/<paquet>.postinst /etc/cron.daily/*`.
-    Si oui, garde son nom et son format (`.list` pour dropbox, slack et spotify), sinon deb822
+- **apt repository:**
+  - The key URL comes from the vendor's official documentation. Download the key and the
+    `InRelease` of the suite: `gpgv --keyring <key> InRelease` must answer "Good signature"
+    (dearmor an armored key with `gpg --dearmor` first). The package must be in the
+    `Packages` index.
+  - Suite: `resolute` if the vendor publishes it, otherwise its own (`stable`, `any`,
+    `xenial`…).
+  - File name: the one of the vendor's instructions or package, so it replaces a file already
+    there instead of adding a second one. apt refuses two entries for the same repository with
+    different `Signed-By`, and `apt-get update` fails.
+  - Check whether the package rewrites its source itself:
+    `grep -lE 'sources.list|trusted.gpg' /var/lib/dpkg/info/<package>.postinst /etc/cron.daily/*`.
+    If so, keep its name and format (`.list` for dropbox, slack and spotify), otherwise deb822
     (`.sources`).
-  - La clé va dans `/etc/apt/keyrings/`, en `.asc` si elle est armurée, en `.gpg` si elle est
-    binaire : apt choisit le format d'après l'extension. Exception : un paquet qui met lui-même
-    ses nouvelles clés dans `/etc/apt/trusted.gpg.d` (Slack, Spotify). Sa source n'a alors pas
-    de `signed-by`, et la clé de départ va dans `trusted.gpg.d`.
-- **deb-get :**
-  - Le nom exact de l'asset : `gh api repos/<owner>/<repo>/releases/latest --jq '.assets[].name'`.
-    Si l'API redirige, le dépôt a déménagé : prends le nouveau nom.
-  - Le catalogue : `https://raw.githubusercontent.com/wimpysworld/deb-get/main/01-main/packages/<paquet>`.
-    Une définition locale suit le modèle de celles de `packages/deb-get/` (`DEFVER`, `URL`,
+  - The key goes to `/etc/apt/keyrings/`, as `.asc` if armored, `.gpg` if binary: apt picks the
+    format from the extension. Exception: a package that puts its new keys in
+    `/etc/apt/trusted.gpg.d` itself (Slack, Spotify). Its source then has no `signed-by`, and
+    the initial key goes to `trusted.gpg.d`.
+- **deb-get:**
+  - The exact asset name: `gh api repos/<owner>/<repo>/releases/latest --jq '.assets[].name'`.
+    If the API redirects, the repository moved: use the new name.
+  - The catalog: `https://raw.githubusercontent.com/wimpysworld/deb-get/main/01-main/packages/<package>`.
+    A local definition follows those of `packages/deb-get/` (`DEFVER`, `URL`,
     `VERSION_PUBLISHED`, `PRETTY_NAME`, `WEBSITE`, `SUMMARY`).
-  - Simule l'extraction de `URL` et de `VERSION_PUBLISHED` sur le JSON de la release.
-  - Lis `Package` et `Version` du `.deb` sans tout télécharger : `curl -fsSL -r 0-200000`, puis
-    `ar p <deb> control.tar.zst | zstd -dc | tar -xO ./control` (ou `.xz`, `.gz`). `Package`
-    doit être le nom de la définition, et `VERSION_PUBLISHED` ne doit pas dépasser `Version`
-    (au sens de `dpkg --compare-versions`) : sinon deb-get le réinstalle à chaque `upgrade`.
-- **Flathub :** l'identifiant, et son statut avec
+  - Simulate the extraction of `URL` and `VERSION_PUBLISHED` on the JSON of the release.
+  - Read `Package` and `Version` of the `.deb` without downloading all of it:
+    `curl -fsSL -r 0-200000`, then `ar p <deb> control.tar.zst | zstd -dc | tar -xO ./control`
+    (or `.xz`, `.gz`). `Package` must be the name of the definition, and `VERSION_PUBLISHED`
+    must not be greater than `Version` (as `dpkg --compare-versions` sees it): otherwise
+    deb-get reinstalls it on every `upgrade`.
+- **Flathub:** the app ID, and its status with
   `curl -fsS https://flathub.org/api/v2/verification/<id>/status`.
-- **mise :** le nom dans le registre, et pour `github:` l'asset (`asset_pattern`) quand la
-  release en publie plusieurs.
+- **mise:** the name in the registry, and for `github:` the asset (`asset_pattern`) when the
+  release ships several.
 
-## 3. Écrire
+## 3. Write
 
-- Un logiciel par ligne, jamais plusieurs sur une même ligne.
-- `apt.sh` : le tableau `packages`, groupé par thème, trié par ordre alphabétique dans chaque
-  groupe. Chaque paquet a sa description en bout de ligne : ce que c'est, et qui en a besoin
-  quand ce n'est pas évident (« vhs records with it »). Aligne la description sur celles de son
-  groupe. Un paquet qui ne rentre dans aucun groupe : demande plutôt que d'en créer un pour lui.
+- One piece of software per line, never several on the same line.
+- `apt.sh`: the `packages` array, grouped by theme, sorted alphabetically within each group.
+  Each package has its description at the end of the line: what it is, and what needs it when
+  that isn't obvious ("vhs records with it"). Align the description with the others of its
+  group. A package that fits no group: ask instead of creating a group for it.
 
   ```bash
   # Search in the terminal
@@ -84,37 +87,38 @@ Fichiers téléchargés dans `~/.claude/tmp/`, supprimés à la fin.
   fd-find         # Simpler, faster find: fdfind, aliased to fd
   ```
 
-- Les autres listes (`deb-get.sh`, `flatpak.sh`), triées, avec `\` en fin de ligne :
+- The other lists (`deb-get.sh`, `flatpak.sh`), sorted, with `\` at the end of each line:
 
   ```bash
   deb-get install \
       appimagelauncher \
       balena-etcher
   ```
-- Les scripts restent idempotents : relancer `install.sh` ne casse rien et n'installe rien en
-  double.
-- Rien ne se met à jour tout seul : ni timer, ni cron, ni mise à jour automatique. Les mises à
-  jour passent par `bin/maj`, lancé à la main : un nouveau canal doit y être ajouté.
-- Un nouveau script de `packages/` est appelé par la fonction `install_packages` de
-  `install.sh`.
-- `packages/` ne contient que les installeurs. La config d'un logiciel va dans un dossier à son
-  nom à la racine du repo (`dnsmasq/`, `php/`), posée par une fonction `setup_<logiciel>` de
-  `install.sh`, appelée par `main` (un groupe aussi : `setup_docker`). Un fichier lu par un
-  démon passe par `install_system_config` : copié, pas lié, car `$HOME` est en 750 et un démon
-  qui ne tourne pas en root ne lit pas le repo ; le service ne redémarre que si le fichier a
-  changé.
-- Un logiciel qui remplace une installation manuelle : la suppression de l'ancienne va dans
-  `packages/migrate.sh`, que l'utilisateur relit et lance lui-même.
-- Retirer un logiciel : l'enlever de sa liste. Ne le désinstalle qu'avec son accord.
 
-## 4. Installer
+- The scripts stay idempotent: running `install.sh` again breaks nothing and installs nothing
+  twice.
+- Nothing updates on its own: no timer, no cron, no automatic update. Updates go through
+  `bin/maj`, run by hand: a new channel must be added to it.
+- A new script of `packages/` is called by the `install_packages` function of `install.sh`.
+- `packages/` only holds the installers. The config of a piece of software goes to a folder
+  named after it at the root of the repository (`dnsmasq/`, `php/`), set up by a
+  `setup_<software>` function of `install.sh`, called by `main` (a group too: `setup_docker`).
+  A file read by a daemon goes through `install_system_config`: copied, not linked, because
+  `$HOME` is 750 and a daemon that doesn't run as root can't read the repository; the service
+  only restarts when the file changed.
+- Software that replaces a manual install: give the user the commands that remove the old
+  one, to review and run themselves.
+- Removing a piece of software: take it out of its list. Only uninstall it with the user's
+  agreement.
 
-Lance seulement le script du canal, depuis le repo : `packages/apt.sh`, `packages/deb-get.sh`,
-`packages/flatpak.sh` ou `packages/mise.sh`. Les trois premiers appellent `sudo` : si
-`sudo -n true` échoue, donne la commande à l'utilisateur, avec le préfixe `!`. Vérifie ensuite que le logiciel répond (`--version`, `dpkg -s`, `flatpak info`,
-`mise which`).
+## 4. Install
 
-## 5. Rendre compte
+Run only the script of the channel, from the repository: `packages/apt.sh`,
+`packages/deb-get.sh`, `packages/flatpak.sh` or `packages/mise.sh`. The first three call
+`sudo`: if `sudo -n true` fails, give the command to the user, with the `!` prefix. Then check
+that the software answers (`--version`, `dpkg -s`, `flatpak info`, `mise which`).
 
-Le canal choisi et pourquoi, ce qui a été vérifié, le diff. Ne commite pas sans demande
-explicite : propose un message au format du repo, `[packages] add <logiciel>`.
+## 5. Report
+
+The channel picked and why, what was checked, the diff. Don't commit without an explicit
+request: suggest a message in the format of the repository, `[packages] add <software>`.

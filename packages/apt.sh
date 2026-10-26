@@ -164,6 +164,7 @@ add_repository slack.list https://packagecloud.io/slacktechnologies/slack/gpgkey
 add_repository spotify.list https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc /etc/apt/trusted.gpg.d/spotify.asc
 add_repository symfony-cli.sources https://dl.cloudsmith.io/public/symfony/stable/gpg.99CEF8A62216B73D.key /etc/apt/keyrings/symfony-cli.asc
 add_repository virtualbox.sources https://www.virtualbox.org/download/oracle_vbox_2016.asc /etc/apt/keyrings/virtualbox.asc
+# The code package rewrites this file on every upgrade, with its own copy of the key
 add_repository vscode.sources https://packages.microsoft.com/keys/microsoft.asc /etc/apt/keyrings/vscode.asc
 
 sudo apt-get update
