@@ -17,15 +17,6 @@ if [[ -d $HOME/.yarn/bin/ ]]; then
     PATH="$HOME/.yarn/bin:$PATH"
 fi
 
-if [[ -d /usr/local/go/bin ]]; then
-    PATH="/usr/local/go/bin:$PATH"
-fi
-
-if [[ -d $HOME/go ]]; then
-    export GOPATH=$HOME/go
-    PATH="$GOPATH/bin:$PATH"
-fi
-
 if [[ -d $HOME/.cargo ]]; then
     . "$HOME/.cargo/env"
 fi
@@ -46,23 +37,6 @@ fi
 if [ -f $HOME/.ripgreprc ] ; then
     export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 fi
-
-# pnpm
-export PNPM_HOME="/home/gregoire/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Gcloud
 if [ -f '/usr/share/google-cloud-sdk/completion.bash.inc' ]; then . '/usr/share/google-cloud-sdk/completion.bash.inc'; fi
@@ -127,6 +101,11 @@ PROMPT_COMMAND='_set_exit_color;history -a;_truncate_pwd;PS1="$EXITCOLOR$NoColor
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
 #PS1='\[\e[01;31m\]\u@\H \[\e[00;32m\]\w\[\e[0m\] ' # simple - prod
 
+# Must come after PROMPT_COMMAND is set: mise adds its hook to it
+if [[ `which mise` ]]; then
+    eval "$(mise activate bash)"
+fi
+
 if [[ `which dircolors` ]]; then
     if [ -f ~/.dir_colors ]; then
         eval `dircolors --bourne-shell ~/.dir_colors`
@@ -162,9 +141,6 @@ man() {
 export PATH="$PATH:/home/gregoire/.lmstudio/bin"
 # End of LM Studio CLI section
 
-
-# opencode
-export PATH=/home/gregoire/.opencode/bin:$PATH
 
 # >>>> Vagrant command completion (start)
 . /opt/vagrant/embedded/gems/gems/vagrant-2.4.9/contrib/bash/completion.sh

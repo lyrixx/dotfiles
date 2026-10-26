@@ -1,0 +1,13 @@
+# The catalog's definition skips alpha and beta releases, so it would install
+# 2.2.0 from 2020. Only the 3.0 betas are built for current Ubuntu, and GitHub
+# marks the latest of them as the latest release.
+DEFVER=1
+get_github_releases "TheAssassin/AppImageLauncher" "latest"
+if [ "${ACTION}" != prettylist ]; then
+    URL=$(grep -m 1 "browser_download_url.*_amd64\.deb\"" "${CACHE_FILE}" | cut -d '"' -f 4)
+    # appimagelauncher_3.0.0-beta-2-gha287.96cb937_amd64.deb is version 3.0.0-beta-2-gha287~96cb937
+    VERSION_PUBLISHED=$(cut -d _ -f 2 <<< "${URL##*/}" | sed -E 's/\.([^.]+)$/~\1/')
+fi
+PRETTY_NAME="AppImageLauncher"
+WEBSITE="https://github.com/TheAssassin/AppImageLauncher"
+SUMMARY="Integrates AppImages into the application launcher."

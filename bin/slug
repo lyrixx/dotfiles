@@ -1,17 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-// # Installation instruction
-// # Clone the symfony/string repository
-// $ git clone git@github.com:symfony/string $HOME/dev/github.com/symfony/string
-// $ cd $HOME/dev/github.com/symfony/string
-// # Install the dependencies
-// $ composer up
-// # Then create a file slug.php with the content of this file.
-// # Make it executable
-// $ chmod +x slug.php
-// # Create a symlink in your $PATH with
-// $ ln -s $HOME/dev/github.com/symfony/string/slug.php $HOME/.local/bin/slug
+// Needs a clone of symfony/string with its dependencies: install.sh sets it up.
 
 // # Usage
 // $ echo "Hello my little 🐰" | slug

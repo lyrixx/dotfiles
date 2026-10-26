@@ -1,0 +1,32 @@
+# Command-line tools, linked to ~/.config/mise/config.toml by mise.sh.
+# `mise install` installs them; bin/maj upgrades them within the versions below.
+
+[settings]
+# Nothing installs or updates on its own: only install.sh and bin/maj do.
+auto_install = false
+# yarn and pnpm come from Corepack, shipped with node 24
+node.corepack = true
+
+[tools]
+"cargo:asciinema" = "latest"
+"cargo:cargo-hack" = "latest"
+"cargo:cross" = "latest"
+ctop = "latest"
+dive = "latest"
+"github:lyrixx/nativella" = { version = "latest", asset_pattern = "nativella-linux-x86_64", bin = "nativella" }
+glab = "latest"
+go = "latest"
+"go:github.com/boyter/scc/v3" = "latest"
+"go:golang.org/x/tools/cmd/goimports" = "latest"
+"go:golang.org/x/tools/gopls" = "latest"
+llmfit = "latest"
+mkcert = "latest"
+node = "24"
+"npm:diff2html-cli" = "latest"
+opencode = "latest"
+"pypi:huggingface_hub" = "latest"
+rtk = "latest"
+tauri-cli = "latest"
+uv = "latest"
+vhs = "latest"
+zizmor = "latest"
