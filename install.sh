@@ -76,6 +76,7 @@ function setup_claude_code {
     mkdir -p ~/.claude/skills
 
     ln -sf $DOTFILES/claude/CLAUDE.md     ~/.claude/CLAUDE.md
+    ln -sfn $DOTFILES/claude/hooks        ~/.claude/hooks
     ln -sfn $DOTFILES/claude/rules        ~/.claude/rules
     local skill
     for skill in $DOTFILES/claude/skills/*/; do

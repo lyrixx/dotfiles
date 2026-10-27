@@ -1,9 +1,14 @@
 {
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
   "permissions": {
     "allow": [
       "Bash(bash --version)",
       "Bash(castor *)",
-      "Bash(composer *)",
+      "Bash(composer show *)",
       "Bash(corepack --version)",
       "Bash(corepack use *)",
       "Bash(docker kill *)",
@@ -22,16 +27,31 @@
       "Bash(xargs cat)",
       "Bash(yarn *)",
       "Read(//home/gregoire/dev/github.com/**)",
-      "Skill(code-review:*)",
       "Skill(code-review)",
-      "Skill(update-config:*)",
+      "Skill(code-review:*)",
       "Skill(update-config)",
+      "Skill(update-config:*)",
       "WebFetch(domain:developers.google.com)",
       "WebFetch(domain:github.com)"
     ],
+    "defaultMode": "auto",
     "additionalDirectories": [
-      "/home/gregoire/.claude",
-      "/tmp"
+      "/home/gregoire/.claude"
+    ]
+  },
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-claude-attribution.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
@@ -40,12 +60,16 @@
   "effortLevel": "xhigh",
   "modelSettings": {
     "claude-opus-5-5": {
-      "effortLevel": "high"
+      "effortLevel": "xhigh"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "xhigh"
     }
   },
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
   "theme": "auto",
-  "attribution": {
-    "commit": "",
-    "pr": ""
-  }
+  "autoCompactEnabled": true,
+  "switchModelsOnFlag": true,
+  "remoteControlAtStartup": true
 }

@@ -16,6 +16,7 @@ packages=(
     build-essential # C compiler: mise builds the cargo: tools with it
     curl            # Downloads the keys below and the installers of install.sh
     git             # Clones the Symfony components of install.sh
+    jq              # Parses the input of the Claude Code hooks, in claude/hooks
     mise            # Installs the tools of mise.toml
 
     # PHP. The php- packages follow the PHP version of Ubuntu, unlike php8.5-.

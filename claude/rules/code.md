@@ -24,6 +24,12 @@ utilise la même orthographe. Exception : quand le nom suit une convention déj�
 - Pas d'array associatif fourre-tout qui traverse les couches : un objet typé et immuable.
 - Pas de paramètre booléen qui fait bifurquer une méthode : deux méthodes explicites.
 
+## Commentaires
+
+Jamais de commentaire ni de docblock qui paraphrase le code. On ne garde que ce que le code ne
+peut pas dire : une unité, une raison, un piège. Et d'abord, le dire par le nom : `$priceInCents`
+plutôt que `$price // in cents`.
+
 ## Robuste, mais pas de code pour l'impossible
 
 La frontière est mince. Le test : peut-on décrire le scénario concret qui mène à cette branche ?
