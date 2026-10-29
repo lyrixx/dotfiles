@@ -2,6 +2,8 @@
 # ghostty +list-themes
 theme = Monokai Soda
 
+# The monospace font of GNOME, the one of Ptyxis
+font-family = Ubuntu Sans Mono
 font-size = 11
 
 # Ghostty toggles fullscreen on it: Claude Code inserts a newline with it
