@@ -77,6 +77,7 @@ packages=(
     redis-tools     # redis-cli and redis-benchmark, without the Redis server
 
     # Terminal
+    ghostty         # GPU-accelerated terminal emulator
     tmux            # Terminal multiplexer
     tree            # Prints a directory tree
     ttyd            # Shares a terminal in the browser: vhs records with it
@@ -155,6 +156,10 @@ add_repository github-cli.list https://cli.github.com/packages/githubcli-archive
 add_repository google-chrome.sources https://dl.google.com/linux/linux_signing_key.pub /etc/apt/keyrings/google-chrome.asc
 add_repository hashicorp.list https://apt.releases.hashicorp.com/gpg /etc/apt/keyrings/hashicorp.asc
 add_repository mise.sources https://mise.jdx.dev/gpg-key.pub /etc/apt/keyrings/mise.asc
+# Ghostty: the PPA of https://ghostty.org/docs/install/binary#debian-and-ubuntu,
+# Ubuntu ships a snapshot from before 1.3.0. The file and key names are those of
+# add-apt-repository, the key is the one Launchpad gives for the PPA.
+add_repository mkasberg-ubuntu-ghostty-ubuntu-resolute.sources 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x0721FDF5FECB88DC6920361657C8EF455CEAE491' /etc/apt/keyrings/mkasberg-ubuntu-ghostty-ubuntu.asc
 add_repository ngrok.list https://ngrok-agent.s3.amazonaws.com/ngrok.asc /etc/apt/keyrings/ngrok.asc
 add_repository signal-desktop.sources https://updates.signal.org/desktop/apt/keys.asc /etc/apt/keyrings/signal-desktop.asc
 # Slack and Spotify put their new keys in /etc/apt/trusted.gpg.d themselves:
