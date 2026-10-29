@@ -1,0 +1,12 @@
+<div class="table-wrap">
+  <table class="vig-table">
+    <thead>
+      <tr><th>Type</th><th>Point</th><th>État</th></tr>
+    </thead>
+    <tbody>
+      {% for row in section.rows %}
+        <tr{% if row.done %} class="done"{% endif %}><td>{{ include('_chips.html.twig', {chips: [row.type]}) }}</td><td>{{ row.text|md_inline }}{% if row.notes %} {% endif %}{{ include('_notes.html.twig', {notes: row.notes, tag: 'span'}) }}</td><td class="state-cell">{{ include('_chips.html.twig', {chips: row.status}) }}{% if row.detail %}<span class="state-detail">{{ row.detail|md_inline }}</span>{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

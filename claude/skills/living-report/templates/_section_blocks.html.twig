@@ -1,0 +1,42 @@
+{% for block in section.blocks %}
+    <div class="stack"{% if block.id %} id="{{ block.id }}"{% endif %}>
+      <h3>{{ block.title|typo }}</h3>
+      {% if block.text %}
+        {{ block.text|md }}
+      {% endif %}
+      {% if block.progress %}
+        <p class="progress-done"><span class="chip ok">Fait</span> <span>{{ block.progress|md_inline }}</span></p>
+      {% endif %}
+      {% if block.todo %}
+        {% if block.todoTitle %}
+          <h4 class="todo-title">{{ block.todoTitle|typo }}</h4>
+        {% endif %}
+        <ul class="watchlist todo">
+          {% for item in block.todo %}
+            <li{% if item.done %} class="done"{% endif %}>{{ include('_chips.html.twig', {chips: [item.chip]}) }}<span>{{ item.text|md_inline }}</span></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if block.cards %}
+        <div class="cards">
+          {% for card in block.cards %}
+            {{ include('_card.html.twig') }}
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if block.table %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>{% for column in block.table.columns %}<th>{{ column|typo }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+              {% for row in block.table.rows %}
+                <tr>{% for cell in row %}<td>{{ cell|md_inline }}</td>{% endfor %}</tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+{% endfor %}

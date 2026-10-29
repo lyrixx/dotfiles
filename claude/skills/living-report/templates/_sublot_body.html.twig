@@ -1,0 +1,5 @@
+{%- if sublot.statusChips or sublot.statusText -%}
+  <p class="state">{{ include('_chips.html.twig', {chips: sublot.statusChips}) }}{% if sublot.statusText %}<span>{{ sublot.statusText|md_inline }}</span>{% endif %}</p>
+{%- endif -%}
+{{ sublot.text|md }}
+{{- include('_notes.html.twig', {notes: sublot.notes}) -}}

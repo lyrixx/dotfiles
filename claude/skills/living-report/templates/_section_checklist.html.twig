@@ -1,0 +1,24 @@
+<ol class="checklist">
+  {% for item in section.items %}
+    <li class="item{{ item.done ? ' done' }}" id="{{ item.id }}">
+      <input type="checkbox" id="{{ item.id }}-check" data-group="{{ section.group }}"{% if item.done %} checked disabled{% endif %} aria-label="{{ section.group == 'decision' ? 'Décidé' : 'Fait' }}">
+      <div class="item-body">
+        <p class="item-title">{% if item.num %}<span class="dnum">{{ item.num }}</span> {% endif %}{{ item.title|md_inline }}</p>
+        {% if item.text %}
+          {{ item.text|md }}
+        {% endif %}
+        {% if item.options %}
+          <ul class="options">
+            {% for option in item.options %}
+              <li>{{ option|md_inline }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        {% if item.reco %}
+          <p class="reco"><span class="reco-label">Reco</span><span>{{ item.reco|md_inline }}</span></p>
+        {% endif %}
+        {{ include('_notes.html.twig', {notes: item.notes}) }}
+      </div>
+    </li>
+  {% endfor %}
+</ol>

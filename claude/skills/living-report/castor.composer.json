@@ -1,0 +1,18 @@
+{
+    "name": "lyrixx/living-report",
+    "description": "Builds a living report (decisions, actions, PRs, vigilance points) from a YAML file.",
+    "type": "castor-project",
+    "require": {
+        "league/commonmark": "^2.10",
+        "symfony/yaml": "^8.1",
+        "twig/twig": "^3.30"
+    },
+    "autoload": {
+        "psr-4": {
+            "LivingReport\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

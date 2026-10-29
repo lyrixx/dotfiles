@@ -1,0 +1,28 @@
+<article class="card{{ card.done ? ' done' }}"{% if card.id %} id="{{ card.id }}"{% endif %}>
+  <div class="card-head">
+    <h3>{{ card.title|md_inline }}</h3>
+    {{ include('_chips.html.twig', {chips: card.headChips}) }}
+  </div>
+  {% if card.meta %}
+    <div class="meta">{% for meta in card.meta %}<span>{{ meta|md_inline }}</span>{% endfor %}</div>
+  {% endif %}
+  {% if card.text %}
+    {{ card.text|md }}
+  {% endif %}
+  {% if card.sublots %}
+    {% if card.hasNumberedSublots %}
+      <ol class="sublots">
+        {% for sublot in card.sublots %}
+          <li{% if sublot.done %} class="done"{% elseif sublot.dropped %} class="dropped"{% endif %}><span class="dnum">{{ sublot.num }}</span><div>{{ include('_sublot_body.html.twig') }}</div></li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <ul class="lot-list">
+        {% for sublot in card.sublots %}
+          <li{% if sublot.done %} class="done"{% elseif sublot.dropped %} class="dropped"{% endif %}>{{ include('_sublot_body.html.twig') }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+  {{ include('_notes.html.twig', {notes: card.notes}) }}
+</article>

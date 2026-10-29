@@ -1,0 +1,3 @@
+{%- for note in notes -%}
+  <{{ tag|default('p') }} class="done-note"><span class="done-label">{{ note.label|typo }}</span><span>{{ note.text|md_inline }}</span></{{ tag|default('p') }}>
+{%- endfor -%}

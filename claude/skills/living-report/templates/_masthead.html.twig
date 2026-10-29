@@ -1,0 +1,57 @@
+<header class="masthead">
+    <p class="eyebrow">{% if report.eyebrow %}{{ report.eyebrow|typo }} · {% endif %}mis à jour le {{ updated_at|date_long }}</p>
+    <h1>{{ report.title|typo }}</h1>
+    {% if report.lede %}
+      <p class="lede">{{ report.lede|md_inline }}</p>
+    {% endif %}
+    {% set status = report.status %}
+    {% if status.done or status.next or status.waiting %}
+      <div class="status" aria-label="État au {{ updated_at|date_day_month }}">
+        {% if status.done %}
+          <div class="s-ok">
+            <span class="chip ok">Fait</span>
+            <p>{{ status.done|md_inline }}</p>
+          </div>
+        {% endif %}
+        {% if status.next %}
+          <div class="s-next">
+            <span class="chip info">Prochaine étape</span>
+            <p>{{ status.next|md_inline }}</p>
+          </div>
+        {% endif %}
+        {% if status.waiting %}
+          <div class="s-wait">
+            <span class="chip warn">En attente</span>
+            <ul>
+              {% for waiting in status.waiting %}
+                <li>{{ waiting|md_inline }}</li>
+              {% endfor %}
+            </ul>
+            {% if status.more %}
+              <a class="more" href="{{ status.more }}">Le détail</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+    {% if report.tally %}
+      <ul class="tally" aria-label="Résumé">
+        {% for entry in report.tally %}
+          <li><a href="#{{ entry.section.id }}"><strong>{{ entry.count }}</strong> {{ entry.label|typo }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if report.history %}
+      <details class="history">
+        <summary>L'historique, {{ date_range(report.history|first.date, report.history|last.date) }}</summary>
+        <ol class="timeline">
+          {% for entry in report.history %}
+            <li><time datetime="{{ entry.date|date('Y-m-d') }}">{{ entry.date|date_short }}</time><span>{{ entry.text|md_inline }}</span></li>
+          {% endfor %}
+        </ol>
+      </details>
+    {% endif %}
+    {% if report.aside %}
+      <p class="aside">{{ report.aside|md_inline }}</p>
+    {% endif %}
+  </header>

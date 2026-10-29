@@ -1,0 +1,4 @@
+{%- for chip in chips -%}
+  {%- set link = chip_link(chip) -%}
+  {%- if link %}<a href="{{ link }}">{% endif %}<span class="chip {{ chip.tone.value }}">{{ chip.text|typo }}</span>{% if link %}</a>{% endif -%}
+{%- endfor -%}
