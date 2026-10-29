@@ -2,5 +2,7 @@
 # ghostty +list-themes
 theme = Monokai Soda
 
+font-size = 11
+
 # Ghostty toggles fullscreen on it: Claude Code sends the queued messages with it
 keybind = ctrl+enter=unbind
