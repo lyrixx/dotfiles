@@ -4,6 +4,9 @@
     "pr": "",
     "sessionUrl": false
   },
+  "env": {
+    "EDITOR": "code --wait"
+  },
   "permissions": {
     "allow": [
       "Bash(bash --version)",
