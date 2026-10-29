@@ -4,5 +4,9 @@ theme = Monokai Soda
 
 font-size = 11
 
-# Ghostty toggles fullscreen on it: Claude Code sends the queued messages with it
+# Ghostty toggles fullscreen on it: Claude Code inserts a newline with it
 keybind = ctrl+enter=unbind
+
+# Over SSH, installs the terminfo of Ghostty on the server, or falls back to
+# TERM=xterm-256color: otherwise Backspace and clear break there
+shell-integration-features = ssh-terminfo,ssh-env
