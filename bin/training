@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# Switches Ghostty and VS Code to a light theme for a training session, readable
+# on a projector, and back. Claude Code follows the background of the terminal
+# with its auto theme.
+
+set -euo pipefail
+
+CONFIG=${XDG_CONFIG_HOME:-$HOME/.config}
+# Included by ghostty/config.ghostty, outside this repository: the repository
+# stays clean
+GHOSTTY_TRAINING_CONFIG=$CONFIG/ghostty/training.ghostty
+VSCODE_SETTINGS=$CONFIG/Code/User/settings.json
+# The VS Code theme to put back after the training session
+VSCODE_THEME_BACKUP=${XDG_STATE_HOME:-$HOME/.local/state}/training/vscode-theme
+# Ghostty ships it, VS Code gets it from the github.github-vscode-theme extension
+LIGHT_THEME='GitHub Light Default'
+
+function main {
+    case ${1:-} in
+        on) training_on ;;
+        off) training_off ;;
+        *)
+            echo 'Usage: training on|off' >&2
+            exit 1
+            ;;
+    esac
+    reload_ghostty
+}
+
+function training_on {
+    # Already on: the backup holds the theme from before, keep it
+    if [[ ! -f $VSCODE_THEME_BACKUP ]]; then
+        local theme
+        theme=$(vscode_theme)
+        if [[ -z $theme ]]; then
+            echo "No workbench.colorTheme in $VSCODE_SETTINGS: pick a theme in VS Code first." >&2
+            exit 1
+        fi
+        mkdir -p "$(dirname "$VSCODE_THEME_BACKUP")"
+        echo "$theme" > "$VSCODE_THEME_BACKUP"
+    fi
+    set_vscode_theme "$LIGHT_THEME"
+    echo "theme = $LIGHT_THEME" > "$GHOSTTY_TRAINING_CONFIG"
+}
+
+function training_off {
+    if [[ -f $VSCODE_THEME_BACKUP ]]; then
+        set_vscode_theme "$(cat "$VSCODE_THEME_BACKUP")"
+        rm "$VSCODE_THEME_BACKUP"
+    fi
+    rm -f "$GHOSTTY_TRAINING_CONFIG"
+}
+
+# settings.json has comments and trailing commas: jq can't read it. VS Code
+# applies the change as soon as the file changes.
+function vscode_theme {
+    sed -n 's|^ *"workbench.colorTheme": "\([^"]*\)".*|\1|p' "$VSCODE_SETTINGS"
+}
+
+function set_vscode_theme {
+    sed -i "s|^\( *\"workbench.colorTheme\": \)\"[^\"]*\"|\1\"$1\"|" "$VSCODE_SETTINGS"
+}
+
+# The action of Ctrl+Shift+, in every window. Only when Ghostty runs: D-Bus
+# would start it otherwise, and it reads its config when it starts anyway.
+function reload_ghostty {
+    if pgrep -x ghostty >/dev/null; then
+        gdbus call --session --dest com.mitchellh.ghostty --object-path /com/mitchellh/ghostty \
+            --method org.gtk.Actions.Activate reload-config [] {} >/dev/null
+    fi
+}
+
+main "$@"

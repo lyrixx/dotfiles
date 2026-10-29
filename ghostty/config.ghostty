@@ -12,3 +12,7 @@ keybind = ctrl+enter=unbind
 # Over SSH, installs the terminfo of Ghostty on the server, or falls back to
 # TERM=xterm-256color: otherwise Backspace and clear break there
 shell-integration-features = ssh-terminfo,ssh-env
+
+# Written by bin/training during a training session, outside this
+# repository. Loaded last, it overrides the theme above.
+config-file = ?training.ghostty
