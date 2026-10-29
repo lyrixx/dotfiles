@@ -1,0 +1,6 @@
+# The colors of Ptyxis, the terminal before Ghostty. To try others:
+# ghostty +list-themes
+theme = Monokai Soda
+
+# Ghostty toggles fullscreen on it: Claude Code sends the queued messages with it
+keybind = ctrl+enter=unbind

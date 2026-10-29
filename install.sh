@@ -25,6 +25,7 @@ function main {
     setup_dnsmasq
     setup_docker
     setup_fzf
+    setup_ghostty
     setup_php
 }
 
@@ -120,6 +121,16 @@ function setup_docker {
 function setup_fzf {
     title 'Setup fzf'
     fzf --bash > ~/.fzf.bash
+}
+
+function setup_ghostty {
+    title 'Setup Ghostty: the terminal of Alt+T'
+    mkdir -p ~/.config/ghostty
+    ln -sf $DOTFILES/ghostty/config.ghostty ~/.config/ghostty/config.ghostty
+    # GNOME runs xdg-terminal-exec on this shortcut. It opens the first terminal
+    # listed in ~/.config, before the Ptyxis of Ubuntu in /usr/share/xdg-terminal-exec.
+    ln -sf $DOTFILES/ghostty/xdg-terminals.list ~/.config/xdg-terminals.list
+    gsettings set org.gnome.settings-daemon.plugins.media-keys terminal "['<Alt>t']"
 }
 
 function setup_php {
