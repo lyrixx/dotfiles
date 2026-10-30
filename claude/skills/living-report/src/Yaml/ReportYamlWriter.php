@@ -13,6 +13,8 @@ final class ReportYamlWriter
     // "done: true" left at the bottom reads, in an excerpt, as the first line of the next element.
     private const array NAME_KEYS = ['id', 'num', 'pr', 'title', 'type', 'who'];
     private const array STATE_KEYS = ['done', 'dropped'];
+    // The links of a to-do follow its state: what closes it, what it waits for
+    private const array LINK_KEYS = ['after', 'done_when', 'not_before'];
     private const array TONES = ['crit', 'info', 'muted', 'ok', 'warn'];
 
     /**
@@ -115,8 +117,9 @@ final class ReportYamlWriter
     }
 
     /**
-     * The name keys, then the state, then the rest, each in the order of the file. Only an element
-     * has a boolean "done": the "done" of the status under the lede is a text.
+     * The name keys, then the state, then the links, then the rest, each in the order of the file.
+     * Only an element has a boolean "done" or links: the "done" of the status under the lede is a
+     * text.
      *
      * @param array<mixed> $map
      *
@@ -124,11 +127,11 @@ final class ReportYamlWriter
      */
     private static function stateFirst(array $map): array
     {
-        if (!\is_bool($map['done'] ?? $map['dropped'] ?? null)) {
+        if (!\is_bool($map['done'] ?? $map['dropped'] ?? null) && [] === array_intersect_key($map, array_flip(self::LINK_KEYS))) {
             return $map;
         }
 
-        return array_intersect_key($map, array_flip(self::NAME_KEYS)) + array_intersect_key($map, array_flip(self::STATE_KEYS)) + $map;
+        return array_intersect_key($map, array_flip(self::NAME_KEYS)) + array_intersect_key($map, array_flip(self::STATE_KEYS)) + array_intersect_key($map, array_flip(self::LINK_KEYS)) + $map;
     }
 
     private static function key(string $key): string

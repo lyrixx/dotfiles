@@ -7,7 +7,7 @@ use Castor\Attribute\AsOption;
 use Castor\Attribute\AsTask;
 use Castor\Exception\ProblemException;
 use LivingReport\Edit\EditableReport;
-use LivingReport\GitHub\PullRequestStates;
+use LivingReport\GitHub\GitHubStates;
 use LivingReport\OpenElements;
 use LivingReport\ReportBuilder;
 use LivingReport\ReportLoader;
@@ -52,7 +52,7 @@ function open(
     #[AsArgument(description: 'Absolute path of the YAML file')]
     string $file,
 ): void {
-    living_report([$file], static fn (): array => [new OpenElements()->render(new ReportLoader()->load($file))]);
+    living_report([$file], static fn (): array => [new OpenElements()->render(new ReportLoader()->load($file), today())]);
 }
 
 #[AsTask(namespace: 'report', description: 'Marks an element done, with an optional note, then builds the HTML')]
@@ -61,14 +61,13 @@ function done(
     string $file,
     #[AsArgument(description: 'D14, 1a, #1234, an id, or a piece of its title or text')]
     string $selector,
-    #[AsOption(description: '"Fait: Corrigé par #1218." (label "Fait" when none is given)')]
+    #[AsOption(description: '"Fait: Corrigé par #1218." (label "Fait" when none is given); the last paragraph of a to-do')]
     ?string $note = null,
 ): void {
     edit_report($file, static function (EditableReport $report) use ($selector, $note): array {
         $target = $report->find($selector);
-        $report->markDone($target, null === $note ? null : parse_note($note, 'Fait'));
 
-        return ['Fait : ' . $target->describe()];
+        return ['Fait : ' . $target->describe(), ...$report->markDone($target, null === $note ? null : parse_note($note, 'Fait'))];
     });
 }
 
@@ -105,16 +104,30 @@ function history(
     });
 }
 
-#[AsTask(name: 'sync-prs', namespace: 'report', description: 'Reads the state of every pull request of the report on GitHub, then builds the HTML')]
-function sync_prs(
+#[AsTask(namespace: 'report', description: 'Reads the pull requests and issues of the report on GitHub, closes the to-dos they finish, then builds the HTML')]
+function sync(
     #[AsArgument(description: 'Absolute path of the YAML file')]
     string $file,
 ): void {
     edit_report($file, static function (EditableReport $report) use ($file): array {
         $repository = Yaml::parseFile($file)['github'] ?? throw new RuntimeException('The report has no "github" repository.');
-        $changes = $report->applyPullRequestStates(new PullRequestStates()->fetch($repository, $report->pullRequestNumbers()));
+        $changes = $report->sync(new GitHubStates()->fetch($repository, $report->gitHubNumbers()));
 
-        return [] === $changes ? ['Rien n\'a changé sur GitHub.'] : ['Changé, relire la prose autour (meta, notes, historique, vigilances) :', ...array_map(static fn (string $change): string => '  - ' . $change, $changes)];
+        return [] === $changes ? ['Rien n\'a changé sur GitHub.'] : ['Ce qui a changé, ce que ça a fermé ou débloqué, puis la prose encore ouverte qui le cite, à relire (avec la meta de la carte et l\'historique) :', ...array_map(static fn (string $change): string => '  - ' . $change, $changes)];
+    });
+}
+
+#[AsTask(namespace: 'report', description: 'Lists where the prose still open says a text: what to review once it changed outside the report')]
+function mentions(
+    #[AsArgument(description: 'Absolute path of the YAML file')]
+    string $file,
+    #[AsArgument(description: '"log injector", "#1234", "D14"…, case aside')]
+    string $text,
+): void {
+    living_report([$file], static function () use ($file, $text): array {
+        $places = EditableReport::load($file)->mentions($text);
+
+        return [] === $places ? [\sprintf('Rien d\'ouvert ne dit « %s ».', $text)] : array_map(static fn (string $place): string => '  - ' . $place, $places);
     });
 }
 

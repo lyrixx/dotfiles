@@ -2,6 +2,7 @@
 
 namespace LivingReport;
 
+use LivingReport\Link\LinkedElement;
 use LivingReport\Model\BlockSection;
 use LivingReport\Model\Card;
 use LivingReport\Model\CardSection;
@@ -21,7 +22,7 @@ use LivingReport\Model\VigilanceSection;
  */
 final readonly class OpenElements
 {
-    public function render(Report $report): string
+    public function render(Report $report, \DateTimeImmutable $today): string
     {
         $lines = [];
         if (null !== $report->status->next) {
@@ -33,7 +34,7 @@ final readonly class OpenElements
 
         foreach ($report->sections as $section) {
             $count = $section->count();
-            $open = $this->section($section);
+            $open = $this->section($section, $today);
             $lines[] = '';
             $lines[] = $section->title . (null === $count ? '' : ' (' . $count . ')');
             array_push($lines, ...self::indent([] === $open ? ['Rien d\'ouvert.'] : $open));
@@ -45,10 +46,10 @@ final readonly class OpenElements
     /**
      * @return list<string>
      */
-    private function section(Section $section): array
+    private function section(Section $section, \DateTimeImmutable $today): array
     {
         return match (true) {
-            $section instanceof BlockSection => $this->blocks($section),
+            $section instanceof BlockSection => $this->blocks($section, $today),
             $section instanceof CardSection => $this->cards($section->cards()),
             $section instanceof ChecklistSection => array_values(array_map(
                 static fn (ChecklistItem $item): string => self::line($item->num ?? $item->id, $item->title),
@@ -64,13 +65,20 @@ final readonly class OpenElements
     /**
      * @return list<string>
      */
-    private function blocks(BlockSection $section): array
+    private function blocks(BlockSection $section, \DateTimeImmutable $today): array
     {
         $lines = [];
         foreach ($section->blocks as $block) {
             $open = [
                 ...array_map(
-                    static fn (TodoItem $item): string => self::line($item->who, $item->text),
+                    static fn (TodoItem $item): string => self::line(
+                        $item->who,
+                        $item->id,
+                        $item->text,
+                        [] === $item->after ? null : 'après ' . implode(', ', array_map(static fn (LinkedElement $element): string => $element->key, $item->after)),
+                        $item->waitsForDate($today) ? 'pas avant le ' . FrenchDate::dayMonth($item->notBefore) : null,
+                        [] === $item->doneWhen ? null : 'se ferme avec ' . implode(', ', $item->doneWhen),
+                    ),
                     array_filter($block->todo(), static fn (TodoItem $item): bool => !$item->done),
                 ),
                 ...$this->cards($block->cards),

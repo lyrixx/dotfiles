@@ -14,6 +14,11 @@ Le générateur calcule ce qu'on tenait avant à la main : les compteurs (résum
 faits, l'ordre (les ouverts d'abord, puis les faits, chaque groupe dans l'ordre du fichier), la date
 de mise à jour, les espaces insécables, et les liens vers GitHub et entre éléments.
 
+Les commandes tiennent les liens entre éléments : un « à faire » dit ce qui le ferme (une PR, une
+issue, une décision…) et ce qu'il attend, et les encadrés sous le chapeau pointent vers leur « à
+faire ». Ce qui se ferme, se débloque ou quitte un encadré change donc sans relecture
+(voir « Les liens »).
+
 ## Construire et publier
 
 ```bash
@@ -37,28 +42,41 @@ Les changements d'état passent par les commandes, la prose s'édite à la main 
 
 ```bash
 R="castor --castor-file=${CLAUDE_SKILL_DIR}/castor.php"
-$R report:sync-prs  <yaml>                                  # état de chaque PR lu sur GitHub
-$R report:done      <yaml> <sélecteur> [--note "Fait: …"]   # grise l'élément, ajoute la note
+$R report:sync      <yaml>                                  # PR et issues lues sur GitHub, « à faire » fermés
+$R report:done      <yaml> <sélecteur> [--note "Fait: …"]   # grise l'élément, ajoute la note (y compris à un « à faire »)
 $R report:note      <yaml> <sélecteur> "Mesuré: …"          # ajoute une note
 $R report:history   <yaml> "Tu merges #1234." [--date …]   # complète l'entrée du jour
 $R report:find      <yaml> <sélecteur>                      # montre l'élément avant une édition
 $R report:open      <yaml>                                  # prochaine étape, attentes, tout ce qui est ouvert
+$R report:mentions  <yaml> "log injector"                   # la prose encore ouverte qui le dit
 ```
 
 - L'état d'un élément et les compteurs se lisent avec `report:open` ou `report:find`, jamais dans
   un extrait du YAML (`grep`, `sed -n`, lecture partielle) : un `done: true` vu hors contexte se
   rattache vite à l'élément voisin, et un élément ouvert n'a souvent pas de ligne `done` du tout.
-- « Quoi faire maintenant », « où on en est » : `report:sync-prs` si des PR ont pu bouger, puis
-  `report:open`, et répondre à partir de sa sortie.
+- « Quoi faire maintenant », « où on en est » : `report:sync` si des PR ou des issues ont pu
+  bouger, puis `report:open`, et répondre à partir de sa sortie. Il montre l'id de chaque « à
+  faire », ce qui le ferme (« se ferme avec #1234 ») et ce qu'il attend (« après deploy »).
 
 - Sélecteur : `D14` ou `1a` (un numéro), `#1234` (la carte de la PR), un `id`, sinon un morceau
   du titre ou du texte. Plusieurs éléments correspondent : la commande les liste, sans rien changer.
 - Note : `"Étiquette: texte"`, deux-points collés à l'étiquette ; sans étiquette (le « : » français
   a une espace avant), « Fait » pour `done`, « Le <jour> » pour `note`.
-- `report:sync-prs` met à jour le `status` des cartes et les puces « Draft #N », « Ouverte #N »,
-  « Mergée #N », « Fermée #N » où qu'elles soient, puis liste ce qui a changé, avec la date du
-  merge : c'est la liste de la prose à relire (meta de la carte, vigilances, à faire, historique).
-  Une carte de PR ne se grise pas avec `done` : elle suit GitHub.
+- Une note sur un « à faire » devient le dernier paragraphe de son texte (« Fait : … ») : il n'a
+  pas de liste de notes.
+- `report:sync` met à jour le `status` des cartes et les puces « Draft #N », « Ouverte #N »,
+  « Mergée #N », « Fermée #N » où qu'elles soient, ferme les « à faire » que GitHub termine (voir
+  « Les liens »), puis liste ce qui a changé, avec la date du merge, ce que ça a fermé ou
+  débloqué, et tout ce qui le cite et reste ouvert : encadrés du chapeau, intros, blocs, à faire,
+  sous-lots, vigilances. Chaque ligne est à traiter, puis la meta de la carte et l'historique. Une
+  carte de PR ne se grise pas avec `done` : elle suit GitHub.
+- `report:done` dit aussi ce qu'il ferme ou débloque en cascade, et ce qu'il retire des encadrés.
+  « La prochaine étape est faite, à remplacer » : écrire la suivante dans `status.next`.
+- Un changement venu d'ailleurs (un déploiement, une décision prise en conversation) :
+  `report:mentions <yaml> "<ce qui a changé>"` liste la prose encore ouverte qui en parle, à
+  relire.
+- Une commande qui échoue affiche `[ERROR]` et sort en code 1 sans rien écrire : ne jamais masquer
+  sa sortie (`> /dev/null`, `|| true`), sinon l'élément reste ouvert sans qu'on le voie.
 - Chaque commande réécrit le YAML dans sa forme canonique, puis reconstruit le HTML : il ne reste
   qu'à publier. Une édition à la main se termine par `report:build`.
 - Forme canonique : `done` et `dropped` juste sous les clés qui nomment l'élément (`id`, `num`,
@@ -66,10 +84,13 @@ $R report:open      <yaml>                                  # prochaine étape, 
 
 À chaque mise à jour :
 
-1. `report:sync-prs` d'abord, puis vérifier le reste du monde extérieur (déploiements, issues).
-2. Relire le YAML entier : il est 3 à 4 fois plus court que le HTML, et chaque phrase doit rester
-   vraie à la date du jour. Réécrire ce qui a changé, au passé si c'est fini ; un élément qui a
-   beaucoup bougé se réécrit en son état actuel, l'historique condensé.
+1. `report:sync` d'abord, puis passer en `done` ce que la conversation a fini (un déploiement,
+   une vérification) : les liens font le reste.
+2. Relire ce que les commandes ont listé, et ce que `report:mentions` trouve pour chaque
+   changement venu d'ailleurs : chaque phrase doit rester vraie à la date du jour. Réécrire ce qui
+   a changé, au passé si c'est fini ; un élément qui a beaucoup bougé se réécrit en son état
+   actuel, l'historique condensé. Le YAML entier ne se relit que sur demande : il est long, et les
+   liens couvrent ce qu'on oubliait.
 3. Un élément fini ne disparaît jamais : `done` et une note qui dit ce qui s'est passé. Il passe en
    gris, après les ouverts.
 4. Publier le HTML.
@@ -84,9 +105,12 @@ key: export-commandes                             # préfixe des cases cochées 
 lede: La V1 de l'export…
 status:                                           # les trois encadrés sous le chapeau
   done: L'export CSV est en prod.
-  next: Paginer la requête (#1230).
+  next:                                           # un texte, ou lié à un « à faire » (voir Les liens)
+    todo: paginate
+    text: Paginer la requête (#1230).
   waiting:
-    - "**Stockage :** l'accès au bucket, demandé à l'infra."
+    - todo: bucket-access
+      text: "**Stockage :** l'accès au bucket, demandé à l'infra."
   more: '#progress'                               # lien « Le détail »
 history:                                          # dépliable, « du 20 au 28 octobre » calculé
   - date: 2026-10-28
@@ -149,9 +173,10 @@ cards:
 ### `type: blocks` (le plan)
 
 Une suite de blocs titrés ; chacun peut avoir, dans cet ordre : `text`, `progress` (la ligne
-« Fait » verte), `todo_title` et `todo` (`{who: Toi, done: false, text: …}` : puce orange au nom
-de la personne, verte « Fait » une fois fait), `cards`, `table` (`columns`, puis `rows` en listes
-de cellules). Un `id` sur un bloc en fait une ancre (`more: '#progress'`).
+« Fait » verte), `todo_title` et `todo` (`{id: …, who: Toi, text: …}` et ses liens : puce orange
+au nom de la personne, grise tant qu'il attend, verte « Fait » une fois fait), `cards`, `table`
+(`columns`, puis `rows` en listes de cellules). Un `id` sur un bloc en fait une ancre
+(`more: '#progress'`).
 
 Les cartes de lots ont des `sublots` : `num` (1a, 2b ; sans numéro, la liste n'est pas numérotée),
 `status` (puces), `status_text`, `text`, `done`, `dropped`, `notes`.
@@ -169,6 +194,43 @@ rows:
       - {info: 'Draft #1234'}
     detail: 'à merger après la pagination de #1230'
 ```
+
+### Les liens
+
+Un « à faire » porte un `id` (kebab-case, en anglais : `deploy-log-injector`) dès qu'un lien le
+nomme, et ses liens juste après `done` :
+
+```yaml
+todo:
+  - id: review-export
+    who: Toi
+    done_when: '#1234'               # ce qui le ferme ; une liste s'il en faut plusieurs
+    text: Relire et merger #1234.
+  - id: check-export
+    who: Toi
+    after: deploy-export             # ce qu'il attend ; une liste s'il en faut plusieurs
+    not_before: 2026-11-02           # pas avant ce jour
+    text: Le lendemain du déploiement, comparer l'export à la comptabilité.
+```
+
+- `done_when` : `#1234` (une PR mergée, une issue fermée comme faite), ou un élément du rapport
+  par son numéro ou son id (`D16`, `3c`, l'id d'un « à faire » ou d'une carte), fait. Quand tout ce
+  qu'il nomme est fini, `report:sync` le ferme avec la note « Fait : #1234 mergée le 30 octobre. »,
+  et `report:done` fait de même quand c'est un élément qu'il vient de fermer. Une PR fermée sans
+  merge ou une issue fermée sans être faite ne ferme rien : la commande le signale, à revoir.
+- `after` : des éléments du rapport seulement, jamais `#1234` (une PR ou une issue va dans le
+  `done_when` de l'« à faire » qu'on attend). Tant que l'un est ouvert, ou avant `not_before`,
+  l'« à faire » a une puce grise et la ligne « Après « … », à partir du 2 novembre » ; la commande
+  qui ferme le dernier dit « Débloqué ».
+- Poser les liens en écrivant l'« à faire » : « Relire #N » ou « Xavier ferme l'issue #N » →
+  `done_when: '#N'` ; « après le déploiement », « une fois D16 tranchée » → `after`. Seul ce qui n'a
+  aucun signal (un déploiement, une vérification, une réponse) se ferme à la main.
+- `status.next` et chaque ligne de `status.waiting` : un texte, ou `{todo: <id>, text: …}`. La
+  ligne liée quitte l'encadré quand son « à faire » est fait ; si c'est `next`, la commande demande
+  la suivante.
+- Le build refuse un lien vers rien, un `after: '#1234'`, une ligne d'encadré liée à un « à faire »
+  fait, et un « à faire » ouvert dont tout le `done_when` (sans `#1234`) est fait :
+  `report:sync` le ferme.
 
 ### Puces et notes
 

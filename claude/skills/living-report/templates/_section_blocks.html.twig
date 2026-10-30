@@ -13,7 +13,14 @@
         {% endif %}
         <ul class="watchlist todo">
           {% for item in block.todo %}
-            <li{% if item.done %} class="done"{% endif %}>{{ include('_chips.html.twig', {chips: [item.chip]}) }}<span>{{ item.text|md_inline }}</span></li>
+            <li{% if item.done %} class="done"{% endif %}{% if item.id %} id="{{ item.id }}"{% endif %}>{{ include('_chips.html.twig', {chips: [item.chip(updated_at)]}) }}<span>{{ item.text|md_inline }}
+              {%- if item.isBlocked(updated_at) -%}
+                <span class="todo-after">
+                  {%- if item.after %}Après {% for element in item.after %}{% if element.anchor %}<a href="#{{ element.anchor }}">{{ element.name|md_inline }}</a>{% else %}{{ element.name|md_inline }}{% endif %}{{ not loop.last ? ', ' }}{% endfor %}{% endif -%}
+                  {%- if item.waitsForDate(updated_at) %}{{ item.after ? ', à' : 'À' }} partir du {{ item.notBefore|date_day_month }}{% endif -%}
+                </span>
+              {%- endif -%}
+            </span></li>
           {% endfor %}
         </ul>
       {% endif %}

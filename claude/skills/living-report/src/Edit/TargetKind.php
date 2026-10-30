@@ -20,9 +20,4 @@ enum TargetKind
             self::VigilanceRow => 'vigilance',
         };
     }
-
-    public function hasNotes(): bool
-    {
-        return self::TodoItem !== $this;
-    }
 }

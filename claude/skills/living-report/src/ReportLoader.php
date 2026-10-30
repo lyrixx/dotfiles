@@ -2,6 +2,9 @@
 
 namespace LivingReport;
 
+use LivingReport\Edit\TargetKind;
+use LivingReport\Link\LinkedElement;
+use LivingReport\Link\ReportIndex;
 use LivingReport\Model\Block;
 use LivingReport\Model\BlockSection;
 use LivingReport\Model\Card;
@@ -45,6 +48,7 @@ final readonly class ReportLoader
     private function report(array $data, string $defaultStorageKey): Report
     {
         self::allowKeys($data, 'report', ['aside', 'eyebrow', 'github', 'history', 'key', 'lede', 'sections', 'status', 'title']);
+        $index = ReportIndex::of($data);
 
         return new Report(
             title: self::string($data, 'title', 'report'),
@@ -52,26 +56,52 @@ final readonly class ReportLoader
             github: self::optionalString($data, 'github', 'report'),
             storageKey: self::optionalString($data, 'key', 'report') ?? $defaultStorageKey,
             lede: self::optionalString($data, 'lede', 'report'),
-            status: $this->status(self::map($data, 'status', 'report')),
+            status: $this->status(self::map($data, 'status', 'report'), $index),
             history: $this->each($data, 'history', 'report', $this->historyEntry(...)),
             aside: self::optionalString($data, 'aside', 'report'),
-            sections: $this->each($data, 'sections', 'report', $this->section(...)),
+            sections: $this->each($data, 'sections', 'report', fn (array $section, string $path): Section => $this->section($section, $path, $index)),
         );
     }
 
     /**
      * @param array<mixed> $data
      */
-    private function status(array $data): Status
+    private function status(array $data, ReportIndex $index): Status
     {
         self::allowKeys($data, 'status', ['done', 'more', 'next', 'waiting']);
+        $waiting = [];
+        foreach (self::list($data, 'waiting', 'status') as $i => $line) {
+            $waiting[] = $this->statusLine($line, \sprintf('status.waiting[%d]', $i), $index);
+        }
 
         return new Status(
             done: self::optionalString($data, 'done', 'status'),
-            next: self::optionalString($data, 'next', 'status'),
-            waiting: self::strings($data, 'waiting', 'status'),
+            next: isset($data['next']) ? $this->statusLine($data['next'], 'status.next', $index) : null,
+            waiting: $waiting,
             more: self::optionalString($data, 'more', 'status'),
         );
+    }
+
+    /**
+     * A text, or {todo: <id>, text: <text>} for the line of an open to-do: report:done and
+     * report:sync take it out of the box when they close the to-do.
+     */
+    private function statusLine(mixed $line, string $path, ReportIndex $index): string
+    {
+        if (\is_string($line)) {
+            return $line;
+        }
+        $line = self::asMap($line, $path);
+        self::allowKeys($line, $path, ['text', 'todo']);
+        $todo = $index->find(self::string($line, 'todo', $path));
+        if (null === $todo || TargetKind::TodoItem !== $todo->target->kind) {
+            throw new \RuntimeException(\sprintf('%s.todo must be the id of a to-do.', $path));
+        }
+        if ($todo->finished) {
+            throw new \RuntimeException(\sprintf('%s points to a done to-do: remove it (report:done and report:sync do it).', $path));
+        }
+
+        return self::string($line, 'text', $path);
     }
 
     /**
@@ -87,7 +117,7 @@ final readonly class ReportLoader
     /**
      * @param array<mixed> $data
      */
-    private function section(array $data, string $path): Section
+    private function section(array $data, string $path, ReportIndex $index): Section
     {
         $type = self::string($data, 'type', $path);
         self::allowKeys($data, $path, ['count', 'id', 'intro', 'tally', 'title', 'type', ...match ($type) {
@@ -104,7 +134,7 @@ final readonly class ReportLoader
         $tally = self::tally($data, $path);
 
         return match ($type) {
-            'blocks' => new BlockSection($id, $title, $intro, $count, $tally, $this->each($data, 'blocks', $path, $this->block(...))),
+            'blocks' => new BlockSection($id, $title, $intro, $count, $tally, $this->each($data, 'blocks', $path, fn (array $block, string $path): Block => $this->block($block, $path, $index))),
             'cards' => new CardSection($id, $title, $intro, $count, $tally, $this->each($data, 'cards', $path, $this->card(...))),
             'checklist' => new ChecklistSection($id, $title, $intro, $count, $tally, self::string($data, 'group', $path), $this->each($data, 'items', $path, $this->checklistItem(...))),
             'vigilance' => new VigilanceSection($id, $title, $intro, $count, $tally, $this->each($data, 'rows', $path, $this->vigilanceRow(...))),
@@ -114,7 +144,7 @@ final readonly class ReportLoader
     /**
      * @param array<mixed> $data
      */
-    private function block(array $data, string $path): Block
+    private function block(array $data, string $path, ReportIndex $index): Block
     {
         self::allowKeys($data, $path, ['cards', 'id', 'progress', 'table', 'text', 'title', 'todo', 'todo_title']);
         $table = isset($data['table']) ? self::asMap($data['table'], "$path.table") : null;
@@ -125,7 +155,7 @@ final readonly class ReportLoader
             text: self::optionalString($data, 'text', $path),
             progress: self::optionalString($data, 'progress', $path),
             todoTitle: self::optionalString($data, 'todo_title', $path),
-            todo: $this->each($data, 'todo', $path, $this->todoItem(...)),
+            todo: $this->each($data, 'todo', $path, fn (array $item, string $path): TodoItem => $this->todoItem($item, $path, $index)),
             cards: $this->each($data, 'cards', $path, $this->card(...)),
             table: null === $table ? null : $this->table($table, "$path.table"),
         );
@@ -134,11 +164,43 @@ final readonly class ReportLoader
     /**
      * @param array<mixed> $data
      */
-    private function todoItem(array $data, string $path): TodoItem
+    private function todoItem(array $data, string $path, ReportIndex $index): TodoItem
     {
-        self::allowKeys($data, $path, ['done', 'text', 'who']);
+        self::allowKeys($data, $path, ['after', 'done', 'done_when', 'id', 'not_before', 'text', 'who']);
+        $done = self::bool($data, 'done', $path);
 
-        return new TodoItem(self::string($data, 'who', $path), self::string($data, 'text', $path), self::bool($data, 'done', $path));
+        $after = [];
+        foreach (self::links($data, 'after', $path) as $key) {
+            if (null !== ReportIndex::gitHubNumber($key)) {
+                throw new \RuntimeException(\sprintf('%s.after names %s, but waits for elements of the report only: a pull request or an issue goes in the done_when of the to-do it waits for.', $path, $key));
+            }
+            $element = $index->find($key) ?? throw new \RuntimeException(\sprintf('%s.after names "%s", which is no num or id of the report.', $path, $key));
+            if (!$element->finished) {
+                $after[] = $element;
+            }
+        }
+
+        $doneWhen = self::links($data, 'done_when', $path);
+        $elements = [];
+        foreach ($doneWhen as $key) {
+            if (null === ReportIndex::gitHubNumber($key)) {
+                $elements[] = $index->find($key) ?? throw new \RuntimeException(\sprintf('%s.done_when names "%s", which is no #1234, num or id of the report.', $path, $key));
+            }
+        }
+        // GitHub is read by report:sync only: without a #1234, the build can tell it is late
+        if (!$done && [] !== $doneWhen && \count($elements) === \count($doneWhen) && [] === array_filter($elements, static fn (LinkedElement $element): bool => !$element->finished)) {
+            throw new \RuntimeException(\sprintf('%s is open while everything in its done_when is done: report:sync closes it, with its note.', $path));
+        }
+
+        return new TodoItem(
+            id: self::optionalString($data, 'id', $path),
+            who: self::string($data, 'who', $path),
+            text: self::string($data, 'text', $path),
+            done: $done,
+            doneWhen: $doneWhen,
+            after: $after,
+            notBefore: isset($data['not_before']) ? self::date($data, 'not_before', $path) : null,
+        );
     }
 
     /**
@@ -365,6 +427,18 @@ final readonly class ReportLoader
 
             return $value;
         }, self::list($data, $key, $path));
+    }
+
+    /**
+     * A link: one key, or a list of keys.
+     *
+     * @param array<mixed> $data
+     *
+     * @return list<string>
+     */
+    private static function links(array $data, string $key, string $path): array
+    {
+        return \is_array($data[$key] ?? []) ? self::strings($data, $key, $path) : [self::string($data, $key, $path)];
     }
 
     /**

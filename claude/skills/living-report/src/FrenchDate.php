@@ -33,6 +33,14 @@ final class FrenchDate
     }
 
     /**
+     * " le 28 octobre", in Paris, for an instant GitHub gives; nothing without one.
+     */
+    public static function on(?\DateTimeImmutable $instant): string
+    {
+        return null === $instant ? '' : ' le ' . self::dayMonth($instant->setTimezone(new \DateTimeZone('Europe/Paris')));
+    }
+
+    /**
      * "du 20 au 28 octobre", "du 30 septembre au 2 octobre", years only when they differ.
      */
     public static function range(\DateTimeImmutable $from, \DateTimeImmutable $to): string
