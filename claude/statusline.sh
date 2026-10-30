@@ -10,14 +10,6 @@ set -euo pipefail
 
 input=$(cat)
 
-# Orca reads the usage limits through its own status line, which this one
-# replaces: keep feeding it. In the background, so its HTTP call (up to 1.5 s)
-# never delays the display.
-orca_statusline=~/.orca/agent-hooks/claude-statusline.sh
-if [[ -x $orca_statusline ]]; then
-    /bin/sh "$orca_statusline" <<<"$input" >/dev/null 2>&1 &
-fi
-
 # Claude Code gives no token totals for the session: sum them from the
 # transcripts, the session's and its subagents'. An API response spans one line
 # per content block, each carrying its usage: count each message once. grep
