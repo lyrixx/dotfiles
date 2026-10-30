@@ -1,0 +1,54 @@
+# Every action and its default: prefix+? in Herdr, or
+# https://herdr.dev/tui/docs/config-reference/
+onboarding = false
+
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[theme.custom]
+# The current Space and Agent rows in the sidebar: the blue of Catppuccin,
+# darkened enough to keep its text readable
+active_row_bg = "#485a80"
+
+[ui.sound]
+enabled = false
+
+[keys]
+# As in tmux. Pressed twice, it sends Ctrl+A to the pane, the start of the line
+# in the shell: Herdr hardcodes it, no binding can take prefix+ctrl+a
+prefix = "ctrl+a"
+
+# The bindings of my .tmux.conf come first, then the defaults of Herdr. The
+# ctrl+alt chords need no prefix. Taken elsewhere: ctrl+alt+up/down and
+# ctrl+alt+d by GNOME, ctrl+alt+arrows and ctrl+alt+shift+j by Ghostty
+detach = ["prefix+d", "prefix+q"]
+focus_pane_down = ["prefix+down", "prefix+j", "ctrl+alt+j"]
+focus_pane_left = ["prefix+left", "prefix+h", "ctrl+alt+h"]
+focus_pane_right = ["prefix+right", "prefix+l", "ctrl+alt+l"]
+focus_pane_up = ["prefix+up", "prefix+k", "ctrl+alt+k"]
+goto = ["prefix+s", "prefix+g"]
+# The last-window of tmux, on prefix+ctrl+a there
+last_pane = "prefix+a"
+# It wraps around: pressed again, it reaches any position
+move_tab_next = "prefix+period"
+next_agent = "ctrl+alt+a"
+next_tab = ["prefix+space", "prefix+n", "ctrl+alt+]"]
+next_workspace = "prefix+shift+down"
+previous_agent = "ctrl+alt+shift+a"
+previous_tab = ["prefix+backspace", "prefix+p", "ctrl+alt+["]
+previous_workspace = "prefix+shift+up"
+rename_tab = ["prefix+comma", "prefix+shift+t"]
+# Its prefix+s goes to goto
+settings = "prefix+shift+s"
+split_vertical = ["prefix+|", "prefix+v"]
+switch_workspace = "ctrl+alt+1..9"
+zoom = ["prefix+z", "ctrl+alt+z"]
+
+[[keys.command]]
+key = "prefix+t"
+type = "popup"
+command = "exec \"${SHELL:-sh}\""
+description = "open scratch terminal"
+width = "80%"
+height = "80%"

@@ -26,6 +26,7 @@ function main {
     setup_docker
     setup_fzf
     setup_ghostty
+    setup_herdr
     setup_php
 }
 
@@ -131,6 +132,13 @@ function setup_ghostty {
     # listed in ~/.config, before the Ptyxis of Ubuntu in /usr/share/xdg-terminal-exec.
     ln -sf $DOTFILES/ghostty/xdg-terminals.list ~/.config/xdg-terminals.list
     gsettings set org.gnome.settings-daemon.plugins.media-keys terminal "['<Alt>t']"
+}
+
+function setup_herdr {
+    title 'Setup Herdr'
+    mkdir -p ~/.config/herdr
+    # Linked: the settings of Herdr write through the link, into this repository
+    ln -sf $DOTFILES/herdr/config.toml ~/.config/herdr/config.toml
 }
 
 function setup_php {

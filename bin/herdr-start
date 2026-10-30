@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# Creates my Herdr workspaces, one per repository, and skips those that already
+# exist. Herdr restores them itself after a restart: this is for a new machine,
+# or after closing one.
+
+set -euo pipefail
+
+function main {
+    if [[ ${HERDR_ENV:-} != 1 ]]; then
+        echo 'Run it from a Herdr pane: it creates the workspaces in its session.' >&2
+        exit 1
+    fi
+
+    # The repository in ~/dev/github.com, then the labels of its tabs. In a
+    # "claude" tab, claude is typed at the prompt but not run: it takes no
+    # memory until Enter.
+    workspace jolicode/redirection.io claude shell
+    workspace jolicode/orpi claude shell
+    workspace lyrixx/symfony
+    workspace jolicode/castor
+    workspace jolicode/docker-starter
+    workspace lyrixx/nativella
+    workspace jolicode/qotd
+    workspace jolicode/monologue
+    workspace lyrixx/homeassistant-ai-helper
+    workspace lyrixx/laptop-ai-helper
+    workspace lyrixx/phone-ai-helper
+    workspace lyrixx/life-style
+    workspace lyrixx/dotfiles
+    workspace lyrixx/3d-files
+    workspace lyrixx/php-wasm-builder
+    workspace lyrixx/lairdubois
+}
+
+function workspace {
+    local repository=$1
+    shift
+    local directory=$HOME/dev/github.com/$repository
+    local label=${repository#*/}
+
+    echo -n "$label ... "
+    if [[ ! -d $directory ]]; then
+        echo "skipped: $directory doesn't exist."
+        return
+    fi
+    if herdr workspace list | jq -e --arg label "$label" '.result.workspaces[] | select(.label == $label)' > /dev/null; then
+        echo 'already exists.'
+        return
+    fi
+
+    local created workspace_id
+    created=$(herdr workspace create --label "$label" --cwd "$directory" --no-focus)
+    workspace_id=$(jq -r .result.workspace.workspace_id <<< "$created")
+
+    local tab first=1
+    for tab in "$@"; do
+        # The workspace comes with its first tab
+        if (( first )); then
+            herdr tab rename "$(jq -r .result.tab.tab_id <<< "$created")" "$tab" > /dev/null
+            first=0
+        else
+            created=$(herdr tab create --workspace "$workspace_id" --label "$tab" --cwd "$directory" --no-focus)
+        fi
+        if [[ $tab == claude ]]; then
+            type_claude "$(jq -r .result.root_pane.pane_id <<< "$created")"
+        fi
+    done
+    echo 'created.'
+}
+
+function type_claude {
+    local pane=$1
+
+    # The prompt of .bashrc starts with ">". Typed before it, the text would be
+    # echoed once more above it.
+    herdr pane wait-output "$pane" --match '>' --timeout 10000 > /dev/null
+    herdr pane send-text "$pane" claude > /dev/null
+}
+
+main
