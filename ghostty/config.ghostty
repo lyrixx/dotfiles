@@ -9,9 +9,10 @@ font-size = 11
 # Ghostty toggles fullscreen on it: Claude Code inserts a newline with it
 keybind = ctrl+enter=unbind
 
-# Over SSH, installs the terminfo of Ghostty on the server, or falls back to
-# TERM=xterm-256color: otherwise Backspace and clear break there
-shell-integration-features = ssh-terminfo,ssh-env
+# Over SSH, TERM=xterm-256color: servers do not know xterm-ghostty, Backspace
+# and clear break there. No ssh-terminfo: it installs it in the ~/.terminfo of
+# the SSH user only, readline breaks after a sudo -sHu
+shell-integration-features = ssh-env
 
 # Written by bin/training during a training session, outside this
 # repository. Loaded last, it overrides the theme above.
