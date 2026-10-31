@@ -1,5 +1,6 @@
 # Every action and its default: prefix+? in Herdr, or
 # https://herdr.dev/tui/docs/config-reference/
+# Keep in sync with herdr/cheatsheet.txt, printed by help_herd
 onboarding = false
 
 [theme]
@@ -10,6 +11,13 @@ auto_switch = false
 # The current Space and Agent rows in the sidebar: the blue of Catppuccin,
 # darkened enough to keep its text readable
 active_row_bg = "#485a80"
+
+[ui]
+# A mouse selection overwrites the clipboard otherwise. Ctrl+C copies the
+# selection while it is still highlighted
+copy_on_select = false
+# The Prefix, Navigate, Copy and Resize mode bars take its place while active
+tab_bar_position = "bottom"
 
 [ui.sound]
 enabled = false

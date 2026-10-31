@@ -139,6 +139,8 @@ function setup_herdr {
     mkdir -p ~/.config/herdr
     # Linked: the settings of Herdr write through the link, into this repository
     ln -sf $DOTFILES/herdr/config.toml ~/.config/herdr/config.toml
+    # Printed by help_herd, of .bash_aliases
+    ln -sf $DOTFILES/herdr/cheatsheet.txt ~/.config/herdr/cheatsheet.txt
 }
 
 function setup_php {

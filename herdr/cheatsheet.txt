@@ -1,0 +1,36 @@
+Herdr, beyond tmux. Every action: ctrl+a ?, then / to filter.
+
+Unlike tmux
+  ctrl+a a                 back to the previous pane
+  ctrl+a ctrl+a            send ctrl+a to the pane: start of the line
+
+Workspaces, in the sidebar
+  ctrl+a shift+n / w / d   new / rename / close
+  ctrl+a shift+up/down     previous / next
+  ctrl+alt+1..9            go to the nth
+  ctrl+a w                 navigate mode: up/down workspaces, h/j/k/l panes
+  ctrl+a b                 fold the sidebar
+  herdr-start              create my workspaces
+
+Agents
+  ctrl+a o                 go to the agent that just finished or waits for me
+  ctrl+alt+a               next agent (ctrl+alt+shift+a: previous)
+  ctrl+a s, then b/w/i/d   only the blocked / working / idle / done agents
+  ctrl+a shift+g           Git worktree, grouped under the workspace: another
+                           agent on another branch
+  A Claude in Herdr drives it: "open a pane on the right with another Claude
+  reviewing my diff".
+
+Without prefix
+  ctrl+alt+h/j/k/l         move between panes
+  ctrl+alt+[ / ]           previous / next tab
+  ctrl+alt+z               zoom
+
+More
+  ctrl+a e                 open the scrollback in vim
+  ctrl+a t                 scratch terminal in a popup, exit closes it
+  ctrl+a shift+p           name the pane: shown in the sidebar and goto
+  ctrl+a shift+h/j/k/l     swap the pane with its neighbor
+  ctrl+a r                 resize mode: h/j/k/l, esc to leave
+  mouse                    select, then ctrl+c copies; double-click selects a word
+  ctrl+a shift+s / r       settings / reload the config

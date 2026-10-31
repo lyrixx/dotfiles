@@ -48,6 +48,7 @@ alias https="http --verify=no"
 alias whatsmyip="curl https://ifconfig.co/"
 alias whatsmypc="inxi -Fxz"
 alias dht="diff2html -i stdin"
+alias help_herd="cat ~/.config/herdr/cheatsheet.txt"
 
 ## Fun
 alias meteo="curl wttr.in/Paris?format=v2"
