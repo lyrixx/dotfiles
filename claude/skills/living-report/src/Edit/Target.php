@@ -79,7 +79,7 @@ final readonly class Target
 
     public function describe(): string
     {
-        return \sprintf('%s « %s »', $this->kind->label(), mb_strimwidth($this->label, 0, 70, '…'));
+        return \sprintf('%s « %s »', $this->kind->label(), mb_strimwidth((string) preg_replace('/\s+/', ' ', $this->label), 0, 70, '…'));
     }
 
     /**

@@ -305,6 +305,8 @@
   .watchlist.todo { margin: 0; }
   .watchlist.todo li:first-child { padding-top: 0; }
   .todo-after { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  /* inline-flex: the line-through of a to-do done does not cross its chips */
+  .todo-links { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: 1px; }
   .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
   .status > div { background: var(--surface); border: 1px solid var(--line); border-top-width: 3px; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 0.92rem; }
   .status > .s-ok { border-top-color: var(--ok); }

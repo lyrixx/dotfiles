@@ -78,6 +78,7 @@ final readonly class OpenElements
                         [] === $item->after ? null : 'après ' . implode(', ', array_map(static fn (LinkedElement $element): string => $element->key, $item->after)),
                         $item->waitsForDate($today) ? 'pas avant le ' . FrenchDate::dayMonth($item->notBefore) : null,
                         [] === $item->doneWhen ? null : 'se ferme avec ' . implode(', ', $item->doneWhen),
+                        [] === $item->chips ? null : implode(', ', array_map(static fn (Chip $chip): string => $chip->text, $item->chips)),
                     ),
                     array_filter($block->todo(), static fn (TodoItem $item): bool => !$item->done),
                 ),

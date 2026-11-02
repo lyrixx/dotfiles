@@ -166,7 +166,7 @@ final readonly class ReportLoader
      */
     private function todoItem(array $data, string $path, ReportIndex $index): TodoItem
     {
-        self::allowKeys($data, $path, ['after', 'done', 'done_when', 'id', 'not_before', 'text', 'who']);
+        self::allowKeys($data, $path, ['after', 'chips', 'done', 'done_when', 'id', 'not_before', 'text', 'who']);
         $done = self::bool($data, 'done', $path);
 
         $after = [];
@@ -191,6 +191,12 @@ final readonly class ReportLoader
         if (!$done && [] !== $doneWhen && \count($elements) === \count($doneWhen) && [] === array_filter($elements, static fn (LinkedElement $element): bool => !$element->finished)) {
             throw new \RuntimeException(\sprintf('%s is open while everything in its done_when is done: report:sync closes it, with its note.', $path));
         }
+        $chips = $this->chips($data, 'chips', $path);
+        foreach (array_filter(array_map(ReportIndex::gitHubNumber(...), $doneWhen)) as $number) {
+            if ([] === array_filter($chips, static fn (Chip $chip): bool => 1 === preg_match('/#' . $number . '(?!\d)/', $chip->text))) {
+                throw new \RuntimeException(\sprintf('%s.done_when names #%d, but no chip shows it: report:sync adds it, with its state on GitHub.', $path, $number));
+            }
+        }
 
         return new TodoItem(
             id: self::optionalString($data, 'id', $path),
@@ -200,6 +206,7 @@ final readonly class ReportLoader
             doneWhen: $doneWhen,
             after: $after,
             notBefore: isset($data['not_before']) ? self::date($data, 'not_before', $path) : null,
+            chips: $chips,
         );
     }
 

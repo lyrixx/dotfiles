@@ -3,6 +3,8 @@
 namespace LivingReport\Edit;
 
 use LivingReport\FrenchDate;
+use LivingReport\Model\Chip;
+use LivingReport\Model\Tone;
 
 final readonly class IssueState
 {
@@ -27,6 +29,15 @@ final readonly class IssueState
         return $this->closed;
     }
 
+    public function chip(int $number): Chip
+    {
+        return match (true) {
+            $this->completed => new Chip(Tone::Ok, \sprintf('Issue fermée #%d', $number)),
+            $this->closed => new Chip(Tone::Muted, \sprintf('Issue écartée #%d', $number)),
+            default => new Chip(Tone::Info, \sprintf('Issue ouverte #%d', $number)),
+        };
+    }
+
     /**
      * "#1234 fermée le 28 octobre"
      */
@@ -36,6 +47,14 @@ final readonly class IssueState
             $this->completed => 'fermée',
             $this->closed => 'fermée sans être faite',
             default => 'ouverte',
-        }, FrenchDate::on($this->closedAt));
+        }, $this->when());
+    }
+
+    /**
+     * " le 28 octobre", for a closed one.
+     */
+    public function when(): string
+    {
+        return FrenchDate::on($this->closedAt);
     }
 }

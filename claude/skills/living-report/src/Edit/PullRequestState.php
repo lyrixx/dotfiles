@@ -3,6 +3,7 @@
 namespace LivingReport\Edit;
 
 use LivingReport\FrenchDate;
+use LivingReport\Model\Chip;
 use LivingReport\Model\PullRequestStatus;
 
 final readonly class PullRequestState
@@ -24,6 +25,11 @@ final readonly class PullRequestState
     public function isClosed(): bool
     {
         return \in_array($this->status, [PullRequestStatus::Closed, PullRequestStatus::Merged], true);
+    }
+
+    public function chip(int $number): Chip
+    {
+        return $this->status->chip($number);
     }
 
     /**

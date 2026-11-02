@@ -9,6 +9,7 @@ final readonly class TodoItem
     /**
      * @param list<string>        $doneWhen What closes it: #1234, D16, 3c or an id
      * @param list<LinkedElement> $after    The elements of its `after` still open
+     * @param list<Chip>          $chips    The pull requests and issues it is linked to, with their state
      */
     public function __construct(
         public ?string $id,
@@ -18,6 +19,7 @@ final readonly class TodoItem
         public array $doneWhen,
         public array $after,
         public ?\DateTimeImmutable $notBefore,
+        public array $chips,
     ) {
     }
 

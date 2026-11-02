@@ -64,9 +64,9 @@ $R report:mentions  <yaml> "log injector"                   # la prose encore ou
   a une espace avant), « Fait » pour `done`, « Le <jour> » pour `note`.
 - Une note sur un « à faire » devient le dernier paragraphe de son texte (« Fait : … ») : il n'a
   pas de liste de notes.
-- `report:sync` met à jour le `status` des cartes et les puces « Draft #N », « Ouverte #N »,
-  « Mergée #N », « Fermée #N » où qu'elles soient, ferme les « à faire » que GitHub termine (voir
-  « Les liens »), puis liste ce qui a changé, avec la date du merge, ce que ça a fermé ou
+- `report:sync` met à jour le `status` des cartes et les puces GitHub où qu'elles soient (voir
+  « Puces et notes »), donne sa puce à chaque `#1234` d'un `done_when`, ferme les « à faire » que
+  GitHub termine (voir « Les liens »), puis liste ce qui a changé, avec la date du merge, ce que ça a fermé ou
   débloqué, et tout ce qui le cite et reste ouvert : encadrés du chapeau, intros, blocs, à faire,
   sous-lots, vigilances. Chaque ligne est à traiter, puis la meta de la carte et l'historique. Une
   carte de PR ne se grise pas avec `done` : elle suit GitHub.
@@ -174,7 +174,8 @@ cards:
 
 Une suite de blocs titrés ; chacun peut avoir, dans cet ordre : `text`, `progress` (la ligne
 « Fait » verte), `todo_title` et `todo` (`{id: …, who: Toi, text: …}` et ses liens : puce orange
-au nom de la personne, grise tant qu'il attend, verte « Fait » une fois fait), `cards`, `table`
+au nom de la personne, grise tant qu'il attend, verte « Fait » une fois fait ; ses PR et issues en
+puces après le texte), `cards`, `table`
 (`columns`, puis `rows` en listes de cellules). Un `id` sur un bloc en fait une ancre
 (`more: '#progress'`).
 
@@ -205,11 +206,15 @@ todo:
   - id: review-export
     who: Toi
     done_when: '#1234'               # ce qui le ferme ; une liste s'il en faut plusieurs
+    chips:
+      - {info: 'Ouverte #1234'}      # écrite par report:sync
     text: Relire et merger #1234.
   - id: check-export
     who: Toi
     after: deploy-export             # ce qu'il attend ; une liste s'il en faut plusieurs
     not_before: 2026-11-02           # pas avant ce jour
+    chips:
+      - {info: '#1230'}              # liée sans le fermer : report:sync écrit son état
     text: Le lendemain du déploiement, comparer l'export à la comptabilité.
 ```
 
@@ -225,17 +230,26 @@ todo:
 - Poser les liens en écrivant l'« à faire » : « Relire #N » ou « Xavier ferme l'issue #N » →
   `done_when: '#N'` ; « après le déploiement », « une fois D16 tranchée » → `after`. Seul ce qui n'a
   aucun signal (un déploiement, une vérification, une réponse) se ferme à la main.
+- Chaque PR ou issue liée à un « à faire » se voit en puce après son texte, avec son état :
+  « Issue ouverte #1218 », « Mergée #1234 ». Celles de `done_when`, `report:sync` les ajoute ; une
+  PR ou une issue liée sans le fermer (celle qu'il vérifie, celle d'un « à faire » qu'il attend, une
+  voisine), l'écrire à la main en `{info: '#N'}`, et `report:sync` y met l'état. Le texte n'a plus
+  besoin de la citer comme simple renvoi (« … : #1220. »).
 - `status.next` et chaque ligne de `status.waiting` : un texte, ou `{todo: <id>, text: …}`. La
   ligne liée quitte l'encadré quand son « à faire » est fait ; si c'est `next`, la commande demande
   la suivante.
 - Le build refuse un lien vers rien, un `after: '#1234'`, une ligne d'encadré liée à un « à faire »
-  fait, et un « à faire » ouvert dont tout le `done_when` (sans `#1234`) est fait :
-  `report:sync` le ferme.
+  fait, un « à faire » ouvert dont tout le `done_when` (sans `#1234`) est fait (`report:sync` le
+  ferme), et un `#1234` de `done_when` sans sa puce (`report:sync` l'ajoute).
 
 ### Puces et notes
 
 - Puce : `{<ton>: '<texte>'}`, le ton parmi `ok`, `warn`, `crit`, `info`, `muted`. Le premier
   `#123` du texte la rend cliquable vers GitHub ; sinon `href: '#ancre'` ou une URL.
+- Puce GitHub : son texte entier est l'état et le numéro, et `report:sync` le tient à jour. PR :
+  « Draft #N », « Ouverte #N », « Mergée #N », « Fermée #N » ; issue : « Issue ouverte #N »,
+  « Issue fermée #N », « Issue écartée #N » (fermée sans être faite). `#N` seul attend son
+  premier état. Une puce avec plus de texte (« #1246 pour Joel ») reste telle quelle.
 - Note : `{<étiquette>: <texte>}`, par exemple `- Fait: Corrigé par #1218.` ou `- Le 28: …`.
 
 ## Écrire le texte

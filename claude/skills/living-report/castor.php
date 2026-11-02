@@ -111,6 +111,7 @@ function sync(
 ): void {
     edit_report($file, static function (EditableReport $report) use ($file): array {
         $repository = Yaml::parseFile($file)['github'] ?? throw new RuntimeException('The report has no "github" repository.');
+        $report->addLinkChips();
         $changes = $report->sync(new GitHubStates()->fetch($repository, $report->gitHubNumbers()));
 
         return [] === $changes ? ['Rien n\'a changé sur GitHub.'] : ['Ce qui a changé, ce que ça a fermé ou débloqué, puis la prose encore ouverte qui le cite, à relire (avec la meta de la carte et l\'historique) :', ...array_map(static fn (string $change): string => '  - ' . $change, $changes)];

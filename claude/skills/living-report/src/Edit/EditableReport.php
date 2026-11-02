@@ -13,8 +13,9 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class EditableReport
 {
-    // "Draft #1234", "Mergée #1211": the chips that tell the state of a pull request
-    private const string PULL_REQUEST_CHIP = '/^(Draft|Ouverte|Mergée|Fermée) #(\d+)$/u';
+    // "Draft #1234", "Mergée #1211", "Issue ouverte #1218": the chips that tell the state of a pull
+    // request or an issue; a bare "#1234" waits for its first one
+    private const string GITHUB_CHIP = '/^(?:(?:Draft|Ouverte|Mergée|Fermée|Issue ouverte|Issue fermée|Issue écartée) )?#(\d+)$/u';
 
     /**
      * @param array<mixed>          $data
@@ -131,6 +132,35 @@ final class EditableReport
     }
 
     /**
+     * Gives a "#1234" chip to every pull request or issue of a done_when that has none:
+     * report:sync then writes its state.
+     */
+    public function addLinkChips(): void
+    {
+        foreach (Target::all($this->data) as $target) {
+            $element = $target->in($this->data);
+            if (TargetKind::TodoItem !== $target->kind) {
+                continue;
+            }
+            $shown = (string) json_encode($element['chips'] ?? [], \JSON_UNESCAPED_UNICODE);
+            $missing = [];
+            foreach (array_filter(array_map(ReportIndex::gitHubNumber(...), ReportIndex::keys($element['done_when'] ?? null))) as $number) {
+                if (!preg_match('/#' . $number . '(?!\d)/', $shown)) {
+                    $missing[] = ['info' => '#' . $number];
+                }
+            }
+            if ([] === $missing) {
+                continue;
+            }
+            // What closes it first, before the text, with the links
+            $element['chips'] = [...$missing, ...($element['chips'] ?? [])];
+            $text = $element['text'] ?? null;
+            unset($element['text']);
+            $this->set($target->path, null === $text ? $element : [...$element, 'text' => $text]);
+        }
+    }
+
+    /**
      * The pull requests the cards and chips follow, and the pull requests and issues the open
      * to-dos wait for.
      *
@@ -149,8 +179,8 @@ final class EditableReport
             }
         }
         $this->walkChips(static function (array $chip) use (&$numbers): array {
-            if (preg_match(self::PULL_REQUEST_CHIP, (string) current($chip), $match)) {
-                $numbers[] = (int) $match[2];
+            if (preg_match(self::GITHUB_CHIP, (string) current($chip), $match)) {
+                $numbers[] = (int) $match[1];
             }
 
             return $chip;
@@ -173,7 +203,7 @@ final class EditableReport
      */
     public function sync(array $states): array
     {
-        [$changes, $changed] = $this->applyPullRequestStates(array_filter($states, static fn (PullRequestState|IssueState $state): bool => $state instanceof PullRequestState));
+        [$changes, $changed] = $this->applyStates($states);
         [$settled, $closing] = $this->settle($states);
 
         return [...$changes, ...$settled, ...$this->openMentions(array_values(array_unique([...$changed, ...$closing])))];
@@ -191,18 +221,18 @@ final class EditableReport
     }
 
     /**
-     * @param array<int, PullRequestState> $states
+     * @param array<int, PullRequestState|IssueState> $states
      *
      * @return array{list<string>, list<int>} What changed, and the numbers that changed
      */
-    private function applyPullRequestStates(array $states): array
+    private function applyStates(array $states): array
     {
         $changes = [];
         $changed = [];
         foreach (Target::all($this->data) as $target) {
             $element = $target->in($this->data);
             $state = $states[$element['pr'] ?? 0] ?? null;
-            if (TargetKind::Card !== $target->kind || null === $state || !\in_array($element['status'] ?? null, ['draft', 'open', 'merged', 'closed'], true) || $element['status'] === $state->status->value) {
+            if (TargetKind::Card !== $target->kind || !$state instanceof PullRequestState || !\in_array($element['status'] ?? null, ['draft', 'open', 'merged', 'closed'], true) || $element['status'] === $state->status->value) {
                 continue;
             }
             $changes[] = \sprintf('#%d %s → %s%s : %s', $element['pr'], $element['status'], $state->status->value, $state->when(), $target->describe());
@@ -211,15 +241,29 @@ final class EditableReport
         }
 
         $this->walkChips(static function (array $chip, string $where) use ($states, &$changes, &$changed): array {
-            if (!preg_match(self::PULL_REQUEST_CHIP, (string) current($chip), $match) || null === $state = $states[(int) $match[2]] ?? null) {
+            if (!preg_match(self::GITHUB_CHIP, (string) current($chip), $match)) {
                 return $chip;
             }
-            $new = $state->status->chip((int) $match[2]);
+            $number = (int) $match[1];
+            $first = current($chip) === '#' . $number;
+            $state = $states[$number] ?? null;
+            if (null === $state) {
+                if ($first) {
+                    $changes[] = \sprintf('#%d introuvable sur GitHub : puce de %s', $number, $where);
+                }
+
+                return $chip;
+            }
+            $new = $state->chip($number);
             if ($new->text === current($chip)) {
                 return $chip;
             }
-            $changes[] = \sprintf('#%s %s → %s%s : puce de %s', $match[2], current($chip), $new->text, $state->when(), $where);
-            $changed[] = (int) $match[2];
+            if ($first) {
+                $changes[] = \sprintf('Puce ajoutée, %s : %s', $new->text, $where);
+            } else {
+                $changes[] = \sprintf('#%d %s → %s%s : puce de %s', $number, current($chip), $new->text, $state->when(), $where);
+                $changed[] = $number;
+            }
 
             return [$new->tone->value => $new->text, ...array_diff_key($chip, array_flip(['crit', 'info', 'muted', 'ok', 'warn']))];
         });
