@@ -28,6 +28,8 @@ Without prefix
 
 More
   ctrl+a e                 open the scrollback in vim
+  ctrl+a p                 save the history of the pane to a file, ~/herdr.history
+                           by default
   ctrl+a t                 scratch terminal in a popup, exit closes it
   ctrl+a shift+p           name the pane: shown in the sidebar and goto
   ctrl+a shift+h/j/k/l     swap the pane with its neighbor

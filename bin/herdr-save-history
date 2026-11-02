@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Saves the whole history of the focused Herdr pane to a file, as prefix+p did
+# in tmux. Run by prefix+p in a popup, see herdr/config.toml. Ctrl+C cancels.
+
+set -euo pipefail
+
+read -r -e -p 'Save the history to: ' -i ~/herdr.history file
+# read doesn't expand a ~ typed by hand
+file=${file/#\~/$HOME}
+
+if ! "${HERDR_BIN_PATH:-herdr}" pane read "$HERDR_ACTIVE_PANE_ID" --source recent-unwrapped --lines 1000000 > "$file"; then
+    # The popup closes when the script exits: the error would vanish with it
+    read -r -p 'Press Enter to close.'
+    exit 1
+fi
