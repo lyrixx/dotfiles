@@ -80,7 +80,7 @@ final readonly class OpenElements
                         [] === $item->doneWhen ? null : 'se ferme avec ' . implode(', ', $item->doneWhen),
                         [] === $item->chips ? null : implode(', ', array_map(static fn (Chip $chip): string => $chip->text, $item->chips)),
                     ),
-                    array_filter($block->todo(), static fn (TodoItem $item): bool => !$item->done),
+                    array_filter($block->todo(), static fn (TodoItem $item): bool => !$item->isFinished()),
                 ),
                 ...$this->cards($block->cards),
             ];

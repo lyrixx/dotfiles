@@ -16,6 +16,7 @@ final readonly class TodoItem
         public string $who,
         public string $text,
         public bool $done,
+        public bool $dropped,
         public array $doneWhen,
         public array $after,
         public ?\DateTimeImmutable $notBefore,
@@ -23,9 +24,17 @@ final readonly class TodoItem
     ) {
     }
 
+    /**
+     * Done, or dropped: nothing to do any more.
+     */
+    public function isFinished(): bool
+    {
+        return $this->done || $this->dropped;
+    }
+
     public function isBlocked(\DateTimeImmutable $today): bool
     {
-        return !$this->done && ([] !== $this->after || $this->waitsForDate($today));
+        return !$this->isFinished() && ([] !== $this->after || $this->waitsForDate($today));
     }
 
     public function waitsForDate(\DateTimeImmutable $today): bool
@@ -37,6 +46,7 @@ final readonly class TodoItem
     {
         return match (true) {
             $this->done => new Chip(Tone::Ok, 'Fait'),
+            $this->dropped => new Chip(Tone::Muted, 'Écarté'),
             $this->isBlocked($today) => new Chip(Tone::Muted, $this->who),
             default => new Chip(Tone::Warn, $this->who),
         };

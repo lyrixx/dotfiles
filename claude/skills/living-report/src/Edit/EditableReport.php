@@ -84,17 +84,23 @@ final class EditableReport
      */
     public function markDone(Target $target, ?array $note): array
     {
-        $element = $target->in($this->data);
-        if (TargetKind::Card === $target->kind && isset($element['status'])) {
-            throw new \RuntimeException(\sprintf('The %s follows its pull request: run report:sync, or change its status by hand.', $target->describe()));
+        return $this->finish($target, 'done', $note);
+    }
+
+    /**
+     * Not done, and not to do any more: its links take it as finished.
+     *
+     * @param ?array{string, string} $note Label and text
+     *
+     * @return list<string> What it closed or unblocked in turn
+     */
+    public function markDropped(Target $target, ?array $note): array
+    {
+        if (!\in_array($target->kind, [TargetKind::Sublot, TargetKind::TodoItem], true)) {
+            throw new \RuntimeException(\sprintf('Only a to-do or a sub-lot can be dropped, not the %s.', $target->describe()));
         }
 
-        $this->set([...$target->path, 'done'], true);
-        if (null !== $note) {
-            $this->addNote($target, ...$note);
-        }
-
-        return $this->settle(null)[0];
+        return $this->finish($target, 'dropped', $note);
     }
 
     public function addNote(Target $target, string $label, string $text): void
@@ -174,7 +180,7 @@ final class EditableReport
             if (TargetKind::Card === $target->kind && isset($element['pr']) && \in_array($element['status'] ?? null, ['draft', 'open', 'merged', 'closed'], true)) {
                 $numbers[] = $element['pr'];
             }
-            if (TargetKind::TodoItem === $target->kind && true !== ($element['done'] ?? false)) {
+            if (TargetKind::TodoItem === $target->kind && !self::isFinished($element)) {
                 array_push($numbers, ...array_filter(array_map(ReportIndex::gitHubNumber(...), ReportIndex::keys($element['done_when'] ?? null))));
             }
         }
@@ -218,6 +224,26 @@ final class EditableReport
     public function mentions(string $text): array
     {
         return array_map(static fn (array $place): string => $place[0], $this->openProse('/' . preg_quote($text, '/') . '/iu'));
+    }
+
+    /**
+     * @param ?array{string, string} $note Label and text
+     *
+     * @return list<string> What it closed or unblocked in turn
+     */
+    private function finish(Target $target, string $state, ?array $note): array
+    {
+        $element = $target->in($this->data);
+        if (TargetKind::Card === $target->kind && isset($element['status'])) {
+            throw new \RuntimeException(\sprintf('The %s follows its pull request: run report:sync, or change its status by hand.', $target->describe()));
+        }
+
+        $this->set([...$target->path, $state], true);
+        if (null !== $note) {
+            $this->addNote($target, ...$note);
+        }
+
+        return $this->settle(null)[0];
     }
 
     /**
@@ -332,7 +358,7 @@ final class EditableReport
 
         foreach (array_diff_key($this->blockedAtLoad, self::blocked($this->data)) as $target) {
             $element = $target->in($this->data);
-            if (true === ($element['done'] ?? false)) {
+            if (self::isFinished($element)) {
                 continue;
             }
             $notBefore = $element['not_before'] ?? null;
@@ -367,7 +393,7 @@ final class EditableReport
             $this->data['status']['waiting'] = $waiting;
         }
         if ($isDone($this->data['status']['next'] ?? null)) {
-            $messages[] = 'La prochaine étape est faite, à remplacer dans status.next : ' . $this->data['status']['next']['text'];
+            $messages[] = 'La prochaine étape est faite ou écartée, à remplacer dans status.next : ' . $this->data['status']['next']['text'];
             unset($this->data['status']['next']);
         }
 
@@ -379,7 +405,7 @@ final class EditableReport
      */
     private function openTodos(): array
     {
-        return array_values(array_filter(Target::all($this->data), fn (Target $target): bool => TargetKind::TodoItem === $target->kind && true !== ($target->in($this->data)['done'] ?? false)));
+        return array_values(array_filter(Target::all($this->data), fn (Target $target): bool => TargetKind::TodoItem === $target->kind && !self::isFinished($target->in($this->data))));
     }
 
     /**
@@ -395,7 +421,7 @@ final class EditableReport
         $blocked = [];
         foreach (Target::all($data) as $target) {
             $element = $target->in($data);
-            if (TargetKind::TodoItem !== $target->kind || true === ($element['done'] ?? false)) {
+            if (TargetKind::TodoItem !== $target->kind || self::isFinished($element)) {
                 continue;
             }
             foreach (ReportIndex::keys($element['after'] ?? null) as $key) {
@@ -461,6 +487,14 @@ final class EditableReport
         }
 
         return $matching;
+    }
+
+    /**
+     * @param array<mixed> $element
+     */
+    private static function isFinished(array $element): bool
+    {
+        return true === ($element['done'] ?? false) || true === ($element['dropped'] ?? false);
     }
 
     /**

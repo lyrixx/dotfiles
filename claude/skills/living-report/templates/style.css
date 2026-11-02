@@ -265,7 +265,7 @@
   .watchlist { list-style: none; display: flex; flex-direction: column; gap: 10px; }
   .watchlist li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; align-items: baseline; }
   .watchlist .chip { justify-self: start; }
-  .watchlist li.done { opacity: 0.55; }
+  .watchlist li.done, .watchlist li.dropped { opacity: 0.55; }
   .watchlist li.done > span:last-child { text-decoration: line-through; text-decoration-thickness: 1px; }
   .watchlist li.done em { text-decoration: none; display: inline-block; }
 

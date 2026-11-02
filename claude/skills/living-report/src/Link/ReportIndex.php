@@ -35,7 +35,7 @@ final readonly class ReportIndex
                 TargetKind::ChecklistItem => [[$element['id'] ?? null, $element['num'] ?? null], $element['num'] ?? self::quote($target->label), $element['id'] ?? null, $done],
                 // A sub-lot has no anchor of its own: its card's
                 TargetKind::Sublot => [[$element['num'] ?? null], $element['num'] ?? null, $target->card()->in($data)['id'] ?? null, $done],
-                TargetKind::TodoItem => [[$element['id'] ?? null], self::quote(self::firstSentence($target->label)), $element['id'] ?? null, $done],
+                TargetKind::TodoItem => [[$element['id'] ?? null], self::quote(self::firstSentence($target->label)), $element['id'] ?? null, $done || true === ($element['dropped'] ?? false)],
                 TargetKind::VigilanceRow => [[], null, null, $done],
             };
             foreach (array_filter($keys, static fn (mixed $key): bool => null !== $key) as $key) {

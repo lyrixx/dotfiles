@@ -166,8 +166,9 @@ final readonly class ReportLoader
      */
     private function todoItem(array $data, string $path, ReportIndex $index): TodoItem
     {
-        self::allowKeys($data, $path, ['after', 'chips', 'done', 'done_when', 'id', 'not_before', 'text', 'who']);
+        self::allowKeys($data, $path, ['after', 'chips', 'done', 'done_when', 'dropped', 'id', 'not_before', 'text', 'who']);
         $done = self::bool($data, 'done', $path);
+        $dropped = self::bool($data, 'dropped', $path);
 
         $after = [];
         foreach (self::links($data, 'after', $path) as $key) {
@@ -188,7 +189,7 @@ final readonly class ReportLoader
             }
         }
         // GitHub is read by report:sync only: without a #1234, the build can tell it is late
-        if (!$done && [] !== $doneWhen && \count($elements) === \count($doneWhen) && [] === array_filter($elements, static fn (LinkedElement $element): bool => !$element->finished)) {
+        if (!$done && !$dropped && [] !== $doneWhen && \count($elements) === \count($doneWhen) && [] === array_filter($elements, static fn (LinkedElement $element): bool => !$element->finished)) {
             throw new \RuntimeException(\sprintf('%s is open while everything in its done_when is done: report:sync closes it, with its note.', $path));
         }
         $chips = $this->chips($data, 'chips', $path);
@@ -203,6 +204,7 @@ final readonly class ReportLoader
             who: self::string($data, 'who', $path),
             text: self::string($data, 'text', $path),
             done: $done,
+            dropped: $dropped,
             doneWhen: $doneWhen,
             after: $after,
             notBefore: isset($data['not_before']) ? self::date($data, 'not_before', $path) : null,

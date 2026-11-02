@@ -29,8 +29,8 @@ final readonly class Block
     public function todo(): array
     {
         return [
-            ...array_values(array_filter($this->todo, static fn (TodoItem $item): bool => !$item->done)),
-            ...array_values(array_filter($this->todo, static fn (TodoItem $item): bool => $item->done)),
+            ...array_values(array_filter($this->todo, static fn (TodoItem $item): bool => !$item->isFinished())),
+            ...array_values(array_filter($this->todo, static fn (TodoItem $item): bool => $item->isFinished())),
         ];
     }
 }

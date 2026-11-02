@@ -71,6 +71,22 @@ function done(
     });
 }
 
+#[AsTask(namespace: 'report', description: 'Marks a to-do or a sub-lot dropped, with an optional note, then builds the HTML')]
+function drop(
+    #[AsArgument(description: 'Absolute path of the YAML file')]
+    string $file,
+    #[AsArgument(description: '1a, an id, or a piece of its text')]
+    string $selector,
+    #[AsOption(description: '"Écarté: L\'API devient payante." (label "Écarté" when none is given); the last paragraph of a to-do')]
+    ?string $note = null,
+): void {
+    edit_report($file, static function (EditableReport $report) use ($selector, $note): array {
+        $target = $report->find($selector);
+
+        return ['Écarté : ' . $target->describe(), ...$report->markDropped($target, null === $note ? null : parse_note($note, 'Écarté'))];
+    });
+}
+
 #[AsTask(namespace: 'report', description: 'Adds a note under an element, then builds the HTML')]
 function note(
     #[AsArgument(description: 'Absolute path of the YAML file')]

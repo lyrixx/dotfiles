@@ -44,6 +44,7 @@ Les changements d'état passent par les commandes, la prose s'édite à la main 
 R="castor --castor-file=${CLAUDE_SKILL_DIR}/castor.php"
 $R report:sync      <yaml>                                  # PR et issues lues sur GitHub, « à faire » fermés
 $R report:done      <yaml> <sélecteur> [--note "Fait: …"]   # grise l'élément, ajoute la note (y compris à un « à faire »)
+$R report:drop      <yaml> <sélecteur> [--note "Écarté: …"] # un « à faire » ou un sous-lot qu'on ne fera pas
 $R report:note      <yaml> <sélecteur> "Mesuré: …"          # ajoute une note
 $R report:history   <yaml> "Tu merges #1234." [--date …]   # complète l'entrée du jour
 $R report:find      <yaml> <sélecteur>                      # montre l'élément avant une édition
@@ -92,7 +93,8 @@ $R report:mentions  <yaml> "log injector"                   # la prose encore ou
    actuel, l'historique condensé. Le YAML entier ne se relit que sur demande : il est long, et les
    liens couvrent ce qu'on oubliait.
 3. Un élément fini ne disparaît jamais : `done` et une note qui dit ce qui s'est passé. Il passe en
-   gris, après les ouverts.
+   gris, après les ouverts. Un « à faire » qu'on ne fera pas (abandonné, repris ailleurs) ne se
+   marque pas fait : `report:drop`, sa puce devient « Écarté ».
 4. Publier le HTML.
 
 ## Le YAML
@@ -174,8 +176,8 @@ cards:
 
 Une suite de blocs titrés ; chacun peut avoir, dans cet ordre : `text`, `progress` (la ligne
 « Fait » verte), `todo_title` et `todo` (`{id: …, who: Toi, text: …}` et ses liens : puce orange
-au nom de la personne, grise tant qu'il attend, verte « Fait » une fois fait ; ses PR et issues en
-puces après le texte), `cards`, `table`
+au nom de la personne, grise tant qu'il attend, verte « Fait » une fois fait, grise « Écarté » avec
+`dropped: true` ; ses PR et issues en puces après le texte), `cards`, `table`
 (`columns`, puis `rows` en listes de cellules). Un `id` sur un bloc en fait une ancre
 (`more: '#progress'`).
 
@@ -219,7 +221,8 @@ todo:
 ```
 
 - `done_when` : `#1234` (une PR mergée, une issue fermée comme faite), ou un élément du rapport
-  par son numéro ou son id (`D16`, `3c`, l'id d'un « à faire » ou d'une carte), fait. Quand tout ce
+  par son numéro ou son id (`D16`, `3c`, l'id d'un « à faire » ou d'une carte), fait (un « à
+  faire » écarté compte comme fini, pour `after` aussi). Quand tout ce
   qu'il nomme est fini, `report:sync` le ferme avec la note « Fait : #1234 mergée le 30 octobre. »,
   et `report:done` fait de même quand c'est un élément qu'il vient de fermer. Une PR fermée sans
   merge ou une issue fermée sans être faite ne ferme rien : la commande le signale, à revoir.
