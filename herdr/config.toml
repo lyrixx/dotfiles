@@ -13,9 +13,10 @@ auto_switch = false
 active_row_bg = "#485a80"
 
 [ui]
-# A mouse selection overwrites the clipboard otherwise. Ctrl+C copies the
-# selection while it is still highlighted
-copy_on_select = false
+# Not false: Herdr then copies on a bare Ctrl+C only, no binding can change
+# it. Ctrl+Shift+C goes through Ghostty, which has no selection of its own,
+# and Herdr drops the selection
+copy_on_select = true
 # The Prefix, Navigate, Copy and Resize mode bars take its place while active
 tab_bar_position = "bottom"
 

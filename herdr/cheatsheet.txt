@@ -34,5 +34,5 @@ More
   ctrl+a shift+p           name the pane: shown in the sidebar and goto
   ctrl+a shift+h/j/k/l     swap the pane with its neighbor
   ctrl+a r                 resize mode: h/j/k/l, esc to leave
-  mouse                    select, then ctrl+c copies; double-click selects a word
+  mouse                    select copies; double-click selects a word
   ctrl+a shift+s / r       settings / reload the config
