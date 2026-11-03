@@ -55,6 +55,15 @@ fichier en `![alt](./capture.png)` : `gh` réécrit le lien vers l'asset upload�
 se met après `#` (`--attach './capture.png#Texte alternatif'`). Ne pas passer par un gist, une
 branche du repo ou un upload manuel. Ça reste une publication : demander mon accord avant.
 
+### Artefacts d'issue
+
+Une issue GitHub peut porter des artefacts (preview depuis octobre 2026) : documents Markdown
+(plan, recherche, analyse de cause…), pages HTML (diagrammes, visualisations interactives) et
+liens. Pour attacher à une issue un plan ou un compte rendu produit pendant le travail, c'est
+`gh issue artifact` (`create`, `edit`, `list`, `view`, `download`, `delete`), avec `--attach`
+pour les images d'un document Markdown, plutôt qu'un long commentaire. Issues seulement, pas de
+PR. Ça reste une publication : demander mon accord avant.
+
 ## Fichiers : ne jamais utiliser `/tmp`
 
 Ne jamais écrire dans `/tmp`, y compris dans le « scratchpad » de session proposé par
