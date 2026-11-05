@@ -7,6 +7,10 @@
 - PHPDoc seulement pour ce que le type natif ne dit pas (shapes d'array, generics).
 - Exceptions : jamais lever `\Exception`. `\LogicException` = bug de notre code (invariant violé),
   `\RuntimeException` (ou plus précis) sinon. Messages = phrase complète terminée par un point.
+  - Jamais `assert()` : désactivé en prod, l'invariant n'y est plus vérifié. Lever une exception
+    à la place (`\LogicException` pour un invariant).
+  - Les classes d'exception vivent dans un sous-namespace `Exception` de leur domaine :
+    `App\Cart\Exception\CartException`, pas `App\Cart\CartException`.
 - Injection de dépendances par attributs (`#[Autowire]`, `#[Target]`, `#[AutoconfigureTag]`…)
   plutôt qu'en YAML.
 - Contrôle d'accès via les voters / `is_granted`, jamais de check ad hoc. Validation par
