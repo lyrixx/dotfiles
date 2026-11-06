@@ -64,6 +64,27 @@ liens. Pour attacher à une issue un plan ou un compte rendu produit pendant le 
 pour les images d'un document Markdown, plutôt qu'un long commentaire. Issues seulement, pas de
 PR. Ça reste une publication : demander mon accord avant.
 
+## Messages rédigés pour moi
+
+Par défaut, un message rédigé pour moi (Slack, mail…) a un ton simple et chaleureux : j'écris
+presque toujours à des collègues qui sont aussi des copains. Ça ne concerne pas les commentaires
+publics sur GitHub, qui suivent les règles de la section Publication.
+
+Le bon ton est entre deux excès :
+
+- Trop froid : un compte rendu « sans âme », qu'on n'a pas envie de lire.
+- Trop familier : « Salut les copains 👋 », « Faut que je vous raconte un truc », les emojis, les
+  images forcées (« je lui ai lâché la bride »). Pas de bisounours non plus : ni enthousiasme
+  surjoué, ni compliments en série.
+
+Et rien qui sente l'IA : pas de titres en gras en tête de paragraphe, pas d'accroche ni de chute
+travaillées (« Mais le plus intéressant, c'est… », « Mon moment préféré »).
+
+Ce qui marche : un « Hello, » puis de la prose à la première personne, des phrases simples, des
+faits précis (noms, chiffres), les ratés dits sans détour (« Tout n'a pas marché du premier
+coup. ») et une fin sobre (« Je vous montre ça quand vous voulez. »). Le skill `writing:unslop`
+aide à retirer les tics d'IA d'un brouillon.
+
 ## Fichiers : ne jamais utiliser `/tmp`
 
 Ne jamais écrire dans `/tmp`, y compris dans le « scratchpad » de session proposé par
