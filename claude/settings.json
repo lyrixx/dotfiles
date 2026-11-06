@@ -1,11 +1,11 @@
 {
+  "env": {
+    "EDITOR": "code --wait"
+  },
   "attribution": {
     "commit": "",
     "pr": "",
     "sessionUrl": false
-  },
-  "env": {
-    "EDITOR": "code --wait"
   },
   "permissions": {
     "allow": [
@@ -51,6 +51,18 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/block-claude-attribution.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-title.sh",
             "timeout": 10
           }
         ]
