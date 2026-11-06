@@ -1,0 +1,1894 @@
+#!/usr/bin/env -S castor --castor-file
+<?php
+
+// What needs me now, across all my repositories: my open PRs, the reviews asked
+// of me, and what I left behind. It changes nothing, neither on GitHub nor in
+// the repositories.
+
+\defined('CASTOR_USE_CHDIR') || \define('CASTOR_USE_CHDIR', true);
+
+use Castor\Attribute\AsTask;
+use Revolt\EventLoop;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
+use Symfony\Component\Tui\Ansi\AnsiUtils;
+use Symfony\Component\Tui\Event\InputEvent;
+use Symfony\Component\Tui\Input\Key;
+use Symfony\Component\Tui\Input\Keybindings;
+use Symfony\Component\Tui\Render\Compositor;
+use Symfony\Component\Tui\Render\Layer;
+use Symfony\Component\Tui\Render\RenderContext;
+use Symfony\Component\Tui\Style\Border;
+use Symfony\Component\Tui\Style\Padding;
+use Symfony\Component\Tui\Style\Style;
+use Symfony\Component\Tui\Style\StyleSheet;
+use Symfony\Component\Tui\Style\TextAlign;
+use Symfony\Component\Tui\Style\VerticalAlign;
+use Symfony\Component\Tui\Tui;
+use Symfony\Component\Tui\Widget\AbstractWidget;
+use Symfony\Component\Tui\Widget\ContainerWidget;
+use Symfony\Component\Tui\Widget\TextWidget;
+use Symfony\Component\Tui\Widget\Util\StringUtils;
+use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
+
+use function Castor\context;
+use function Castor\io;
+use function Castor\run;
+
+#[AsTask(default: true, description: 'What needs me now, across all my repositories')]
+function work(): void
+{
+    $gitHub = new GitHub();
+    $workspace = new Workspace();
+
+    if (stream_isatty(\STDOUT) && stream_isatty(\STDIN)) {
+        new Dashboard($gitHub, $workspace, new Herdr())->run();
+
+        return;
+    }
+
+    printBoard($gitHub, $workspace);
+}
+
+/**
+ * For a pipe, or for an agent reading the output.
+ */
+function printBoard(GitHub $gitHub, Workspace $workspace): void
+{
+    try {
+        $snapshot = $gitHub->fetch();
+    } catch (ProcessFailedException|ProcessTimedOutException $exception) {
+        $snapshot = $gitHub->cached() ?? throw $exception;
+        io()->getErrorStyle()->warning('GitHub ne répond pas : données ' . formatAge($snapshot->fetchedAt) . '.');
+    }
+
+    $entries = [...$snapshot->entries, ...$workspace->forgotten($snapshot)];
+    $links = $workspace->pullRequestLinks();
+
+    foreach (Section::cases() as $section) {
+        $sectionEntries = array_filter($entries, static fn (Entry $entry) => $entry->section === $section);
+        io()->writeln(\sprintf("\n%s (%d)", $section->value, \count($sectionEntries)), OutputInterface::OUTPUT_RAW);
+
+        foreach ($sectionEntries as $entry) {
+            io()->writeln(\sprintf(
+                '  %s%s%s  %s',
+                mb_str_pad($entry->status, 24),
+                mb_str_pad($entry->reference, 44),
+                mb_str_pad("{$entry->ageInDays} j", 6),
+                $entry->title,
+            ), OutputInterface::OUTPUT_RAW);
+
+            if (Section::ToDo === $section && null !== $location = $workspace->locate($entry, $links)) {
+                io()->writeln('    ' . $location->command(), OutputInterface::OUTPUT_RAW);
+            }
+        }
+    }
+}
+
+final class Dashboard
+{
+    private const float AGENTS_REFRESH_INTERVAL_IN_SECONDS = 5;
+    private const float BOARD_REFRESH_INTERVAL_IN_SECONDS = 300;
+    private const float CLOCK_REFRESH_INTERVAL_IN_SECONDS = 30;
+    private const float FAILED_LOAD_RETRY_INTERVAL_IN_SECONDS = 30;
+    private const int LOG_LINES = 10;
+    private const array SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    private const float SPINNER_INTERVAL_IN_SECONDS = 0.08;
+
+    private readonly BoardWidget $board;
+    private readonly TextWidget $detail;
+    private readonly ContainerWidget $detailBox;
+    private readonly LineWidget $footer;
+    private readonly LineWidget $header;
+    private readonly Keybindings $keys;
+    private readonly ContainerWidget $splash;
+    private readonly LineWidget $splashLoader;
+    private readonly Tui $tui;
+
+    /** @var list<Agent> */
+    private array $agents = [];
+    private bool $agentsLoading = false;
+    /** @var list<Entry> Kept during a refresh: they take longer to find than the PRs */
+    private array $forgotten = [];
+    private bool $hasFreshData = false;
+    private bool $helpVisible = false;
+    private bool $herdrRunning = false;
+    private bool $lastLoadFailed = false;
+    private bool $loading = false;
+    private int $localSearch = 0;
+    /** @var array<string, Location> By reference */
+    private array $locations = [];
+    /** @var array<string, list<string>> By reference */
+    private array $logs = [];
+    private ?string $notice = null;
+    private ?Location $resumeAfterExit = null;
+    private bool $showingBoard = false;
+    private ?int $snapshotFetchedAt = null;
+    private int $spinnerFrame = 0;
+    /** @var array<string, true> What is running, by label */
+    private array $tasks = [];
+
+    public function __construct(
+        private readonly GitHub $gitHub,
+        private readonly Workspace $workspace,
+        private readonly Herdr $herdr,
+    ) {
+        $this->keys = new Keybindings([
+            'down' => [Key::DOWN, 'j'],
+            'logs' => ['l'],
+            'next_section' => [Key::TAB],
+            'open' => ['o'],
+            'previous_section' => ['shift+tab'],
+            'interrupt' => ['ctrl+c'],
+            'quit' => ['q', Key::ESCAPE],
+            'refresh' => ['r'],
+            'resume' => [Key::ENTER],
+            'up' => [Key::UP, 'k'],
+        ]);
+
+        $this->tui = new Tui(new StyleSheet([
+            '.logo' => new Style(color: Tone::Accent->value, font: 'slant', textAlign: TextAlign::Center),
+            '.splash' => new Style(gap: 1, verticalAlign: VerticalAlign::Center),
+        ]));
+
+        $this->board = new BoardWidget();
+        $this->detail = new TextWidget(truncate: true);
+        $this->detailBox = new ContainerWidget();
+        $this->detailBox->add($this->detail);
+        $this->footer = new LineWidget($this->renderFooter(...));
+        $this->header = new LineWidget($this->renderHeader(...));
+
+        $logo = new TextWidget('gh work');
+        $logo->addStyleClass('logo');
+        $this->splashLoader = new LineWidget($this->renderSplashLoader(...));
+        $this->splash = new ContainerWidget();
+        $this->splash->addStyleClass('splash');
+        $this->splash->expandVertically(true);
+        $this->splash->add($logo);
+        $this->splash->add($this->splashLoader);
+    }
+
+    public function run(): void
+    {
+        $cached = $this->gitHub->cached();
+        if (null === $cached) {
+            $this->tui->add($this->splash);
+        } else {
+            $this->showSnapshot($cached);
+            // It only needs the disk: no reason to wait for the network
+            EventLoop::queue(fn () => $this->findLocalState($cached));
+        }
+
+        $this->tui->addListener($this->handleKey(...));
+        $this->tui->scheduleInterval($this->tickSpinner(...), self::SPINNER_INTERVAL_IN_SECONDS);
+        $this->tui->scheduleInterval($this->redraw(...), self::CLOCK_REFRESH_INTERVAL_IN_SECONDS);
+        $this->tui->scheduleInterval($this->load(...), self::BOARD_REFRESH_INTERVAL_IN_SECONDS);
+        $this->tui->scheduleInterval($this->retryFailedLoad(...), self::FAILED_LOAD_RETRY_INTERVAL_IN_SECONDS);
+        $this->tui->scheduleInterval($this->loadAgents(...), self::AGENTS_REFRESH_INTERVAL_IN_SECONDS);
+
+        $this->load();
+        $this->loadAgents();
+
+        // The alternate screen gives the terminal back as it was
+        fwrite(\STDOUT, "\e[?1049h\e[H");
+        try {
+            $this->tui->run();
+        } finally {
+            fwrite(\STDOUT, "\e[?1049l");
+        }
+
+        if (null !== $this->resumeAfterExit) {
+            $this->resumeInThisTerminal($this->resumeAfterExit);
+        }
+    }
+
+    private function load(): void
+    {
+        if ($this->loading) {
+            return;
+        }
+
+        $this->loading = true;
+        $this->notice = null;
+        $this->tasks['GitHub'] = true;
+        $this->redraw();
+
+        EventLoop::queue(function (): void {
+            try {
+                $snapshot = $this->gitHub->fetch();
+                $this->lastLoadFailed = false;
+                unset($this->tasks['GitHub']);
+                $this->showFreshSnapshot($snapshot);
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                $this->lastLoadFailed = true;
+                $this->showBoard();
+                $this->notice = 'GitHub injoignable, nouvel essai dans 30 s';
+            } finally {
+                $this->loading = false;
+                unset($this->tasks['GitHub']);
+                $this->redraw();
+            }
+        });
+    }
+
+    private function retryFailedLoad(): void
+    {
+        if ($this->lastLoadFailed) {
+            $this->load();
+        }
+    }
+
+    private function showFreshSnapshot(Snapshot $snapshot): void
+    {
+        if ($this->hasFreshData) {
+            $this->notifyChanges($snapshot->entries);
+        }
+
+        $this->hasFreshData = true;
+        $this->logs = [];
+        $this->showSnapshot($snapshot);
+        $this->findLocalState($snapshot);
+    }
+
+    private function showSnapshot(Snapshot $snapshot): void
+    {
+        $this->showBoard();
+        $this->snapshotFetchedAt = $snapshot->fetchedAt;
+        $this->board->setEntries([...$snapshot->entries, ...$this->forgotten]);
+    }
+
+    private function showBoard(): void
+    {
+        if ($this->showingBoard) {
+            return;
+        }
+
+        $this->showingBoard = true;
+        $this->tui->clear();
+        $this->tui->add($this->header);
+        $this->tui->add($this->board);
+        $this->tui->add($this->detailBox);
+        $this->tui->add($this->footer);
+    }
+
+    private function findLocalState(Snapshot $snapshot): void
+    {
+        // A newer snapshot takes over: this search would only overwrite it
+        $search = ++$this->localSearch;
+        $isStale = fn () => $search !== $this->localSearch;
+
+        $this->tasks['sessions Claude'] = true;
+        $this->redraw();
+        $links = $this->workspace->pullRequestLinks();
+        foreach ($snapshot->entries as $entry) {
+            $this->locate($entry, $links);
+            if ($isStale()) {
+                return;
+            }
+        }
+        unset($this->tasks['sessions Claude']);
+
+        $this->tasks['worktrees et stashes'] = true;
+        $this->redraw();
+        $this->forgotten = $this->workspace->forgotten($snapshot);
+        if ($isStale()) {
+            return;
+        }
+
+        $this->board->setEntries([...$snapshot->entries, ...$this->forgotten]);
+        foreach ($this->forgotten as $entry) {
+            $this->locate($entry, $links);
+        }
+        unset($this->tasks['worktrees et stashes']);
+        $this->redraw();
+    }
+
+    private function locate(Entry $entry, PullRequestLinks $links): void
+    {
+        $location = $this->workspace->locate($entry, $links);
+        if (null !== $location) {
+            $this->locations[$entry->reference] = $location;
+        }
+        $this->redraw();
+    }
+
+    /**
+     * @param list<Entry> $entries
+     */
+    private function notifyChanges(array $entries): void
+    {
+        $previousStatuses = [];
+        foreach ($this->board->entries() as $entry) {
+            $previousStatuses[$entry->reference] = $entry->status;
+        }
+
+        foreach ($entries as $entry) {
+            $previousStatus = $previousStatuses[$entry->reference] ?? $entry->status;
+            if (Section::ToDo === $entry->section && $previousStatus !== $entry->status) {
+                $this->runInBackground(['notify-send', '--app-name=gh work', $entry->reference, "{$entry->status} : {$entry->title}"]);
+            }
+        }
+    }
+
+    private function loadAgents(): void
+    {
+        if ($this->agentsLoading) {
+            return;
+        }
+
+        $this->agentsLoading = true;
+        EventLoop::queue(function (): void {
+            try {
+                $this->herdrRunning = $this->herdr->isRunning();
+                $this->agents = $this->herdrRunning ? $this->herdr->agents() : [];
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                $this->agents = [];
+                $this->notice = 'Herdr ne répond pas';
+            } finally {
+                $this->agentsLoading = false;
+                $this->redraw();
+            }
+        });
+    }
+
+    private function handleKey(InputEvent $event): void
+    {
+        $data = $event->getData();
+
+        if ($this->keys->matches($data, 'interrupt')) {
+            $this->tui->stop();
+
+            return;
+        }
+
+        if ($this->isHelpKey($data) || ($this->helpVisible && $this->keys->matches($data, 'quit'))) {
+            $this->toggleHelp();
+
+            return;
+        }
+
+        if ($this->helpVisible) {
+            return;
+        }
+
+        $actions = [
+            'down' => fn () => $this->board->moveBy(1),
+            'logs' => $this->showLogs(...),
+            'next_section' => fn () => $this->board->moveToSection(1),
+            'open' => $this->openInBrowser(...),
+            'previous_section' => fn () => $this->board->moveToSection(-1),
+            'quit' => $this->tui->stop(...),
+            'refresh' => $this->load(...),
+            'resume' => $this->resume(...),
+            'up' => fn () => $this->board->moveBy(-1),
+        ];
+
+        foreach ($actions as $action => $callback) {
+            if ($this->keys->matches($data, $action)) {
+                $callback();
+                $this->redraw();
+
+                return;
+            }
+        }
+    }
+
+    /**
+     * ? needs Shift on most layouts, and a terminal speaking the Kitty protocol
+     * may report that as an escape sequence, which no key identifier matches.
+     */
+    private function isHelpKey(string $data): bool
+    {
+        return '?' === ($this->keys->getParser()->decodePrintable($data) ?? $data);
+    }
+
+    private function toggleHelp(): void
+    {
+        if (!$this->showingBoard) {
+            return;
+        }
+
+        $this->helpVisible = !$this->helpVisible;
+        $this->board->setModal($this->helpVisible ? HelpModal::lines() : null);
+        $this->redraw();
+    }
+
+    private function resume(): void
+    {
+        $entry = $this->board->selected();
+        if (null === $entry) {
+            return;
+        }
+
+        $location = $this->locations[$entry->reference] ?? null;
+        $agent = $this->agentOf($entry, $location);
+        if (null !== $agent) {
+            $this->notice = null;
+            $this->focusAgent($agent);
+
+            return;
+        }
+
+        if (null === $location) {
+            $this->notice = 'Ce dépôt n\'est pas cloné sur cette machine';
+
+            return;
+        }
+
+        if (!$this->herdrRunning) {
+            $this->resumeAfterExit = $location;
+            $this->tui->stop();
+
+            return;
+        }
+
+        $this->notice = null;
+        $this->startClaude($entry, $location);
+    }
+
+    private function focusAgent(Agent $agent): void
+    {
+        EventLoop::queue(function () use ($agent): void {
+            try {
+                $this->herdr->focus($agent);
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                $this->notice = 'Herdr n\'a pas pu afficher l\'onglet';
+                $this->redraw();
+            }
+        });
+    }
+
+    private function startClaude(Entry $entry, Location $location): void
+    {
+        // Claude takes seconds to start: a second Enter would start it twice
+        if (isset($this->tasks['ouverture de Claude'])) {
+            return;
+        }
+
+        $this->tasks['ouverture de Claude'] = true;
+        EventLoop::queue(function () use ($entry, $location): void {
+            try {
+                $this->herdr->startClaude($entry->agentName, $location);
+                $this->loadAgents();
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                $this->notice = 'Claude n\'a pas démarré : regarde son onglet dans Herdr';
+            } finally {
+                unset($this->tasks['ouverture de Claude']);
+                $this->redraw();
+            }
+        });
+    }
+
+    private function resumeInThisTerminal(Location $location): void
+    {
+        if (null === $location->sessionId) {
+            io()->writeln($location->command(), OutputInterface::OUTPUT_RAW);
+
+            return;
+        }
+
+        run(['claude', '--resume', $location->sessionId], context: context()->withWorkingDirectory($location->directory)->withTty());
+    }
+
+    private function openInBrowser(): void
+    {
+        $url = $this->board->selected()?->url;
+        if (null === $url) {
+            $this->notice = 'Pas de page GitHub pour cette ligne';
+
+            return;
+        }
+
+        $this->runInBackground(['xdg-open', $url]);
+    }
+
+    private function showLogs(): void
+    {
+        $entry = $this->board->selected();
+        $check = null === $entry ? null : array_find($entry->failedChecks, static fn (FailedCheck $check) => null !== $check->runId);
+        if (null === $entry || null === $check) {
+            $this->notice = 'Pas de log GitHub Actions pour cette ligne';
+
+            return;
+        }
+
+        $this->tasks['logs de la CI'] = true;
+        EventLoop::queue(function () use ($check, $entry): void {
+            try {
+                $this->logs[$entry->reference] = $this->gitHub->failedLogs((string) $entry->repository, (string) $check->runId, self::LOG_LINES);
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                $this->notice = 'Logs de la CI indisponibles : expirés, ou GitHub injoignable';
+            } finally {
+                unset($this->tasks['logs de la CI']);
+                $this->redraw();
+            }
+        });
+    }
+
+    /**
+     * @param list<string> $command
+     */
+    private function runInBackground(array $command): void
+    {
+        EventLoop::queue(static fn () => finishedProcess($command));
+    }
+
+    private function tickSpinner(): void
+    {
+        if ([] === $this->tasks) {
+            return;
+        }
+
+        $this->spinnerFrame = ($this->spinnerFrame + 1) % \count(self::SPINNER_FRAMES);
+        $this->header->invalidate();
+        $this->splashLoader->invalidate();
+        $this->tui->requestRender();
+    }
+
+    private function redraw(): void
+    {
+        $entry = $this->board->selected();
+        $this->detail->setText(null === $entry ? '' : $this->renderDetail($entry));
+        $this->detailBox->setStyle(new Style(
+            border: Border::all(1, 'rounded', ($entry?->icon->tone() ?? Tone::Muted)->value),
+            hidden: $this->helpVisible ?: null,
+            padding: Padding::xy(1, 0),
+        ));
+        $this->board->setActiveReferences($this->activeReferences());
+        $this->header->invalidate();
+        $this->footer->invalidate();
+        $this->tui->requestRender();
+    }
+
+    private function renderSplashLoader(int $columns): string
+    {
+        $message = 'Je demande à GitHub ce qui t\'attend…';
+        $indent = intdiv($columns - AnsiUtils::visibleWidth($message) - 2, 2);
+
+        return str_repeat(' ', max(0, $indent)) . paint(self::SPINNER_FRAMES[$this->spinnerFrame], Tone::Accent) . ' ' . paint($message, Tone::Muted);
+    }
+
+    private function renderHeader(int $columns): string
+    {
+        $entries = $this->board->entries();
+        $count = static fn (Section $section) => \count(array_filter($entries, static fn (Entry $entry) => $entry->section === $section));
+
+        $left = new Style(background: Tone::Accent->value, color: '#000000', bold: true)->apply(' gh work ') . '  ';
+        foreach ($entries as $entry) {
+            if (\in_array($entry->section, [Section::Rest, Section::ToDo], true)) {
+                $left .= paint('■', $entry->icon->tone());
+            }
+        }
+        $left .= '  ' . implode('  ', [
+            paint(\sprintf('%d à toi', $count(Section::ToDo)), Tone::Danger),
+            paint(\sprintf('%d reviews', $count(Section::Reviews)), Tone::Info),
+            paint(\sprintf('%d en attente', $count(Section::Rest)), Tone::Success),
+            paint(\sprintf('%d oubliés', $count(Section::Forgotten)), Tone::Muted),
+        ]);
+
+        $age = null === $this->snapshotFetchedAt ? null : formatAge($this->snapshotFetchedAt);
+        $right = implode(paint('  ·  ', Tone::Muted), array_filter([
+            null === $this->notice ? null : paint($this->notice, Tone::Warning),
+            [] === $this->tasks ? null : paint(self::SPINNER_FRAMES[$this->spinnerFrame] . ' ' . implode(', ', array_keys($this->tasks)) . '…', Tone::Accent),
+            null === $age ? null : paint($age, $this->hasFreshData ? Tone::Muted : Tone::Warning),
+        ]));
+
+        $gap = $columns - AnsiUtils::visibleWidth($left) - AnsiUtils::visibleWidth($right) - 1;
+
+        return $left . str_repeat(' ', max(1, $gap)) . $right;
+    }
+
+    private function renderFooter(int $columns): string
+    {
+        $parts = [];
+        foreach (['⏎' => 'reprendre', '?' => 'aide', 'q' => 'quitter'] as $key => $label) {
+            $parts[] = paint($key, Tone::Text, bold: true) . ' ' . paint($label, Tone::Muted);
+        }
+
+        return ' ' . implode('   ', $parts);
+    }
+
+    private function renderDetail(Entry $entry): string
+    {
+        $lines = [
+            paint($entry->reference, Tone::Text, bold: true) . '  ' . paint($entry->status, $entry->icon->tone()),
+            paint($entry->title, Tone::Text),
+            $this->renderFacts($entry),
+        ];
+
+        if ([] !== $entry->failedChecks) {
+            $names = array_map(static fn (FailedCheck $check) => $check->name, $entry->failedChecks);
+            $lines[] = paint(\sprintf('✘ %d en échec : ', \count($names)), Tone::Danger, bold: true) . paint(implode(' · ', $names), Tone::Danger);
+        }
+
+        $lines[] = $this->renderLocation($entry);
+
+        foreach ($this->logs[$entry->reference] ?? [] as $line) {
+            $lines[] = paint($line, Tone::Muted);
+        }
+
+        return implode("\n", $lines);
+    }
+
+    private function renderFacts(Entry $entry): string
+    {
+        if (null !== $entry->hint) {
+            return paint($entry->hint, Tone::Muted);
+        }
+
+        $facts = [paint("⎇ {$entry->branch}", Tone::Info)];
+        if ($entry->changedFiles > 0) {
+            $facts[] = paint("+{$entry->additions}", Tone::Success) . ' ' . paint("−{$entry->deletions}", Tone::Danger) . paint(" dans {$entry->changedFiles} fichiers", Tone::Muted);
+        }
+        foreach ($entry->reviews as $review) {
+            $facts[] = paint($review, Tone::Text);
+        }
+        if ($entry->unresolvedThreads > 0) {
+            $facts[] = paint("{$entry->unresolvedThreads} fils non résolus", Tone::Warning);
+        }
+
+        return implode(paint('  ·  ', Tone::Muted), $facts);
+    }
+
+    private function renderLocation(Entry $entry): string
+    {
+        $location = $this->locations[$entry->reference] ?? null;
+        $agent = $this->agentOf($entry, $location);
+        if (null !== $agent) {
+            return paint(Icon::Agent->value . " Claude tourne ici ({$agent->status}) : ⏎ pour y aller", Tone::Accent);
+        }
+
+        if (null === $location) {
+            return paint([] === $this->tasks ? 'Ce dépôt n\'est pas cloné sur cette machine.' : 'Je cherche la session…', Tone::Muted);
+        }
+
+        return paint('▶ ' . $location->command(), Tone::Accent);
+    }
+
+    /**
+     * By name when gh work started it, by directory when I started it myself.
+     */
+    private function agentOf(Entry $entry, ?Location $location): ?Agent
+    {
+        return array_find($this->agents, static fn (Agent $agent) => $agent->name === $entry->agentName || true === $location?->isIn($agent->directory));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function activeReferences(): array
+    {
+        $references = [];
+        foreach ($this->board->entries() as $entry) {
+            if (null !== $this->agentOf($entry, $this->locations[$entry->reference] ?? null)) {
+                $references[] = $entry->reference;
+            }
+        }
+
+        return $references;
+    }
+}
+
+/**
+ * The list of entries, grouped by section, with one highlighted line.
+ */
+final class BoardWidget extends AbstractWidget implements VerticallyExpandableInterface
+{
+    private const int AGE_WIDTH = 6;
+    private const int MAX_REFERENCE_WIDTH = 44;
+    private const int MAX_STATUS_WIDTH = 24;
+    private const int MIN_TITLE_WIDTH = 16;
+
+    /** @var list<string> */
+    private array $activeReferences = [];
+    /** @var list<Entry> */
+    private array $entries = [];
+    /** @var list<string>|null */
+    private ?array $modal = null;
+    private int $selectedIndex = 0;
+
+    /**
+     * @param list<Entry> $entries
+     */
+    public function setEntries(array $entries): void
+    {
+        $selectedReference = $this->selected()?->reference;
+        usort($entries, static fn (Entry $a, Entry $b) => $a->section->position() <=> $b->section->position());
+        $this->entries = $entries;
+
+        $index = array_find_key($entries, static fn (Entry $entry) => $entry->reference === $selectedReference);
+        $this->selectedIndex = $index ?? max(0, min($this->selectedIndex, \count($entries) - 1));
+        $this->invalidate();
+    }
+
+    /**
+     * @return list<Entry>
+     */
+    public function entries(): array
+    {
+        return $this->entries;
+    }
+
+    public function selected(): ?Entry
+    {
+        return $this->entries[$this->selectedIndex] ?? null;
+    }
+
+    /**
+     * @param list<string> $activeReferences
+     */
+    public function setActiveReferences(array $activeReferences): void
+    {
+        if ($this->activeReferences !== $activeReferences) {
+            $this->activeReferences = $activeReferences;
+            $this->invalidate();
+        }
+    }
+
+    /**
+     * @param list<string>|null $modal
+     */
+    public function setModal(?array $modal): void
+    {
+        $this->modal = $modal;
+        $this->invalidate();
+    }
+
+    public function moveBy(int $offset): void
+    {
+        if ([] === $this->entries) {
+            return;
+        }
+
+        $this->selectedIndex = ($this->selectedIndex + $offset + \count($this->entries)) % \count($this->entries);
+        $this->invalidate();
+    }
+
+    public function moveToSection(int $direction): void
+    {
+        $current = $this->selected()?->section;
+        $count = \count($this->entries);
+
+        for ($step = 1; $step < $count; ++$step) {
+            $index = ($this->selectedIndex + $direction * $step + $count * $step) % $count;
+            if ($this->entries[$index]->section !== $current) {
+                $section = $this->entries[$index]->section;
+                $this->selectedIndex = (int) array_find_key($this->entries, static fn (Entry $entry) => $entry->section === $section);
+                $this->invalidate();
+
+                return;
+            }
+        }
+    }
+
+    public function expandVertically(bool $expand): static
+    {
+        return $this;
+    }
+
+    public function isVerticallyExpanded(): bool
+    {
+        return true;
+    }
+
+    public function render(RenderContext $context): array
+    {
+        $columns = $context->getColumns();
+        $rows = max(1, $context->getRows());
+
+        $lines = [''];
+        $selectedLine = 0;
+        $section = null;
+
+        if ([] !== $this->entries && [] === array_filter($this->entries, static fn (Entry $entry) => Section::ToDo === $entry->section)) {
+            $lines[] = $this->renderSection(Section::ToDo, 0, $columns);
+            $lines[] = '   ' . paint(Icon::ReadyToMerge->value . ' Rien ne t\'attend.', Tone::Success);
+            $lines[] = '';
+        }
+
+        [$statusWidth, $referenceWidth, $titleWidth] = $this->columnWidths($columns);
+
+        foreach ($this->entries as $index => $entry) {
+            if ($entry->section !== $section) {
+                if (null !== $section) {
+                    $lines[] = '';
+                }
+                $section = $entry->section;
+                $sectionEntries = array_filter($this->entries, static fn (Entry $other) => $other->section === $entry->section);
+                $lines[] = $this->renderSection($section, \count($sectionEntries), $columns);
+            }
+
+            if ($index === $this->selectedIndex) {
+                $selectedLine = \count($lines);
+            }
+            $lines[] = $this->renderEntry($entry, $index === $this->selectedIndex, $columns, $statusWidth, $referenceWidth, $titleWidth);
+        }
+
+        $firstLine = max(0, min($selectedLine - intdiv($rows, 2), \count($lines) - $rows));
+
+        $visibleLines = array_pad(\array_slice($lines, $firstLine, $rows), $rows, '');
+
+        return null === $this->modal ? $visibleLines : $this->renderModal($this->modal, $visibleLines, $columns, $rows);
+    }
+
+    /**
+     * @param list<string> $modal
+     * @param list<string> $lines
+     *
+     * @return list<string>
+     */
+    private function renderModal(array $modal, array $lines, int $columns, int $rows): array
+    {
+        $dimmed = array_map(static fn (string $line) => paint(AnsiUtils::stripAnsiCodes($line), Tone::Line), $lines);
+
+        return Compositor::composite(
+            new Layer($dimmed, width: $columns, height: $rows),
+            new Layer(
+                $modal,
+                row: max(0, intdiv($rows - \count($modal), 2)),
+                col: max(0, intdiv($columns - AnsiUtils::visibleWidth($modal[0]), 2)),
+            ),
+        );
+    }
+
+    /**
+     * @return array{int, int, int}
+     */
+    private function columnWidths(int $columns): array
+    {
+        $statusWidth = 0;
+        $referenceWidth = 0;
+        foreach ($this->entries as $entry) {
+            $statusWidth = max($statusWidth, AnsiUtils::visibleWidth($entry->status));
+            $referenceWidth = max($referenceWidth, AnsiUtils::visibleWidth($entry->reference));
+        }
+        $statusWidth = min($statusWidth, self::MAX_STATUS_WIDTH);
+        $referenceWidth = min($referenceWidth, self::MAX_REFERENCE_WIDTH);
+
+        // The bar, the icon and the mark of an agent, then the gaps between the columns
+        $fixedWidth = 6 + 2 + 2 + self::AGE_WIDTH;
+        $titleWidth = $columns - $fixedWidth - $statusWidth - $referenceWidth;
+        if ($titleWidth < self::MIN_TITLE_WIDTH) {
+            $titleWidth += $statusWidth;
+            $statusWidth = 0;
+        }
+
+        return [$statusWidth, $referenceWidth, max(0, $titleWidth)];
+    }
+
+    private function renderSection(Section $section, int $count, int $columns): string
+    {
+        $title = " {$section->value} ";
+        $rule = str_repeat('─', max(0, $columns - AnsiUtils::visibleWidth($title) - 6));
+
+        return paint($title, $section->tone(), bold: true) . paint((string) $count, Tone::Text) . ' ' . paint($rule, Tone::Line);
+    }
+
+    private function renderEntry(Entry $entry, bool $selected, int $columns, int $statusWidth, int $referenceWidth, int $titleWidth): string
+    {
+        $background = $selected ? Tone::Selection : null;
+        $hasAgent = \in_array($entry->reference, $this->activeReferences, true);
+
+        $line = paint($selected ? '▌' : ' ', $entry->icon->tone(), $background);
+        $line .= paint(' ', Tone::Text, $background);
+        $line .= paint($entry->icon->value . ' ', $entry->icon->tone(), $background);
+        $line .= paint($hasAgent ? Icon::Agent->value . ' ' : '  ', Icon::Agent->tone(), $background);
+        if ($statusWidth > 0) {
+            $line .= paint(self::fit($entry->status, $statusWidth) . '  ', $entry->icon->tone(), $background);
+        }
+        $line .= $this->renderReference($entry->reference, $referenceWidth, $background) . paint('  ', Tone::Text, $background);
+        $line .= paint(self::fit($entry->title, $titleWidth), Tone::Text, $background, bold: $selected);
+        $line .= paint(str_pad("{$entry->ageInDays} j", self::AGE_WIDTH, ' ', \STR_PAD_LEFT), Tone::Muted, $background);
+
+        $padding = $columns - AnsiUtils::visibleWidth($line);
+
+        return $line . paint(str_repeat(' ', max(0, $padding)), Tone::Text, $background);
+    }
+
+    private function renderReference(string $reference, int $width, ?Tone $background): string
+    {
+        $fitted = self::fit($reference, $width);
+        $slash = strrpos($fitted, '/');
+        if (false === $slash) {
+            return paint($fitted, Tone::Text, $background);
+        }
+
+        return paint(substr($fitted, 0, $slash + 1), Tone::Muted, $background) . paint(substr($fitted, $slash + 1), Tone::Text, $background);
+    }
+
+    private static function fit(string $text, int $width): string
+    {
+        return AnsiUtils::truncateToWidth($text, $width, '…', pad: true);
+    }
+}
+
+/**
+ * The keys and the marks of the board, as lines to draw over it.
+ */
+final class HelpModal
+{
+    private const int KEY_WIDTH = 9;
+    private const array KEYS = [
+        '↑↓ j k' => 'naviguer',
+        '⇥ ⇧⇥' => 'changer de section',
+        '⏎' => 'reprendre dans Herdr',
+        'l' => 'cause de l\'échec de CI',
+        'o' => 'ouvrir sur GitHub',
+        'r' => 'rafraîchir',
+        '?' => 'fermer cette aide',
+        'q' => 'quitter',
+    ];
+    private const int KEYS_WIDTH = 33;
+    private const int LEGEND_WIDTH = 24;
+    private const int MARGIN_WIDTH = 2;
+
+    /**
+     * @return list<string>
+     */
+    public static function lines(): array
+    {
+        $width = self::MARGIN_WIDTH * 2 + self::KEYS_WIDTH + self::LEGEND_WIDTH;
+        $keys = self::keyColumn();
+        $legend = self::legendColumn();
+
+        $title = ' Aide ';
+        $lines = [paint('╭─', Tone::Accent, Tone::Panel) . paint($title, Tone::Text, Tone::Panel, bold: true) . paint(str_repeat('─', $width - mb_strlen($title) - 1) . '╮', Tone::Accent, Tone::Panel)];
+        $lines[] = self::row('', $width);
+        $lines[] = self::row(self::columns(paint('Clavier', Tone::Accent, Tone::Panel, bold: true), paint('Légende', Tone::Accent, Tone::Panel, bold: true)), $width);
+
+        for ($index = 0; $index < max(\count($keys), \count($legend)); ++$index) {
+            $lines[] = self::row(self::columns($keys[$index] ?? '', $legend[$index] ?? ''), $width);
+        }
+
+        $lines[] = self::row('', $width);
+        $lines[] = paint('╰' . str_repeat('─', $width) . '╯', Tone::Accent, Tone::Panel);
+
+        return $lines;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function keyColumn(): array
+    {
+        $lines = [];
+        foreach (self::KEYS as $key => $label) {
+            $lines[] = paint(mb_str_pad($key, self::KEY_WIDTH), Tone::Text, Tone::Panel, bold: true) . paint($label, Tone::Muted, Tone::Panel);
+        }
+
+        return $lines;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function legendColumn(): array
+    {
+        return array_map(
+            static fn (Icon $icon) => paint($icon->value . ' ', $icon->tone(), Tone::Panel) . paint($icon->label(), Tone::Muted, Tone::Panel),
+            Icon::cases(),
+        );
+    }
+
+    private static function columns(string $left, string $right): string
+    {
+        $gap = self::KEYS_WIDTH - AnsiUtils::visibleWidth($left);
+
+        return $left . paint(str_repeat(' ', max(0, $gap)), Tone::Text, Tone::Panel) . $right;
+    }
+
+    private static function row(string $content, int $width): string
+    {
+        $margin = paint(str_repeat(' ', self::MARGIN_WIDTH), Tone::Text, Tone::Panel);
+        $padding = $width - self::MARGIN_WIDTH - AnsiUtils::visibleWidth($content);
+
+        return paint('│', Tone::Accent, Tone::Panel) . $margin . $content . paint(str_repeat(' ', max(0, $padding)), Tone::Text, Tone::Panel) . paint('│', Tone::Accent, Tone::Panel);
+    }
+}
+
+/**
+ * One line that depends on the width of the terminal.
+ */
+final class LineWidget extends AbstractWidget
+{
+    /**
+     * @param \Closure(int): string $content
+     */
+    public function __construct(
+        private readonly \Closure $content,
+    ) {
+    }
+
+    public function render(RenderContext $context): array
+    {
+        $columns = $context->getColumns();
+
+        return [AnsiUtils::truncateToWidth(($this->content)($columns), $columns, '')];
+    }
+}
+
+enum Section: string
+{
+    case ToDo = 'À TOI';
+    case Reviews = 'REVIEWS DEMANDÉES';
+    case Rest = 'LE RESTE';
+    case Forgotten = 'OUBLIÉ';
+
+    public function tone(): Tone
+    {
+        return match ($this) {
+            self::ToDo => Tone::Danger,
+            self::Reviews => Tone::Info,
+            self::Rest => Tone::Success,
+            self::Forgotten => Tone::Muted,
+        };
+    }
+
+    public function position(): int
+    {
+        return (int) array_search($this, self::cases(), true);
+    }
+}
+
+/**
+ * The marks of the board, which the help lists.
+ */
+enum Icon: string
+{
+    case CiFailed = '✘';
+    case Blocked = '▲';
+    case ReadyToMerge = '✔';
+    case ReviewRequested = '◉';
+    case CiPassed = '●';
+    case CiRunning = '◐';
+    case Idle = '○';
+    case Forgotten = '◌';
+    case Agent = '◆';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::CiFailed => 'CI rouge',
+            self::Blocked => 'conflit ou changements',
+            self::ReadyToMerge => 'prêt à merger',
+            self::ReviewRequested => 'review demandée',
+            self::CiPassed => 'CI verte',
+            self::CiRunning => 'CI en cours',
+            self::Idle => 'draft ou pas de CI',
+            self::Forgotten => 'oublié',
+            self::Agent => 'Claude tourne ici',
+        };
+    }
+
+    public function tone(): Tone
+    {
+        return match ($this) {
+            self::Agent => Tone::Accent,
+            self::Blocked => Tone::Warning,
+            self::CiFailed => Tone::Danger,
+            self::CiPassed, self::ReadyToMerge => Tone::Success,
+            self::CiRunning, self::ReviewRequested => Tone::Info,
+            self::Forgotten, self::Idle => Tone::Muted,
+        };
+    }
+}
+
+/**
+ * The palette of Monokai, the family of the theme of Ghostty.
+ */
+enum Tone: string
+{
+    case Accent = '#ae81ff';
+    case Danger = '#f92672';
+    case Info = '#66d9ef';
+    case Line = '#3a3a34';
+    case Muted = '#75715e';
+    case Panel = '#272822';
+    case Selection = '#3e3d32';
+    case Success = '#a6e22e';
+    case Text = '#f8f8f2';
+    case Warning = '#fd971f';
+}
+
+function paint(string $text, Tone $color, ?Tone $background = null, ?bool $bold = null): string
+{
+    return new Style(background: $background?->value, color: $color->value, bold: $bold ?: null)->apply($text);
+}
+
+final readonly class Entry
+{
+    /**
+     * @param list<FailedCheck> $failedChecks
+     * @param list<string>      $reviews
+     */
+    private function __construct(
+        public Section $section,
+        public string $status,
+        public Icon $icon,
+        public string $reference,
+        public string $agentName,
+        public string $title,
+        public int $ageInDays,
+        public ?string $repository = null,
+        public ?string $branch = null,
+        public ?string $url = null,
+        public ?string $directory = null,
+        public ?string $hint = null,
+        public bool $isDraft = false,
+        public array $failedChecks = [],
+        public array $reviews = [],
+        public int $additions = 0,
+        public int $deletions = 0,
+        public int $changedFiles = 0,
+        public int $unresolvedThreads = 0,
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    public static function fromPullRequest(array $node): self
+    {
+        $rollup = $node['commits']['nodes'][0]['commit']['statusCheckRollup'] ?? null;
+        $ci = $rollup['state'] ?? 'NONE';
+        $reviews = $node['latestOpinionatedReviews']['nodes'];
+        $reviewStates = array_column($reviews, 'state');
+        $conflicting = 'CONFLICTING' === $node['mergeable'];
+        $changesRequested = \in_array('CHANGES_REQUESTED', $reviewStates, true);
+        $ciFailed = \in_array($ci, ['ERROR', 'FAILURE'], true);
+        $approved = \in_array('APPROVED', $reviewStates, true);
+        $readyToMerge = !$node['isDraft'] && $approved && !$conflicting && !$changesRequested && \in_array($ci, ['NONE', 'SUCCESS'], true);
+
+        $blockers = array_keys(array_filter([
+            'CI rouge' => $ciFailed,
+            'conflit' => $conflicting,
+            'changements demandés' => $changesRequested,
+        ]));
+
+        [$section, $status, $icon] = match (true) {
+            [] !== $blockers => [Section::ToDo, implode(' + ', $blockers), $ciFailed ? Icon::CiFailed : Icon::Blocked],
+            $readyToMerge => [Section::ToDo, 'prêt à merger', Icon::ReadyToMerge],
+            default => [Section::Rest, self::waitingStatus($node, $ci), self::waitingIcon($node, $ci)],
+        };
+
+        return new self(
+            section: $section,
+            status: $status,
+            icon: $icon,
+            reference: "{$node['repository']['nameWithOwner']}#{$node['number']}" . ($node['isDraft'] ? ' (draft)' : ''),
+            agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            title: StringUtils::stripControlBytes($node['title']),
+            ageInDays: daysSince($node['updatedAt']),
+            repository: $node['repository']['nameWithOwner'],
+            branch: $node['headRefName'],
+            url: $node['url'],
+            isDraft: $node['isDraft'],
+            failedChecks: FailedCheck::fromRollup($rollup),
+            reviews: array_map(self::renderReview(...), $reviews),
+            additions: $node['additions'],
+            deletions: $node['deletions'],
+            changedFiles: $node['changedFiles'],
+            unresolvedThreads: \count(array_filter($node['reviewThreads']['nodes'], static fn (array $thread) => !$thread['isResolved'])),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    public static function fromReviewRequest(array $node): self
+    {
+        return new self(
+            section: Section::Reviews,
+            status: "@{$node['author']['login']}",
+            icon: Icon::ReviewRequested,
+            reference: "{$node['repository']['nameWithOwner']}#{$node['number']}",
+            agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            title: StringUtils::stripControlBytes($node['title']),
+            ageInDays: daysSince($node['updatedAt']),
+            repository: $node['repository']['nameWithOwner'],
+            url: $node['url'],
+            hint: "Review demandée par @{$node['author']['login']}.",
+        );
+    }
+
+    public static function forgottenWorktree(MergedBranch $merged, string $directory): self
+    {
+        return self::forgottenBranch($merged, 'worktree', $directory, "Pour nettoyer : git worktree remove {$directory}");
+    }
+
+    public static function forgottenLocalBranch(MergedBranch $merged, string $directory): self
+    {
+        return self::forgottenBranch($merged, 'branche', $directory, "Pour nettoyer : git branch -D {$merged->branch}");
+    }
+
+    public static function forgottenStash(string $directory, string $name, int $count, int $ageInDays): self
+    {
+        return new self(
+            section: Section::Forgotten,
+            status: 'stash',
+            icon: Icon::Forgotten,
+            reference: $name,
+            agentName: self::agentName($name, 'stash'),
+            title: 1 === $count ? '1 stash' : "{$count} stashes",
+            ageInDays: $ageInDays,
+            directory: $directory,
+            hint: 'Pour regarder : git stash list',
+        );
+    }
+
+    private static function forgottenBranch(MergedBranch $merged, string $status, string $directory, string $hint): self
+    {
+        return new self(
+            section: Section::Forgotten,
+            status: $status,
+            icon: Icon::Forgotten,
+            reference: "{$merged->repository}#{$merged->number}",
+            agentName: self::agentName($merged->repository, (string) $merged->number),
+            title: "{$merged->branch} : PR mergée",
+            ageInDays: $merged->ageInDays,
+            url: $merged->url,
+            directory: $directory,
+            hint: $hint,
+        );
+    }
+
+    /**
+     * Herdr wants [a-z][a-z0-9_-]{0,31}: the suffix must survive a long name.
+     */
+    private static function agentName(string $repository, string $suffix): string
+    {
+        $name = ltrim((string) preg_replace('{[^a-z0-9_-]+}', '-', strtolower(basename($repository))), '0123456789_-');
+
+        return substr('' === $name ? 'repository' : $name, 0, 31 - \strlen($suffix)) . "-{$suffix}";
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    private static function waitingStatus(array $node, string $ci): string
+    {
+        return implode(', ', array_filter([
+            $node['isDraft'] ? 'draft' : null,
+            ['EXPECTED' => 'CI en cours', 'NONE' => 'pas de CI', 'PENDING' => 'CI en cours', 'SUCCESS' => 'CI verte'][$ci] ?? null,
+            'UNKNOWN' === $node['mergeable'] ? 'conflit ?' : null,
+        ]));
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    private static function waitingIcon(array $node, string $ci): Icon
+    {
+        return match (true) {
+            $node['isDraft'], 'NONE' === $ci => Icon::Idle,
+            'SUCCESS' === $ci => Icon::CiPassed,
+            default => Icon::CiRunning,
+        };
+    }
+
+    /**
+     * @param array{state: string, author: array{login: string}|null} $review
+     */
+    private static function renderReview(array $review): string
+    {
+        $icon = ['APPROVED' => '✔', 'CHANGES_REQUESTED' => '✎'][$review['state']] ?? '·';
+
+        return "{$icon} @" . ($review['author']['login'] ?? 'ghost');
+    }
+}
+
+final readonly class FailedCheck
+{
+    private const array FAILED_CONCLUSIONS = ['ACTION_REQUIRED', 'FAILURE', 'STARTUP_FAILURE', 'TIMED_OUT'];
+    private const array FAILED_STATES = ['ERROR', 'FAILURE'];
+
+    private function __construct(
+        public string $name,
+        public ?string $runId,
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed>|null $rollup
+     *
+     * @return list<self>
+     */
+    public static function fromRollup(?array $rollup): array
+    {
+        $failedChecks = [];
+        foreach ($rollup['contexts']['nodes'] ?? [] as $check) {
+            if ('CheckRun' === $check['__typename'] && \in_array($check['conclusion'], self::FAILED_CONCLUSIONS, true)) {
+                preg_match('{/actions/runs/(\d+)}', (string) $check['detailsUrl'], $matches);
+                $failedChecks[] = new self(StringUtils::stripControlBytes($check['name']), $matches[1] ?? null);
+            }
+
+            if ('StatusContext' === $check['__typename'] && \in_array($check['state'], self::FAILED_STATES, true)) {
+                $failedChecks[] = new self(StringUtils::stripControlBytes($check['context']), null);
+            }
+        }
+
+        return $failedChecks;
+    }
+}
+
+final readonly class MergedBranch
+{
+    public function __construct(
+        public string $repository,
+        public string $branch,
+        public int $number,
+        public string $url,
+        public int $ageInDays,
+    ) {
+    }
+}
+
+final readonly class Snapshot
+{
+    /**
+     * @param list<Entry>        $entries
+     * @param list<MergedBranch> $mergedBranches
+     */
+    private function __construct(
+        public array $entries,
+        public array $mergedBranches,
+        public int $fetchedAt,
+    ) {
+    }
+
+    /**
+     * @param array<string, mixed> $data The response of GitHub
+     */
+    public static function fromGitHub(array $data, int $fetchedAt): self
+    {
+        $pullRequests = array_map(Entry::fromPullRequest(...), $data['mine']['nodes']);
+        usort($pullRequests, static fn (Entry $a, Entry $b) => [$a->isDraft, $a->ageInDays] <=> [$b->isDraft, $b->ageInDays]);
+
+        return new self(
+            [...$pullRequests, ...array_map(Entry::fromReviewRequest(...), $data['requested']['nodes'])],
+            array_map(
+                static fn (array $node) => new MergedBranch($node['repository']['nameWithOwner'], $node['headRefName'], $node['number'], $node['url'], daysSince($node['updatedAt'])),
+                $data['merged']['nodes'],
+            ),
+            $fetchedAt,
+        );
+    }
+
+    public function hasOpenPullRequest(MergedBranch $merged): bool
+    {
+        return [] !== array_filter(
+            $this->entries,
+            static fn (Entry $entry) => $entry->repository === $merged->repository && $entry->branch === $merged->branch,
+        );
+    }
+}
+
+/**
+ * Where to get back to a branch: the last Claude session that worked on it, or
+ * else its worktree.
+ */
+final readonly class Location
+{
+    public function __construct(
+        public string $directory,
+        public ?string $worktree = null,
+        public ?string $sessionId = null,
+    ) {
+    }
+
+    public function command(): string
+    {
+        $directory = str_replace(home(), '~', $this->directory);
+
+        return null === $this->sessionId ? "cd {$directory}" : "cd {$directory} && claude --resume {$this->sessionId}";
+    }
+
+    public function isIn(string $directory): bool
+    {
+        return null !== $this->worktree && str_starts_with("{$directory}/", "{$this->worktree}/");
+    }
+}
+
+/**
+ * The PRs Claude Code recorded in its transcripts. The format is not documented,
+ * and a session that only came across a PR has such a link too.
+ */
+final readonly class PullRequestLinks
+{
+    /**
+     * @param array<string, list<string>> $transcriptsByUrl
+     */
+    public function __construct(
+        private array $transcriptsByUrl,
+    ) {
+    }
+
+    /**
+     * A session of the project comes first: it worked on the PR, while one from
+     * elsewhere may only mention it.
+     */
+    public function latestTranscript(?string $url, string $projectPrefix): ?string
+    {
+        $transcripts = $this->transcriptsByUrl[$url] ?? [];
+        $rank = static fn (string $transcript) => [str_contains($transcript, "/{$projectPrefix}"), filemtime($transcript)];
+        usort($transcripts, static fn (string $a, string $b) => $rank($b) <=> $rank($a));
+
+        return $transcripts[0] ?? null;
+    }
+}
+
+final readonly class Agent
+{
+    public function __construct(
+        public ?string $name,
+        public string $directory,
+        public string $status,
+        public string $tabId,
+    ) {
+    }
+}
+
+final readonly class GitHub
+{
+    private const string CACHE_FILE = '/.cache/gh-work/snapshot.json';
+    private const int MERGEABLE_ATTEMPTS = 3;
+    private const float MERGEABLE_RETRY_DELAY_IN_SECONDS = 2;
+    private const int QUERY_ATTEMPTS = 3;
+    private const float QUERY_RETRY_DELAY_IN_SECONDS = 2;
+    // It answers in 3 s: past that, the connection is hanging
+    private const float QUERY_TIMEOUT_IN_SECONDS = 20;
+
+    private const string QUERY = <<<'GRAPHQL'
+        query {
+          mine: search(query: "is:pr is:open author:@me archived:false", type: ISSUE, first: 100) {
+            nodes {
+              ... on PullRequest {
+                number title url isDraft mergeable updatedAt headRefName additions deletions changedFiles
+                repository { nameWithOwner }
+                latestOpinionatedReviews(first: 20) { nodes { state author { login } } }
+                reviewThreads(first: 50) { nodes { isResolved } }
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup {
+                        state
+                        contexts(first: 50) {
+                          nodes {
+                            __typename
+                            ... on CheckRun { name conclusion detailsUrl }
+                            ... on StatusContext { context state }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          requested: search(query: "is:pr is:open review-requested:@me archived:false", type: ISSUE, first: 50) {
+            nodes {
+              ... on PullRequest {
+                number title url updatedAt
+                author { login }
+                repository { nameWithOwner }
+              }
+            }
+          }
+          merged: search(query: "is:pr is:merged author:@me sort:updated-desc", type: ISSUE, first: 100) {
+            nodes {
+              ... on PullRequest {
+                number url updatedAt headRefName
+                repository { nameWithOwner }
+              }
+            }
+          }
+        }
+        GRAPHQL;
+
+    public function fetch(): Snapshot
+    {
+        $data = $this->queryWithRetries();
+
+        // GitHub computes mergeable on demand: the first read of a PR may say UNKNOWN
+        for ($attempt = 1; $attempt < self::MERGEABLE_ATTEMPTS && self::hasUnknownMergeable($data); ++$attempt) {
+            pause(self::MERGEABLE_RETRY_DELAY_IN_SECONDS);
+
+            try {
+                $data = $this->query();
+            } catch (ProcessFailedException|ProcessTimedOutException) {
+                // What we have is worth more than a failure: a few PRs say "conflit ?"
+                break;
+            }
+        }
+
+        $this->saveToCache($data);
+
+        return Snapshot::fromGitHub($data, time());
+    }
+
+    /**
+     * The last known state, for an unreliable connection.
+     */
+    public function cached(): ?Snapshot
+    {
+        $file = home() . self::CACHE_FILE;
+        if (!is_file($file)) {
+            return null;
+        }
+
+        try {
+            $data = json_decode((string) file_get_contents($file), true, flags: \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        return Snapshot::fromGitHub($data, (int) filemtime($file));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function failedLogs(string $repository, string $runId, int $lineCount): array
+    {
+        $lines = explode("\n", trim(output(['gh', 'run', 'view', $runId, '--repo', $repository, '--log-failed'])));
+
+        // The end of a log is the cleanup of the job: the cause is above the first error
+        $firstError = array_find_key($lines, static fn (string $line) => str_contains($line, '##[error]'));
+        $lastLine = $firstError ?? \count($lines) - 1;
+        $relevantLines = \array_slice($lines, max(0, $lastLine - $lineCount + 1), min($lineCount, $lastLine + 1));
+
+        return array_map(
+            // The columns are the job, the step, then a timestamp and the line
+            static fn (string $line) => StringUtils::stripControlBytes(AnsiUtils::stripAnsiCodes(preg_replace('{^[^\t]*\t[^\t]*\t\S+\s?}', '', $line) ?? $line)),
+            $relevantLines,
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function queryWithRetries(): array
+    {
+        for ($attempt = 1; ; ++$attempt) {
+            try {
+                return $this->query();
+            } catch (ProcessFailedException|ProcessTimedOutException $exception) {
+                if (self::QUERY_ATTEMPTS === $attempt) {
+                    throw $exception;
+                }
+            }
+
+            pause(self::QUERY_RETRY_DELAY_IN_SECONDS);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function query(): array
+    {
+        $response = output(['gh', 'api', 'graphql', '-f', 'query=' . self::QUERY], self::QUERY_TIMEOUT_IN_SECONDS);
+
+        return json_decode($response, true, flags: \JSON_THROW_ON_ERROR)['data'];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private static function hasUnknownMergeable(array $data): bool
+    {
+        return \in_array('UNKNOWN', array_column($data['mine']['nodes'], 'mergeable'), true);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function saveToCache(array $data): void
+    {
+        $file = home() . self::CACHE_FILE;
+        if (!is_dir(\dirname($file)) && !mkdir(\dirname($file), recursive: true) && !is_dir(\dirname($file))) {
+            throw new \RuntimeException(\sprintf('Could not create the directory of "%s".', $file));
+        }
+
+        // Atomic: a reader never sees a half-written file
+        file_put_contents("{$file}.tmp", json_encode($data, \JSON_THROW_ON_ERROR));
+        rename("{$file}.tmp", $file);
+    }
+}
+
+/**
+ * What lives on this machine: the checkouts, their worktrees and stashes, and
+ * the transcripts of Claude.
+ */
+final readonly class Workspace
+{
+    // I work on Symfony from my fork: the clone of the main repository only follows it
+    private const array CHECKOUT_OVERRIDES = ['symfony/symfony' => 'lyrixx/symfony'];
+    private const string CHECKOUTS_DIRECTORY = '/dev/github.com';
+    private const string CLAUDE_PROJECTS_DIRECTORY = '/.claude/projects';
+    // Keep in sync with the branches brc, brcc, wtc and wtcc spare, in .gitconfig
+    private const string DEFAULT_BRANCHES = '{^(master|main|develop)$}';
+    private const string DEVELOPMENT_DIRECTORY = '/dev';
+    // An older stash is an archive, not work I forgot
+    private const int STASH_MAX_AGE_IN_DAYS = 60;
+
+    public function pullRequestLinks(): PullRequestLinks
+    {
+        $matches = finishedProcess([
+            'rg', '--no-config', '--no-ignore', '--with-filename', '--null', '--only-matching',
+            '--max-depth', '2', '--glob', '*.jsonl', '--replace', '$1',
+            '"type":"pr-link"[^\n]*?"prUrl":"([^"]+)"', home() . self::CLAUDE_PROJECTS_DIRECTORY,
+        ])->getOutput();
+
+        $transcriptsByUrl = [];
+        foreach (array_filter(explode("\n", $matches)) as $match) {
+            [$transcript, $url] = explode("\0", $match, 2);
+            $transcriptsByUrl[$url][$transcript] = $transcript;
+        }
+
+        return new PullRequestLinks(array_map(array_values(...), $transcriptsByUrl));
+    }
+
+    public function locate(Entry $entry, PullRequestLinks $links): ?Location
+    {
+        if (null === $entry->repository) {
+            return null === $entry->directory ? null : new Location($entry->directory);
+        }
+
+        $checkout = self::checkout($entry->repository);
+        $worktree = null === $entry->branch ? null : $this->findWorktree($checkout, $entry->branch);
+
+        $transcript = $links->latestTranscript($entry->url, self::projectPrefix($checkout));
+        if (null === $transcript && null !== $entry->branch) {
+            $transcript = $this->findTranscript($checkout, $entry->branch);
+        }
+
+        if (null !== $transcript) {
+            $directory = $this->sessionDirectory($transcript);
+            if (is_dir($directory)) {
+                return new Location($directory, $worktree, basename($transcript, '.jsonl'));
+            }
+        }
+
+        if (null !== $worktree) {
+            return new Location($worktree, $worktree);
+        }
+
+        return is_dir($checkout) ? new Location($checkout) : null;
+    }
+
+    /**
+     * @return list<Entry>
+     */
+    public function forgotten(Snapshot $snapshot): array
+    {
+        $entries = [];
+        $seen = [];
+
+        foreach ($snapshot->mergedBranches as $merged) {
+            $key = "{$merged->repository}\t{$merged->branch}";
+            if (isset($seen[$key]) || preg_match(self::DEFAULT_BRANCHES, $merged->branch) || $snapshot->hasOpenPullRequest($merged)) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            $checkout = self::checkout($merged->repository);
+            if (!is_dir($checkout)) {
+                continue;
+            }
+
+            $worktree = $this->findWorktree($checkout, $merged->branch);
+            if (null !== $worktree && $worktree !== $checkout) {
+                $entries[] = Entry::forgottenWorktree($merged, $worktree);
+            } elseif (finishedProcess(['git', '-C', $checkout, 'show-ref', '--verify', '--quiet', "refs/heads/{$merged->branch}"])->isSuccessful()) {
+                $entries[] = Entry::forgottenLocalBranch($merged, $checkout);
+            }
+        }
+
+        return [...$entries, ...$this->stashes()];
+    }
+
+    /**
+     * @return list<Entry>
+     */
+    private function stashes(): array
+    {
+        $development = home() . self::DEVELOPMENT_DIRECTORY;
+        // An unreadable directory makes find fail, with what it found so far
+        $reflogs = finishedProcess(['find', $development, '-maxdepth', '7', '-path', '*/.git/logs/refs/stash', '-mtime', '-' . self::STASH_MAX_AGE_IN_DAYS])->getOutput();
+
+        $entries = [];
+        foreach (array_filter(explode("\n", $reflogs)) as $reflog) {
+            $directory = substr($reflog, 0, -\strlen('/.git/logs/refs/stash'));
+            $name = str_replace(["{$development}/github.com/", "{$development}/"], '', $directory);
+            $entries[] = Entry::forgottenStash($directory, $name, \count(file($reflog) ?: []), intdiv(time() - (int) filemtime($reflog), 86400));
+        }
+
+        return $entries;
+    }
+
+    private function findWorktree(string $checkout, string $branch): ?string
+    {
+        if (!is_dir($checkout)) {
+            return null;
+        }
+
+        $path = null;
+        foreach (explode("\n", finishedProcess(['git', '-C', $checkout, 'worktree', 'list', '--porcelain'])->getOutput()) as $line) {
+            if (str_starts_with($line, 'worktree ')) {
+                $path = substr($line, \strlen('worktree '));
+            }
+            if ("branch refs/heads/{$branch}" === $line) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function findTranscript(string $checkout, string $branch): ?string
+    {
+        $prefix = self::projectPrefix($checkout);
+        $projects = glob(home() . self::CLAUDE_PROJECTS_DIRECTORY . "/{$prefix}*", \GLOB_ONLYDIR) ?: [];
+        if ([] === $projects) {
+            return null;
+        }
+
+        // --max-depth 1 leaves out the transcripts of subagents
+        $matches = finishedProcess([
+            'rg', '--no-config', '--no-ignore', '--files-with-matches', '--max-depth', '1', '--glob', '*.jsonl',
+            '--fixed-strings', "\"gitBranch\":\"{$branch}\"", ...$projects,
+        ])->getOutput();
+
+        $transcripts = array_filter(explode("\n", $matches));
+        usort($transcripts, static fn (string $a, string $b) => filemtime($b) <=> filemtime($a));
+
+        return $transcripts[0] ?? null;
+    }
+
+    /**
+     * A session resumes from the directory it started in, which is the first
+     * cwd of its transcript, not the worktree it may have moved to.
+     */
+    private function sessionDirectory(string $transcript): string
+    {
+        $line = output(['rg', '--no-config', '--max-count', '1', '--fixed-strings', '"cwd":"', $transcript]);
+
+        return json_decode($line, true, flags: \JSON_THROW_ON_ERROR)['cwd'];
+    }
+
+    private static function checkout(string $repository): string
+    {
+        return home() . self::CHECKOUTS_DIRECTORY . '/' . (self::CHECKOUT_OVERRIDES[$repository] ?? $repository);
+    }
+
+    /**
+     * Claude names a project directory after its path, with / and . as dashes.
+     * As a prefix, it also matches the worktrees of the project.
+     */
+    private static function projectPrefix(string $checkout): string
+    {
+        return str_replace(['/', '.'], '-', $checkout);
+    }
+}
+
+/**
+ * Herdr answers from any terminal, not only from one of its panes.
+ */
+final readonly class Herdr
+{
+    public function isRunning(): bool
+    {
+        return str_contains(finishedProcess(['herdr', 'status', 'server'])->getOutput(), 'status: running');
+    }
+
+    /**
+     * @return list<Agent>
+     */
+    public function agents(): array
+    {
+        $agents = json_decode(output(['herdr', 'agent', 'list']), true, flags: \JSON_THROW_ON_ERROR)['result']['agents'];
+
+        return array_values(array_map(
+            // Only an agent started through Herdr has a name, not a claude typed by hand
+            static fn (array $agent) => new Agent($agent['name'] ?? null, $agent['cwd'], $agent['agent_status'], $agent['tab_id']),
+            array_filter($agents, static fn (array $agent) => 'claude' === $agent['agent']),
+        ));
+    }
+
+    public function focus(Agent $agent): void
+    {
+        output(['herdr', 'tab', 'focus', $agent->tabId]);
+    }
+
+    public function startClaude(string $agentName, Location $location): void
+    {
+        $arguments = null === $location->sessionId ? [] : ['--', '--resume', $location->sessionId];
+
+        output(['herdr-claude', $agentName, $location->directory, ...$arguments]);
+    }
+}
+
+/**
+ * @param list<string> $command
+ */
+function output(array $command, float $timeoutInSeconds = 60): string
+{
+    $process = finishedProcess($command, $timeoutInSeconds);
+    if (!$process->isSuccessful()) {
+        throw new ProcessFailedException($process);
+    }
+
+    return $process->getOutput();
+}
+
+/**
+ * Waits without blocking the event loop: the dashboard keeps on drawing and
+ * reading the keyboard in the meantime.
+ *
+ * @param list<string> $command
+ */
+function finishedProcess(array $command, float $timeoutInSeconds = 60): Process
+{
+    $process = new Process($command, timeout: $timeoutInSeconds);
+    $process->start();
+
+    while ($process->isRunning()) {
+        $process->checkTimeout();
+        pause(0.005);
+    }
+
+    return $process;
+}
+
+function pause(float $seconds): void
+{
+    $suspension = EventLoop::getSuspension();
+    EventLoop::delay($seconds, static fn () => $suspension->resume());
+    $suspension->suspend();
+}
+
+function daysSince(string $date): int
+{
+    return new \DateTimeImmutable($date)->diff(new \DateTimeImmutable())->days ?: 0;
+}
+
+function formatAge(int $timestamp): string
+{
+    $minutes = intdiv(time() - $timestamp, 60);
+
+    return match (true) {
+        $minutes < 1 => 'à l\'instant',
+        $minutes < 60 => "il y a {$minutes} min",
+        $minutes < 1440 => 'il y a ' . intdiv($minutes, 60) . ' h',
+        default => 'il y a ' . intdiv($minutes, 1440) . ' j',
+    };
+}
+
+function home(): string
+{
+    return (string) getenv('HOME');
+}
