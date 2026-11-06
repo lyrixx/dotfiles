@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Starts Claude on a directory, in a new tab of the Herdr workspace of its
+# repository, and creates that workspace if needed. A worktree goes in the
+# workspace of its repository.
+#
+#   herdr-claude [--no-focus] <agent name> <directory> [-- <arguments of claude>]
+#
+# The agent name matches [a-z][a-z0-9_-]{0,31} and must be free.
+
+set -euo pipefail
+
+function main {
+    local focus=1
+    if [[ ${1:-} == --no-focus ]]; then
+        focus=0
+        shift
+    fi
+
+    if [[ $# -lt 2 ]]; then
+        echo 'Usage: herdr-claude [--no-focus] <agent name> <directory> [-- <arguments of claude>]' >&2
+        exit 1
+    fi
+
+    local name=$1 directory=$2
+    shift 2
+    if [[ ${1:-} == -- ]]; then
+        shift
+    fi
+
+    # Before touching anything: it would leave an empty tab behind
+    if herdr agent list | jq -e --arg name "$name" 'any(.result.agents[]; .name == $name)' > /dev/null; then
+        echo "The agent name \"$name\" is already used." >&2
+        exit 1
+    fi
+
+    local label workspace created tab
+    label=$(repository_name "$directory")
+    workspace=$(herdr workspace list | jq -r --arg label "$label" 'first(.result.workspaces[] | select(.label == $label) | .workspace_id) // empty')
+
+    if [[ -n $workspace ]]; then
+        created=$(herdr tab create --workspace "$workspace" --cwd "$directory" --label "$name" --no-focus)
+        tab=$(jq -r .result.tab.tab_id <<< "$created")
+    else
+        created=$(herdr workspace create --cwd "$directory" --label "$label" --no-focus)
+        tab=$(jq -r .result.tab.tab_id <<< "$created")
+        herdr tab rename "$tab" "$name" > /dev/null
+    fi
+
+    # Before starting Claude: in a directory it doesn't trust yet, it asks me first
+    if (( focus )); then
+        herdr tab focus "$tab" > /dev/null
+    fi
+
+    herdr agent start "$name" --kind claude --pane "$(jq -r .result.root_pane.pane_id <<< "$created")" --timeout 45000 -- "$@"
+}
+
+function repository_name {
+    local directory=$1 common_dir
+
+    if common_dir=$(git -C "$directory" rev-parse --path-format=absolute --git-common-dir 2> /dev/null); then
+        basename "$(dirname "$common_dir")"
+    else
+        basename "$directory"
+    fi
+}
+
+main "$@"
