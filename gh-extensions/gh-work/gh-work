@@ -118,9 +118,9 @@ final class Dashboard
     private bool $lastLoadFailed = false;
     private bool $loading = false;
     private int $localSearch = 0;
-    /** @var array<string, Location> By reference */
+    /** @var array<string, Location> By id */
     private array $locations = [];
-    /** @var array<string, list<string>> By reference */
+    /** @var array<string, list<string>> By id */
     private array $logs = [];
     private ?string $notice = null;
     private ?Location $resumeAfterExit = null;
@@ -309,7 +309,7 @@ final class Dashboard
     {
         $location = $this->workspace->locate($entry, $links);
         if (null !== $location) {
-            $this->locations[$entry->reference] = $location;
+            $this->locations[$entry->id()] = $location;
         }
         $this->redraw();
     }
@@ -321,11 +321,11 @@ final class Dashboard
     {
         $previousStatuses = [];
         foreach ($this->board->entries() as $entry) {
-            $previousStatuses[$entry->reference] = $entry->status;
+            $previousStatuses[$entry->id()] = $entry->status;
         }
 
         foreach ($entries as $entry) {
-            $previousStatus = $previousStatuses[$entry->reference] ?? $entry->status;
+            $previousStatus = $previousStatuses[$entry->id()] ?? $entry->status;
             if (Section::ToDo === $entry->section && $previousStatus !== $entry->status) {
                 $this->runInBackground(['notify-send', '--app-name=gh work', $entry->reference, "{$entry->status} : {$entry->title}"]);
             }
@@ -422,7 +422,7 @@ final class Dashboard
             return;
         }
 
-        $location = $this->locations[$entry->reference] ?? null;
+        $location = $this->locations[$entry->id()] ?? null;
         $agent = $this->agentOf($entry, $location);
         if (null !== $agent) {
             $this->notice = null;
@@ -517,7 +517,7 @@ final class Dashboard
         $this->tasks['logs de la CI'] = true;
         EventLoop::queue(function () use ($check, $entry): void {
             try {
-                $this->logs[$entry->reference] = $this->gitHub->failedLogs((string) $entry->repository, (string) $check->runId, self::LOG_LINES);
+                $this->logs[$entry->id()] = $this->gitHub->failedLogs((string) $entry->repository, (string) $check->runId, self::LOG_LINES);
             } catch (ProcessFailedException|ProcessTimedOutException) {
                 $this->notice = 'Logs de la CI indisponibles : expirés, ou GitHub injoignable';
             } finally {
@@ -556,7 +556,7 @@ final class Dashboard
             hidden: $this->helpVisible ?: null,
             padding: Padding::xy(1, 0),
         ));
-        $this->board->setActiveReferences($this->activeReferences());
+        $this->board->setActiveIds($this->activeIds());
         $this->header->invalidate();
         $this->footer->invalidate();
         $this->tui->requestRender();
@@ -625,7 +625,7 @@ final class Dashboard
 
         $lines[] = $this->renderLocation($entry);
 
-        foreach ($this->logs[$entry->reference] ?? [] as $line) {
+        foreach ($this->logs[$entry->id()] ?? [] as $line) {
             $lines[] = paint($line, Tone::Muted);
         }
 
@@ -654,7 +654,7 @@ final class Dashboard
 
     private function renderLocation(Entry $entry): string
     {
-        $location = $this->locations[$entry->reference] ?? null;
+        $location = $this->locations[$entry->id()] ?? null;
         $agent = $this->agentOf($entry, $location);
         if (null !== $agent) {
             return paint(Icon::Agent->value . " Claude tourne ici ({$agent->status}) : ⏎ pour y aller", Tone::Accent);
@@ -678,16 +678,16 @@ final class Dashboard
     /**
      * @return list<string>
      */
-    private function activeReferences(): array
+    private function activeIds(): array
     {
-        $references = [];
+        $ids = [];
         foreach ($this->board->entries() as $entry) {
-            if (null !== $this->agentOf($entry, $this->locations[$entry->reference] ?? null)) {
-                $references[] = $entry->reference;
+            if (null !== $this->agentOf($entry, $this->locations[$entry->id()] ?? null)) {
+                $ids[] = $entry->id();
             }
         }
 
-        return $references;
+        return $ids;
     }
 }
 
@@ -702,7 +702,7 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     private const int MIN_TITLE_WIDTH = 16;
 
     /** @var list<string> */
-    private array $activeReferences = [];
+    private array $activeIds = [];
     /** @var list<Entry> */
     private array $entries = [];
     /** @var list<string>|null */
@@ -714,11 +714,11 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
      */
     public function setEntries(array $entries): void
     {
-        $selectedReference = $this->selected()?->reference;
+        $selectedId = $this->selected()?->id();
         usort($entries, static fn (Entry $a, Entry $b) => $a->section->position() <=> $b->section->position());
         $this->entries = $entries;
 
-        $index = array_find_key($entries, static fn (Entry $entry) => $entry->reference === $selectedReference);
+        $index = array_find_key($entries, static fn (Entry $entry) => $entry->id() === $selectedId);
         $this->selectedIndex = $index ?? max(0, min($this->selectedIndex, \count($entries) - 1));
         $this->invalidate();
     }
@@ -737,12 +737,12 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     }
 
     /**
-     * @param list<string> $activeReferences
+     * @param list<string> $activeIds
      */
-    public function setActiveReferences(array $activeReferences): void
+    public function setActiveIds(array $activeIds): void
     {
-        if ($this->activeReferences !== $activeReferences) {
-            $this->activeReferences = $activeReferences;
+        if ($this->activeIds !== $activeIds) {
+            $this->activeIds = $activeIds;
             $this->invalidate();
         }
     }
@@ -889,7 +889,7 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     private function renderEntry(Entry $entry, bool $selected, int $columns, int $statusWidth, int $referenceWidth, int $titleWidth): string
     {
         $background = $selected ? Tone::Selection : null;
-        $hasAgent = \in_array($entry->reference, $this->activeReferences, true);
+        $hasAgent = \in_array($entry->id(), $this->activeIds, true);
 
         $line = paint($selected ? '▌' : ' ', $entry->icon->tone(), $background);
         $line .= paint(' ', Tone::Text, $background);
@@ -1065,6 +1065,7 @@ enum Icon: string
     case CiRunning = '◐';
     case Idle = '○';
     case Forgotten = '◌';
+    case DockerStack = '▣';
     case Agent = '◆';
 
     public function label(): string
@@ -1078,6 +1079,7 @@ enum Icon: string
             self::CiRunning => 'CI en cours',
             self::Idle => 'draft ou pas de CI',
             self::Forgotten => 'oublié',
+            self::DockerStack => 'stack Docker démarrée',
             self::Agent => 'Claude tourne ici',
         };
     }
@@ -1089,7 +1091,7 @@ enum Icon: string
             self::Blocked => Tone::Warning,
             self::CiFailed => Tone::Danger,
             self::CiPassed, self::ReadyToMerge => Tone::Success,
-            self::CiRunning, self::ReviewRequested => Tone::Info,
+            self::CiRunning, self::DockerStack, self::ReviewRequested => Tone::Info,
             self::Forgotten, self::Idle => Tone::Muted,
         };
     }
@@ -1213,14 +1215,29 @@ final readonly class Entry
         );
     }
 
-    public static function forgottenWorktree(MergedBranch $merged, string $directory): self
+    public static function forgottenMergedBranch(LocalBranch $branch, MergedBranch $merged): self
     {
-        return self::forgottenBranch($merged, 'worktree', $directory, "Pour nettoyer : git worktree remove {$directory}");
+        return self::forgottenBranch($branch, "{$branch->name} : PR mergée", $merged->url);
     }
 
-    public static function forgottenLocalBranch(MergedBranch $merged, string $directory): self
+    public static function forgottenGoneBranch(LocalBranch $branch): self
     {
-        return self::forgottenBranch($merged, 'branche', $directory, "Pour nettoyer : git branch -D {$merged->branch}");
+        return self::forgottenBranch($branch, "{$branch->name} : supprimée sur GitHub");
+    }
+
+    public static function forgottenUnpushedBranch(LocalBranch $branch): self
+    {
+        return new self(
+            section: Section::Forgotten,
+            status: 'non poussée',
+            icon: Icon::Forgotten,
+            reference: $branch->repository,
+            agentName: self::agentName($branch->repository, $branch->name),
+            title: $branch->name,
+            ageInDays: $branch->ageInDays,
+            directory: $branch->directory(),
+            hint: "Pour regarder : git log {$branch->name}",
+        );
     }
 
     public static function forgottenStash(string $directory, string $name, int $count, int $ageInDays): self
@@ -1238,19 +1255,42 @@ final readonly class Entry
         );
     }
 
-    private static function forgottenBranch(MergedBranch $merged, string $status, string $directory, string $hint): self
+    public static function runningStack(string $name, ?string $directory, int $containers, int $ageInDays): self
     {
         return new self(
             section: Section::Forgotten,
-            status: $status,
-            icon: Icon::Forgotten,
-            reference: "{$merged->repository}#{$merged->number}",
-            agentName: self::agentName($merged->repository, (string) $merged->number),
-            title: "{$merged->branch} : PR mergée",
-            ageInDays: $merged->ageInDays,
-            url: $merged->url,
+            status: 'docker',
+            icon: Icon::DockerStack,
+            reference: $name,
+            agentName: self::agentName($name, 'docker'),
+            title: 1 === $containers ? '1 conteneur démarré' : "{$containers} conteneurs démarrés",
+            ageInDays: $ageInDays,
             directory: $directory,
-            hint: $hint,
+            hint: "Pour arrêter : docker compose -p {$name} stop",
+        );
+    }
+
+    /**
+     * A repository has several forgotten branches: its name is not enough.
+     */
+    public function id(): string
+    {
+        return "{$this->reference} {$this->title}";
+    }
+
+    private static function forgottenBranch(LocalBranch $branch, string $title, ?string $url = null): self
+    {
+        return new self(
+            section: Section::Forgotten,
+            status: null === $branch->worktree ? 'branche' : 'worktree',
+            icon: Icon::Forgotten,
+            reference: $branch->repository,
+            agentName: self::agentName($branch->repository, $branch->name),
+            title: $title,
+            ageInDays: $branch->ageInDays,
+            url: $url,
+            directory: $branch->directory(),
+            hint: null === $branch->worktree ? "Pour nettoyer : git branch -D {$branch->name}" : "Pour nettoyer : git worktree remove {$branch->worktree}",
         );
     }
 
@@ -1259,7 +1299,9 @@ final readonly class Entry
      */
     private static function agentName(string $repository, string $suffix): string
     {
-        $name = ltrim((string) preg_replace('{[^a-z0-9_-]+}', '-', strtolower(basename($repository))), '0123456789_-');
+        $slug = static fn (string $text) => (string) preg_replace('{[^a-z0-9_-]+}', '-', strtolower($text));
+        $name = ltrim($slug(basename($repository)), '0123456789_-');
+        $suffix = substr($slug($suffix), 0, 16);
 
         return substr('' === $name ? 'repository' : $name, 0, 31 - \strlen($suffix)) . "-{$suffix}";
     }
@@ -1333,14 +1375,29 @@ final readonly class FailedCheck
     }
 }
 
+final readonly class LocalBranch
+{
+    public function __construct(
+        public string $repository,
+        public string $checkout,
+        public string $name,
+        public ?string $worktree,
+        public int $ageInDays,
+    ) {
+    }
+
+    public function directory(): string
+    {
+        return $this->worktree ?? $this->checkout;
+    }
+}
+
 final readonly class MergedBranch
 {
     public function __construct(
         public string $repository,
         public string $branch,
-        public int $number,
         public string $url,
-        public int $ageInDays,
     ) {
     }
 }
@@ -1369,18 +1426,10 @@ final readonly class Snapshot
         return new self(
             [...$pullRequests, ...array_map(Entry::fromReviewRequest(...), $data['requested']['nodes'])],
             array_map(
-                static fn (array $node) => new MergedBranch($node['repository']['nameWithOwner'], $node['headRefName'], $node['number'], $node['url'], daysSince($node['updatedAt'])),
+                static fn (array $node) => new MergedBranch($node['repository']['nameWithOwner'], $node['headRefName'], $node['url']),
                 $data['merged']['nodes'],
             ),
             $fetchedAt,
-        );
-    }
-
-    public function hasOpenPullRequest(MergedBranch $merged): bool
-    {
-        return [] !== array_filter(
-            $this->entries,
-            static fn (Entry $entry) => $entry->repository === $merged->repository && $entry->branch === $merged->branch,
         );
     }
 }
@@ -1453,6 +1502,8 @@ final readonly class Agent
 final readonly class GitHub
 {
     private const string CACHE_FILE = '/.cache/gh-work/snapshot.json';
+    // "merged" only asks for the repositories of Workspace::CHECKOUT_OVERRIDES: a
+    // branch of a fork survives its merge, so git can't tell it from a live one.
     private const int MERGEABLE_ATTEMPTS = 3;
     private const float MERGEABLE_RETRY_DELAY_IN_SECONDS = 2;
     private const int QUERY_ATTEMPTS = 3;
@@ -1497,10 +1548,10 @@ final readonly class GitHub
               }
             }
           }
-          merged: search(query: "is:pr is:merged author:@me sort:updated-desc", type: ISSUE, first: 100) {
+          merged: search(query: "is:pr is:merged author:@me repo:symfony/symfony sort:updated-desc", type: ISSUE, first: 100) {
             nodes {
               ... on PullRequest {
-                number url updatedAt headRefName
+                url headRefName
                 repository { nameWithOwner }
               }
             }
@@ -1632,8 +1683,10 @@ final readonly class Workspace
     // Keep in sync with the branches brc, brcc, wtc and wtcc spare, in .gitconfig
     private const string DEFAULT_BRANCHES = '{^(master|main|develop)$}';
     private const string DEVELOPMENT_DIRECTORY = '/dev';
-    // An older stash is an archive, not work I forgot
-    private const int STASH_MAX_AGE_IN_DAYS = 60;
+    // Older, an unpushed branch or a stash is an archive, not work I forgot
+    private const int MAX_AGE_IN_DAYS = 60;
+    // Claude creates and removes them itself, for its isolated agents
+    private const string INTERNAL_BRANCHES = '{^worktree-agent-}';
 
     public function pullRequestLinks(): PullRequestLinks
     {
@@ -1685,49 +1738,143 @@ final readonly class Workspace
      */
     public function forgotten(Snapshot $snapshot): array
     {
-        $entries = [];
-        $seen = [];
-
-        foreach ($snapshot->mergedBranches as $merged) {
-            $key = "{$merged->repository}\t{$merged->branch}";
-            if (isset($seen[$key]) || preg_match(self::DEFAULT_BRANCHES, $merged->branch) || $snapshot->hasOpenPullRequest($merged)) {
-                continue;
-            }
-            $seen[$key] = true;
-
-            $checkout = self::checkout($merged->repository);
-            if (!is_dir($checkout)) {
-                continue;
-            }
-
-            $worktree = $this->findWorktree($checkout, $merged->branch);
-            if (null !== $worktree && $worktree !== $checkout) {
-                $entries[] = Entry::forgottenWorktree($merged, $worktree);
-            } elseif (finishedProcess(['git', '-C', $checkout, 'show-ref', '--verify', '--quiet', "refs/heads/{$merged->branch}"])->isSuccessful()) {
-                $entries[] = Entry::forgottenLocalBranch($merged, $checkout);
+        $openBranches = [];
+        foreach ($snapshot->entries as $entry) {
+            if (null !== $entry->repository && null !== $entry->branch) {
+                $openBranches[self::checkout($entry->repository) . "\t{$entry->branch}"] = true;
             }
         }
 
-        return [...$entries, ...$this->stashes()];
+        $mergedBranches = [];
+        foreach ($snapshot->mergedBranches as $merged) {
+            $mergedBranches[self::checkout($merged->repository) . "\t{$merged->branch}"] = $merged;
+        }
+
+        $entries = [];
+        foreach ($this->checkouts() as $checkout) {
+            $repository = self::repositoryName($checkout);
+
+            foreach ($this->localBranches($checkout, $repository) as [$branch, $upstream, $track]) {
+                $key = "{$checkout}\t{$branch->name}";
+                if (isset($openBranches[$key]) || preg_match(self::DEFAULT_BRANCHES, $branch->name)) {
+                    continue;
+                }
+
+                if (isset($mergedBranches[$key])) {
+                    $entries[] = Entry::forgottenMergedBranch($branch, $mergedBranches[$key]);
+                } elseif ('[gone]' === $track) {
+                    $entries[] = Entry::forgottenGoneBranch($branch);
+                } elseif ('' === $upstream && $branch->ageInDays <= self::MAX_AGE_IN_DAYS && !preg_match(self::INTERNAL_BRANCHES, $branch->name)) {
+                    $entries[] = Entry::forgottenUnpushedBranch($branch);
+                }
+            }
+
+            $stash = $this->stash($checkout, $repository);
+            if (null !== $stash) {
+                $entries[] = $stash;
+            }
+        }
+
+        usort($entries, static fn (Entry $a, Entry $b) => $a->ageInDays <=> $b->ageInDays);
+
+        return [...$this->runningStacks(), ...$entries];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function checkouts(): array
+    {
+        // An unreadable directory makes find fail, with what it found so far
+        $directories = finishedProcess(['find', home() . self::DEVELOPMENT_DIRECTORY, '-maxdepth', '4', '-name', '.git', '-type', 'd'])->getOutput();
+
+        return array_map(\dirname(...), array_filter(explode("\n", $directories)));
+    }
+
+    /**
+     * @return list<array{LocalBranch, string, string}> The branch, its upstream and how it tracks it
+     */
+    private function localBranches(string $checkout, string $repository): array
+    {
+        $references = finishedProcess([
+            'git', '-C', $checkout, 'for-each-ref', 'refs/heads',
+            '--format=%(refname:short)%09%(upstream)%09%(upstream:track)%09%(worktreepath)%09%(committerdate:unix)',
+        ])->getOutput();
+
+        $branches = [];
+        foreach (array_filter(explode("\n", $references)) as $reference) {
+            [$name, $upstream, $track, $worktree, $committedAt] = explode("\t", $reference);
+            $branches[] = [
+                new LocalBranch($repository, $checkout, $name, \in_array($worktree, ['', $checkout], true) ? null : $worktree, intdiv(time() - (int) $committedAt, 86400)),
+                $upstream,
+                $track,
+            ];
+        }
+
+        return $branches;
+    }
+
+    private function stash(string $checkout, string $repository): ?Entry
+    {
+        $reflog = "{$checkout}/.git/logs/refs/stash";
+        if (!is_file($reflog)) {
+            return null;
+        }
+
+        $ageInDays = intdiv(time() - (int) filemtime($reflog), 86400);
+
+        return $ageInDays > self::MAX_AGE_IN_DAYS ? null : Entry::forgottenStash($checkout, $repository, \count(file($reflog) ?: []), $ageInDays);
     }
 
     /**
      * @return list<Entry>
      */
-    private function stashes(): array
+    private function runningStacks(): array
     {
-        $development = home() . self::DEVELOPMENT_DIRECTORY;
-        // An unreadable directory makes find fail, with what it found so far
-        $reflogs = finishedProcess(['find', $development, '-maxdepth', '7', '-path', '*/.git/logs/refs/stash', '-mtime', '-' . self::STASH_MAX_AGE_IN_DAYS])->getOutput();
+        // Fails when Docker is stopped: then nothing is running
+        $containers = finishedProcess(['docker', 'ps', '--format', 'json'])->getOutput();
+
+        $stacks = [];
+        foreach (array_filter(explode("\n", $containers)) as $line) {
+            $container = json_decode($line, true, flags: \JSON_THROW_ON_ERROR);
+            if (!preg_match('{(?:^|,)com\.docker\.compose\.project=([^,]+)}', $container['Labels'], $project)) {
+                continue;
+            }
+
+            preg_match('{(?:^|,)com\.docker\.compose\.project\.working_dir=([^,]+)}', $container['Labels'], $workingDirectory);
+            $stacks[$project[1]]['containers'] = ($stacks[$project[1]]['containers'] ?? 0) + 1;
+            $stacks[$project[1]]['workingDirectory'] = $workingDirectory[1] ?? null;
+            // The format ends with the name of the time zone, which PHP refuses after an offset
+            $stacks[$project[1]]['ageInDays'] = max($stacks[$project[1]]['ageInDays'] ?? 0, daysSince(substr($container['CreatedAt'], 0, 25)));
+        }
 
         $entries = [];
-        foreach (array_filter(explode("\n", $reflogs)) as $reflog) {
-            $directory = substr($reflog, 0, -\strlen('/.git/logs/refs/stash'));
-            $name = str_replace(["{$development}/github.com/", "{$development}/"], '', $directory);
-            $entries[] = Entry::forgottenStash($directory, $name, \count(file($reflog) ?: []), intdiv(time() - (int) filemtime($reflog), 86400));
+        foreach ($stacks as $name => $stack) {
+            $entries[] = Entry::runningStack($name, $this->stackDirectory($stack['workingDirectory']), $stack['containers'], $stack['ageInDays']);
         }
 
         return $entries;
+    }
+
+    /**
+     * The worktree of a stack may be gone while its containers still run.
+     */
+    private function stackDirectory(?string $workingDirectory): ?string
+    {
+        if (null === $workingDirectory || !is_dir($workingDirectory)) {
+            return null;
+        }
+
+        $process = finishedProcess(['git', '-C', $workingDirectory, 'rev-parse', '--show-toplevel']);
+
+        return $process->isSuccessful() ? trim($process->getOutput()) : $workingDirectory;
+    }
+
+    private static function repositoryName(string $checkout): string
+    {
+        $development = home() . self::DEVELOPMENT_DIRECTORY;
+
+        return str_replace(["{$development}/github.com/", "{$development}/"], '', $checkout);
     }
 
     private function findWorktree(string $checkout, string $branch): ?string
