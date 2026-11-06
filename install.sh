@@ -25,6 +25,7 @@ function main {
     setup_dnsmasq
     setup_docker
     setup_fzf
+    setup_gh_extensions
     setup_ghostty
     setup_herdr
     setup_php
@@ -122,6 +123,17 @@ function setup_docker {
 function setup_fzf {
     title 'Setup fzf'
     fzf --bash > ~/.fzf.bash
+}
+
+function setup_gh_extensions {
+    title 'Link the gh extensions'
+    mkdir -p ~/.local/share/gh/extensions
+
+    # What `gh extension install .` does, but it fails when already installed
+    local extension
+    for extension in $DOTFILES/gh-extensions/*/; do
+        ln -sfn "${extension%/}" ~/.local/share/gh/extensions/
+    done
 }
 
 function setup_ghostty {
