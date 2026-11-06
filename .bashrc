@@ -48,6 +48,7 @@ export HISTSIZE=50000
 export HISTFILESIZE=${HISTSIZE}
 export HISTIGNORE="ls:cd:[bf]g:exit"
 export HISTCONTROL="ignoreboth" # ignore duplicate line + line which start by a space
+export HISTTIMEFORMAT="%F %T "
 
 export ANSIBLE_STDOUT_CALLBACK=debug
 export BUILDKIT_PROGRESS=plain
