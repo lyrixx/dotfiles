@@ -2,8 +2,8 @@
 <?php
 
 // What needs me now, across all my repositories: my open PRs, the reviews asked
-// of me, and what I left behind. It changes nothing, neither on GitHub nor in
-// the repositories.
+// of me, and what I left behind. It never changes anything on GitHub, and locally
+// only the d key does, once confirmed: it deletes a branch and its worktree.
 
 \defined('CASTOR_USE_CHDIR') || \define('CASTOR_USE_CHDIR', true);
 
@@ -123,6 +123,7 @@ final class Dashboard
     /** @var array<string, list<string>> By id */
     private array $logs = [];
     private ?string $notice = null;
+    private ?Entry $pendingDeletion = null;
     private ?Location $resumeAfterExit = null;
     private bool $showingBoard = false;
     private ?int $snapshotFetchedAt = null;
@@ -136,6 +137,8 @@ final class Dashboard
         private readonly Herdr $herdr,
     ) {
         $this->keys = new Keybindings([
+            'confirm' => ['y'],
+            'delete' => ['d'],
             'down' => [Key::DOWN, 'j'],
             'logs' => ['l'],
             'next_section' => [Key::TAB],
@@ -363,6 +366,12 @@ final class Dashboard
             return;
         }
 
+        if (null !== $this->pendingDeletion) {
+            $this->answerDeletion($this->pendingDeletion, $data);
+
+            return;
+        }
+
         if ($this->isHelpKey($data) || ($this->helpVisible && $this->keys->matches($data, 'quit'))) {
             $this->toggleHelp();
 
@@ -374,6 +383,7 @@ final class Dashboard
         }
 
         $actions = [
+            'delete' => $this->askDeletion(...),
             'down' => fn () => $this->board->moveBy(1),
             'logs' => $this->showLogs(...),
             'next_section' => fn () => $this->board->moveToSection(1),
@@ -411,8 +421,75 @@ final class Dashboard
         }
 
         $this->helpVisible = !$this->helpVisible;
-        $this->board->setModal($this->helpVisible ? HelpModal::lines() : null);
+        $this->board->setModal($this->helpVisible ? Modal::help() : null);
         $this->redraw();
+    }
+
+    private function askDeletion(): void
+    {
+        $entry = $this->board->selected();
+        $branch = $entry?->localBranch;
+        if (null === $entry || null === $branch) {
+            $this->notice = 'd supprime les branches et worktrees déjà partis de GitHub';
+
+            return;
+        }
+
+        $reason = $this->deletionBlocker($branch);
+        if (null !== $reason) {
+            $this->notice = $reason;
+
+            return;
+        }
+
+        $this->notice = null;
+        $this->pendingDeletion = $entry;
+        $this->board->setModal(Modal::deletion($branch));
+    }
+
+    private function deletionBlocker(LocalBranch $branch): ?string
+    {
+        if (null !== array_find($this->agents, static fn (Agent $agent) => $branch->worktreeContains($agent->directory))) {
+            return 'Claude tourne dans ce worktree';
+        }
+
+        $stacks = array_filter($this->board->entries(), static fn (Entry $entry) => Icon::DockerStack === $entry->icon);
+        if (null !== array_find($stacks, static fn (Entry $stack) => null !== $stack->directory && $branch->worktreeContains($stack->directory))) {
+            return 'Une stack Docker tourne dans ce worktree';
+        }
+
+        return null;
+    }
+
+    private function answerDeletion(Entry $entry, string $data): void
+    {
+        $this->pendingDeletion = null;
+        $this->board->setModal(null);
+
+        if ($this->keys->matches($data, 'confirm') && null !== $entry->localBranch) {
+            $this->deleteBranch($entry, $entry->localBranch);
+        }
+
+        $this->redraw();
+    }
+
+    private function deleteBranch(Entry $entry, LocalBranch $branch): void
+    {
+        $this->tasks['suppression'] = true;
+        EventLoop::queue(function () use ($branch, $entry): void {
+            try {
+                $commit = $this->workspace->deleteBranch($branch);
+                $isOther = static fn (Entry $other) => $other->id() !== $entry->id();
+                $this->forgotten = array_values(array_filter($this->forgotten, $isOther));
+                $this->board->setEntries(array_values(array_filter($this->board->entries(), $isOther)));
+                $this->notice = "Supprimée. Pour la récupérer : git branch {$branch->name} {$commit}";
+            } catch (ProcessFailedException|ProcessTimedOutException $exception) {
+                $this->notice = 'Refusé : ' . str_replace(home(), '~', (string) strtok($exception->getProcess()->getErrorOutput(), "\n"));
+            } finally {
+                unset($this->tasks['suppression']);
+                $this->redraw();
+            }
+        });
     }
 
     private function resume(): void
@@ -553,7 +630,7 @@ final class Dashboard
         $this->detail->setText(null === $entry ? '' : $this->renderDetail($entry));
         $this->detailBox->setStyle(new Style(
             border: Border::all(1, 'rounded', ($entry?->icon->tone() ?? Tone::Muted)->value),
-            hidden: $this->helpVisible ?: null,
+            hidden: $this->helpVisible || null !== $this->pendingDeletion ?: null,
             padding: Padding::xy(1, 0),
         ));
         $this->board->setActiveIds($this->activeIds());
@@ -596,8 +673,12 @@ final class Dashboard
         ]));
 
         $gap = $columns - AnsiUtils::visibleWidth($left) - AnsiUtils::visibleWidth($right) - 1;
+        if ($gap < 1) {
+            // What a notice says matters more than the counters
+            return ' ' . $right;
+        }
 
-        return $left . str_repeat(' ', max(1, $gap)) . $right;
+        return $left . str_repeat(' ', $gap) . $right;
     }
 
     private function renderFooter(int $columns): string
@@ -925,9 +1006,9 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
 }
 
 /**
- * The keys and the marks of the board, as lines to draw over it.
+ * Boxes to draw over the board, as lines.
  */
-final class HelpModal
+final class Modal
 {
     private const int KEY_WIDTH = 9;
     private const array KEYS = [
@@ -936,60 +1017,73 @@ final class HelpModal
         '⏎' => 'reprendre dans Herdr',
         'l' => 'cause de l\'échec de CI',
         'o' => 'ouvrir sur GitHub',
+        'd' => 'supprimer une branche',
         'r' => 'rafraîchir',
         '?' => 'fermer cette aide',
         'q' => 'quitter',
     ];
     private const int KEYS_WIDTH = 33;
-    private const int LEGEND_WIDTH = 24;
     private const int MARGIN_WIDTH = 2;
+    private const int MIN_CONTENT_WIDTH = 50;
 
     /**
      * @return list<string>
      */
-    public static function lines(): array
+    public static function help(): array
     {
-        $width = self::MARGIN_WIDTH * 2 + self::KEYS_WIDTH + self::LEGEND_WIDTH;
-        $keys = self::keyColumn();
-        $legend = self::legendColumn();
-
-        $title = ' Aide ';
-        $lines = [paint('╭─', Tone::Accent, Tone::Panel) . paint($title, Tone::Text, Tone::Panel, bold: true) . paint(str_repeat('─', $width - mb_strlen($title) - 1) . '╮', Tone::Accent, Tone::Panel)];
-        $lines[] = self::row('', $width);
-        $lines[] = self::row(self::columns(paint('Clavier', Tone::Accent, Tone::Panel, bold: true), paint('Légende', Tone::Accent, Tone::Panel, bold: true)), $width);
-
-        for ($index = 0; $index < max(\count($keys), \count($legend)); ++$index) {
-            $lines[] = self::row(self::columns($keys[$index] ?? '', $legend[$index] ?? ''), $width);
-        }
-
-        $lines[] = self::row('', $width);
-        $lines[] = paint('╰' . str_repeat('─', $width) . '╯', Tone::Accent, Tone::Panel);
-
-        return $lines;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function keyColumn(): array
-    {
-        $lines = [];
+        $keys = [];
         foreach (self::KEYS as $key => $label) {
-            $lines[] = paint(mb_str_pad($key, self::KEY_WIDTH), Tone::Text, Tone::Panel, bold: true) . paint($label, Tone::Muted, Tone::Panel);
+            $keys[] = paint(mb_str_pad($key, self::KEY_WIDTH), Tone::Text, Tone::Panel, bold: true) . paint($label, Tone::Muted, Tone::Panel);
         }
 
-        return $lines;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function legendColumn(): array
-    {
-        return array_map(
+        $legend = array_map(
             static fn (Icon $icon) => paint($icon->value . ' ', $icon->tone(), Tone::Panel) . paint($icon->label(), Tone::Muted, Tone::Panel),
             Icon::cases(),
         );
+
+        $rows = [self::columns(paint('Clavier', Tone::Accent, Tone::Panel, bold: true), paint('Légende', Tone::Accent, Tone::Panel, bold: true))];
+        for ($index = 0; $index < max(\count($keys), \count($legend)); ++$index) {
+            $rows[] = self::columns($keys[$index] ?? '', $legend[$index] ?? '');
+        }
+
+        return self::box('Aide', Tone::Accent, $rows);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function deletion(LocalBranch $branch): array
+    {
+        $fact = static fn (string $label, string $value) => paint(mb_str_pad($label, self::KEY_WIDTH), Tone::Muted, Tone::Panel) . paint($value, Tone::Text, Tone::Panel, bold: true);
+
+        $rows = [$fact('dépôt', $branch->repository), $fact('branche', $branch->name)];
+        if (null !== $branch->worktree) {
+            $rows[] = $fact('worktree', str_replace(home(), '~', $branch->worktree));
+        }
+        $rows[] = '';
+        $rows[] = paint('y', Tone::Danger, Tone::Panel, bold: true) . paint(' supprimer   ', Tone::Text, Tone::Panel) . paint('une autre touche annule', Tone::Muted, Tone::Panel);
+
+        return self::box($branch->worktree ? 'Supprimer ce worktree et sa branche ?' : 'Supprimer cette branche ?', Tone::Danger, $rows);
+    }
+
+    /**
+     * @param list<string> $rows
+     *
+     * @return list<string>
+     */
+    private static function box(string $title, Tone $tone, array $rows): array
+    {
+        $contentWidth = max(self::MIN_CONTENT_WIDTH, ...array_map(AnsiUtils::visibleWidth(...), $rows));
+        $width = self::MARGIN_WIDTH * 2 + $contentWidth;
+        $title = " {$title} ";
+
+        $lines = [paint('╭─', $tone, Tone::Panel) . paint($title, Tone::Text, Tone::Panel, bold: true) . paint(str_repeat('─', $width - mb_strlen($title) - 1) . '╮', $tone, Tone::Panel)];
+        foreach (['', ...$rows, ''] as $row) {
+            $lines[] = self::row($row, $width, $tone);
+        }
+        $lines[] = paint('╰' . str_repeat('─', $width) . '╯', $tone, Tone::Panel);
+
+        return $lines;
     }
 
     private static function columns(string $left, string $right): string
@@ -999,12 +1093,12 @@ final class HelpModal
         return $left . paint(str_repeat(' ', max(0, $gap)), Tone::Text, Tone::Panel) . $right;
     }
 
-    private static function row(string $content, int $width): string
+    private static function row(string $content, int $width, Tone $tone): string
     {
         $margin = paint(str_repeat(' ', self::MARGIN_WIDTH), Tone::Text, Tone::Panel);
         $padding = $width - self::MARGIN_WIDTH - AnsiUtils::visibleWidth($content);
 
-        return paint('│', Tone::Accent, Tone::Panel) . $margin . $content . paint(str_repeat(' ', max(0, $padding)), Tone::Text, Tone::Panel) . paint('│', Tone::Accent, Tone::Panel);
+        return paint('│', $tone, Tone::Panel) . $margin . $content . paint(str_repeat(' ', max(0, $padding)), Tone::Text, Tone::Panel) . paint('│', $tone, Tone::Panel);
     }
 }
 
@@ -1138,6 +1232,7 @@ final readonly class Entry
         public ?string $url = null,
         public ?string $directory = null,
         public ?string $hint = null,
+        public ?LocalBranch $localBranch = null,
         public bool $isDraft = false,
         public array $failedChecks = [],
         public array $reviews = [],
@@ -1290,7 +1385,8 @@ final readonly class Entry
             ageInDays: $branch->ageInDays,
             url: $url,
             directory: $branch->directory(),
-            hint: null === $branch->worktree ? "Pour nettoyer : git branch -D {$branch->name}" : "Pour nettoyer : git worktree remove {$branch->worktree}",
+            hint: 'd pour supprimer',
+            localBranch: $branch,
         );
     }
 
@@ -1389,6 +1485,11 @@ final readonly class LocalBranch
     public function directory(): string
     {
         return $this->worktree ?? $this->checkout;
+    }
+
+    public function worktreeContains(string $directory): bool
+    {
+        return null !== $this->worktree && str_starts_with("{$directory}/", "{$this->worktree}/");
     }
 }
 
@@ -1778,6 +1879,24 @@ final readonly class Workspace
         usort($entries, static fn (Entry $a, Entry $b) => $a->ageInDays <=> $b->ageInDays);
 
         return [...$this->runningStacks(), ...$entries];
+    }
+
+    /**
+     * Without --force: git refuses a worktree with changes, which is what we want.
+     *
+     * @return string The last commit of the branch, to get it back
+     */
+    public function deleteBranch(LocalBranch $branch): string
+    {
+        $commit = trim(output(['git', '-C', $branch->checkout, 'rev-parse', '--short', "refs/heads/{$branch->name}"]));
+
+        if (null !== $branch->worktree) {
+            output(['git', '-C', $branch->checkout, 'worktree', 'remove', $branch->worktree]);
+        }
+
+        output(['git', '-C', $branch->checkout, 'branch', '-D', $branch->name]);
+
+        return $commit;
     }
 
     /**
