@@ -94,8 +94,7 @@ final class Dashboard
     private const float CLOCK_REFRESH_INTERVAL_IN_SECONDS = 30;
     private const float FAILED_LOAD_RETRY_INTERVAL_IN_SECONDS = 30;
     // Held down, any other key would act once per repeat: o would open a tab each time
-    private const array KEY_REPEAT_ACTIONS = ['down', 'next_section', 'previous_section', 'up'];
-    private const int LOG_LINES = 10;
+    private const array KEY_REPEAT_ACTIONS = ['down', 'next_section', 'page_down', 'page_up', 'previous_section', 'up'];
     private const array SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     private const float SPINNER_INTERVAL_IN_SECONDS = 0.08;
 
@@ -119,14 +118,18 @@ final class Dashboard
     private bool $herdrRunning = false;
     private bool $lastLoadFailed = false;
     private bool $loading = false;
+    private ?LogViewer $logViewer = null;
     private int $localSearch = 0;
     /** @var array<string, Location> By id */
     private array $locations = [];
-    /** @var array<string, list<string>> By id */
+    /** @var array<string, list<string>> The failed CI logs, by id */
     private array $logs = [];
+    /** @var array<string, string> Why an action failed on a line, by id */
+    private array $failures = [];
     private ?string $notice = null;
     private ?Entry $pendingDeletion = null;
     private ?Location $resumeAfterExit = null;
+    private ?Inspection $shellRequest = null;
     private bool $showingBoard = false;
     private ?int $snapshotFetchedAt = null;
     private int $spinnerFrame = 0;
@@ -139,17 +142,20 @@ final class Dashboard
         private readonly Herdr $herdr,
     ) {
         $this->keys = new Keybindings([
-            'confirm' => ['y'],
+            'bottom' => [Key::END],
             'delete' => ['d'],
             'down' => [Key::DOWN, 'j'],
+            'interrupt' => ['ctrl+c'],
             'logs' => ['l'],
             'next_section' => [Key::TAB],
             'open' => ['o'],
+            'page_down' => [Key::PAGE_DOWN, Key::SPACE],
+            'page_up' => [Key::PAGE_UP],
             'previous_section' => ['shift+tab'],
-            'interrupt' => ['ctrl+c'],
             'quit' => ['q', Key::ESCAPE],
             'refresh' => ['r'],
             'resume' => [Key::ENTER],
+            'top' => [Key::HOME, 'g'],
             'up' => [Key::UP, 'k'],
         ]);
 
@@ -200,6 +206,16 @@ final class Dashboard
         fwrite(\STDOUT, "\e[?1049h\e[H");
         try {
             $this->tui->run();
+            while (null !== $this->shellRequest) {
+                $inspection = $this->shellRequest;
+                $this->shellRequest = null;
+                fwrite(\STDOUT, "\e[?1049l");
+                $inspection->openShell();
+                fwrite(\STDOUT, "\e[?1049h\e[H\e[2J");
+                // The screen was cleared behind its back: everything is drawn again
+                $this->tui->requestRender(true);
+                $this->tui->run();
+            }
         } finally {
             fwrite(\STDOUT, "\e[?1049l");
         }
@@ -384,6 +400,12 @@ final class Dashboard
             return;
         }
 
+        if (null !== $this->logViewer) {
+            $this->scrollLogs($this->logViewer, $data);
+
+            return;
+        }
+
         if (!$isRepeat && ($this->isHelpKey($data) || ($this->helpVisible && $this->keys->matches($data, 'quit')))) {
             $this->toggleHelp();
 
@@ -394,16 +416,29 @@ final class Dashboard
             return;
         }
 
+        // G is Shift+g: matched on what it types
+        $typed = $parser->decodePrintable($data) ?? $data;
+        if ('G' === $typed) {
+            $this->board->moveToLast();
+            $this->redraw();
+
+            return;
+        }
+
         $actions = [
+            'bottom' => $this->board->moveToLast(...),
             'delete' => $this->askDeletion(...),
             'down' => fn () => $this->board->moveBy(1),
             'logs' => $this->showLogs(...),
             'next_section' => fn () => $this->board->moveToSection(1),
             'open' => $this->openInBrowser(...),
+            'page_down' => fn () => $this->board->moveByPage(1),
+            'page_up' => fn () => $this->board->moveByPage(-1),
             'previous_section' => fn () => $this->board->moveToSection(-1),
             'quit' => $this->tui->stop(...),
             'refresh' => $this->load(...),
             'resume' => $this->resume(...),
+            'top' => $this->board->moveToFirst(...),
             'up' => fn () => $this->board->moveBy(-1),
         ];
 
@@ -435,34 +470,39 @@ final class Dashboard
         }
 
         $this->helpVisible = !$this->helpVisible;
-        $this->board->setModal($this->helpVisible ? Modal::help() : null);
+        $this->board->setModal($this->helpVisible ? static fn () => Modal::help() : null);
         $this->redraw();
     }
 
     private function askDeletion(): void
     {
         $entry = $this->board->selected();
-        $branch = $entry?->localBranch;
-        if (null === $entry || null === $branch) {
-            $this->notice = 'd supprime les branches et worktrees déjà partis de GitHub';
-
+        if (null === $entry) {
             return;
         }
 
-        $reason = $this->deletionBlocker($branch);
-        if (null !== $reason) {
-            $this->notice = $reason;
+        $branch = $entry->localBranch;
+        $reason = null === $branch ? 'd ne supprime que les branches et worktrees déjà partis de GitHub' : $this->deletionBlocker($branch);
+        if (null !== $reason || null === $branch) {
+            // Also in the detail, next to the line: the header is easy to miss, and cut
+            $this->notice = 'Suppression impossible : le détail dit pourquoi';
+            $this->failures[$entry->id()] = (string) $reason;
 
             return;
         }
 
         $this->notice = null;
+        unset($this->failures[$entry->id()]);
         $this->pendingDeletion = $entry;
-        $this->board->setModal(Modal::deletion($branch));
+        $this->board->setModal(static fn () => Modal::deletion($branch));
     }
 
     private function deletionBlocker(LocalBranch $branch): ?string
     {
+        if (null !== $branch->lock && !$branch->lock->isStale()) {
+            return $branch->lock->isClaudeSession() ? 'Une session Claude utilise encore ce worktree' : "Worktree verrouillé : {$branch->lock->reason}";
+        }
+
         if (null !== array_find($this->agents, static fn (Agent $agent) => $branch->worktreeContains($agent->directory))) {
             return 'Claude tourne dans ce worktree';
         }
@@ -480,8 +520,12 @@ final class Dashboard
         $this->pendingDeletion = null;
         $this->board->setModal(null);
 
-        if ($this->keys->matches($data, 'confirm') && null !== $entry->localBranch) {
+        // Whatever form the terminal reports it in: plain text or a Kitty sequence
+        $typed = $this->keys->getParser()->decodePrintable($data) ?? $data;
+        if (\in_array($typed, ['y', 'Y'], true) && null !== $entry->localBranch) {
             $this->deleteBranch($entry, $entry->localBranch);
+        } else {
+            $this->notice = 'Suppression annulée';
         }
 
         $this->redraw();
@@ -498,7 +542,8 @@ final class Dashboard
                 $this->board->setEntries(array_values(array_filter($this->board->entries(), $isOther)));
                 $this->notice = "Supprimée. Pour la récupérer : git branch {$branch->name} {$commit}";
             } catch (ProcessFailedException|ProcessTimedOutException $exception) {
-                $this->notice = 'Refusé : ' . str_replace(home(), '~', (string) strtok($exception->getProcess()->getErrorOutput(), "\n"));
+                $this->notice = 'Suppression refusée : le détail dit pourquoi';
+                $this->failures[$entry->id()] = 'Refusé : ' . str_replace(home(), '~', (string) strtok($exception->getProcess()->getErrorOutput(), "\n"));
             } finally {
                 unset($this->tasks['suppression']);
                 $this->redraw();
@@ -510,6 +555,15 @@ final class Dashboard
     {
         $entry = $this->board->selected();
         if (null === $entry) {
+            return;
+        }
+
+        // What I left behind is looked at with git, not with Claude: a shell
+        // there, back here with exit, like the scratch terminal of Herdr
+        if (null !== $entry->inspection) {
+            $this->shellRequest = $entry->inspection;
+            $this->tui->stop();
+
             return;
         }
 
@@ -605,17 +659,74 @@ final class Dashboard
             return;
         }
 
+        if (isset($this->logs[$entry->id()])) {
+            $this->openLogs($entry, $this->logs[$entry->id()]);
+
+            return;
+        }
+
+        if (isset($this->tasks['logs de la CI'])) {
+            return;
+        }
+
         $this->tasks['logs de la CI'] = true;
         EventLoop::queue(function () use ($check, $entry): void {
             try {
-                $this->logs[$entry->id()] = $this->gitHub->failedLogs((string) $entry->repository, (string) $check->runId, self::LOG_LINES);
+                $this->logs[$entry->id()] = $this->gitHub->failedLogs((string) $entry->repository, (string) $check->runId);
+                unset($this->failures[$entry->id()]);
+                // Another modal opened in the meantime: the log waits for the next l
+                if (!$this->hasModal()) {
+                    $this->openLogs($entry, $this->logs[$entry->id()]);
+                }
             } catch (ProcessFailedException|ProcessTimedOutException) {
-                $this->notice = 'Logs de la CI indisponibles : expirés, ou GitHub injoignable';
+                $this->notice = 'Logs de la CI indisponibles : le détail dit pourquoi';
+                $this->failures[$entry->id()] = 'Logs de la CI indisponibles : expirés, ou GitHub injoignable';
             } finally {
                 unset($this->tasks['logs de la CI']);
                 $this->redraw();
             }
         });
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function openLogs(Entry $entry, array $lines): void
+    {
+        $this->logViewer = new LogViewer("Logs de {$entry->reference}", $lines);
+        $this->board->setModal($this->logViewer->render(...));
+        $this->redraw();
+    }
+
+    private function scrollLogs(LogViewer $viewer, string $data): void
+    {
+        $typed = $this->keys->getParser()->decodePrintable($data) ?? $data;
+
+        match (true) {
+            $this->keys->matches($data, 'quit') || $this->keys->matches($data, 'logs') => $this->closeLogs(),
+            'G' === $typed || $this->keys->matches($data, 'bottom') => $viewer->scrollToBottom(),
+            $this->keys->matches($data, 'top') => $viewer->scrollToTop(),
+            $this->keys->matches($data, 'down') => $viewer->scroll(1),
+            $this->keys->matches($data, 'up') => $viewer->scroll(-1),
+            $this->keys->matches($data, 'page_down') => $viewer->scrollPage(1),
+            $this->keys->matches($data, 'page_up') => $viewer->scrollPage(-1),
+            default => null,
+        };
+
+        $this->board->invalidate();
+        $this->tui->requestRender();
+    }
+
+    private function closeLogs(): void
+    {
+        $this->logViewer = null;
+        $this->board->setModal(null);
+        $this->redraw();
+    }
+
+    private function hasModal(): bool
+    {
+        return $this->helpVisible || null !== $this->pendingDeletion || null !== $this->logViewer;
     }
 
     /**
@@ -644,7 +755,7 @@ final class Dashboard
         $this->detail->setText(null === $entry ? '' : $this->renderDetail($entry));
         $this->detailBox->setStyle(new Style(
             border: Border::all(1, 'rounded', ($entry?->icon->tone() ?? Tone::Muted)->value),
-            hidden: $this->helpVisible || null !== $this->pendingDeletion ?: null,
+            hidden: $this->hasModal() ?: null,
             padding: Padding::xy(1, 0),
         ));
         $this->board->setActiveIds($this->activeIds());
@@ -698,7 +809,7 @@ final class Dashboard
     private function renderFooter(int $columns): string
     {
         $parts = [];
-        foreach (['⏎' => 'reprendre', '?' => 'aide', 'q' => 'quitter'] as $key => $label) {
+        foreach (['Entrée' => 'ouvrir', '?' => 'aide', 'q' => 'quitter'] as $key => $label) {
             $parts[] = paint($key, Tone::Text, bold: true) . ' ' . paint($label, Tone::Muted);
         }
 
@@ -720,8 +831,8 @@ final class Dashboard
 
         $lines[] = $this->renderLocation($entry);
 
-        foreach ($this->logs[$entry->id()] ?? [] as $line) {
-            $lines[] = paint($line, Tone::Muted);
+        if (isset($this->failures[$entry->id()])) {
+            $lines[] = paint('✘ ' . $this->failures[$entry->id()], Tone::Danger, bold: true);
         }
 
         return implode("\n", $lines);
@@ -749,10 +860,14 @@ final class Dashboard
 
     private function renderLocation(Entry $entry): string
     {
+        if (null !== $entry->inspection) {
+            return paint('▶ Entrée : un terminal, avec ' . $entry->inspection->display(), Tone::Accent);
+        }
+
         $location = $this->locations[$entry->id()] ?? null;
         $agent = $this->agentOf($entry, $location);
         if (null !== $agent) {
-            return paint(Icon::Agent->value . " Claude tourne ici ({$agent->status}) : ⏎ pour y aller", Tone::Accent);
+            return paint(Icon::Agent->value . " Claude tourne ici ({$agent->status}) : Entrée pour y aller", Tone::Accent);
         }
 
         if (null === $location) {
@@ -800,9 +915,10 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     private array $activeIds = [];
     /** @var list<Entry> */
     private array $entries = [];
-    /** @var list<string>|null */
-    private ?array $modal = null;
+    /** @var (\Closure(int, int): list<string>)|null Its lines, for the columns and rows of the board */
+    private ?\Closure $modal = null;
     private int $selectedIndex = 0;
+    private int $visibleRows = 1;
 
     /**
      * @param list<Entry> $entries
@@ -843,9 +959,9 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     }
 
     /**
-     * @param list<string>|null $modal
+     * @param (\Closure(int, int): list<string>)|null $modal
      */
-    public function setModal(?array $modal): void
+    public function setModal(?\Closure $modal): void
     {
         $this->modal = $modal;
         $this->invalidate();
@@ -858,6 +974,29 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
         }
 
         $this->selectedIndex = ($this->selectedIndex + $offset + \count($this->entries)) % \count($this->entries);
+        $this->invalidate();
+    }
+
+    public function moveByPage(int $direction): void
+    {
+        if ([] === $this->entries) {
+            return;
+        }
+
+        // A page of lines holds fewer entries: the titles of the sections take rows
+        $this->selectedIndex = max(0, min($this->selectedIndex + $direction * max(1, $this->visibleRows - 4), \count($this->entries) - 1));
+        $this->invalidate();
+    }
+
+    public function moveToFirst(): void
+    {
+        $this->selectedIndex = 0;
+        $this->invalidate();
+    }
+
+    public function moveToLast(): void
+    {
+        $this->selectedIndex = max(0, \count($this->entries) - 1);
         $this->invalidate();
     }
 
@@ -892,6 +1031,7 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     {
         $columns = $context->getColumns();
         $rows = max(1, $context->getRows());
+        $this->visibleRows = $rows;
 
         $lines = [''];
         $selectedLine = 0;
@@ -925,7 +1065,7 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
 
         $visibleLines = array_pad(\array_slice($lines, $firstLine, $rows), $rows, '');
 
-        return null === $this->modal ? $visibleLines : $this->renderModal($this->modal, $visibleLines, $columns, $rows);
+        return null === $this->modal ? $visibleLines : $this->renderModal(($this->modal)($columns, $rows), $visibleLines, $columns, $rows);
     }
 
     /**
@@ -1024,11 +1164,13 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
  */
 final class Modal
 {
-    private const int KEY_WIDTH = 9;
+    private const int KEY_WIDTH = 13;
     private const array KEYS = [
         '↑↓ j k' => 'naviguer',
-        '⇥ ⇧⇥' => 'changer de section',
-        '⏎' => 'reprendre dans Herdr',
+        'PgUp PgDn' => 'défiler par page',
+        'g G' => 'début, fin',
+        'Tab Maj+Tab' => 'changer de section',
+        'Entrée' => 'Claude, ou un terminal',
         'l' => 'cause de l\'échec de CI',
         'o' => 'ouvrir sur GitHub',
         'd' => 'supprimer une branche',
@@ -1036,7 +1178,7 @@ final class Modal
         '?' => 'fermer cette aide',
         'q' => 'quitter',
     ];
-    private const int KEYS_WIDTH = 33;
+    private const int KEYS_WIDTH = 37;
     private const int MARGIN_WIDTH = 2;
     private const int MIN_CONTENT_WIDTH = 50;
 
@@ -1074,6 +1216,9 @@ final class Modal
         if (null !== $branch->worktree) {
             $rows[] = $fact('worktree', str_replace(home(), '~', $branch->worktree));
         }
+        if (null !== $branch->lock) {
+            $rows[] = paint(mb_str_pad('verrou', self::KEY_WIDTH), Tone::Muted, Tone::Panel) . paint('d\'une session Claude terminée : il sera levé', Tone::Warning, Tone::Panel);
+        }
         $rows[] = '';
         $rows[] = paint('y', Tone::Danger, Tone::Panel, bold: true) . paint(' supprimer   ', Tone::Text, Tone::Panel) . paint('une autre touche annule', Tone::Muted, Tone::Panel);
 
@@ -1085,7 +1230,7 @@ final class Modal
      *
      * @return list<string>
      */
-    private static function box(string $title, Tone $tone, array $rows): array
+    public static function box(string $title, Tone $tone, array $rows): array
     {
         $contentWidth = max(self::MIN_CONTENT_WIDTH, ...array_map(AnsiUtils::visibleWidth(...), $rows));
         $width = self::MARGIN_WIDTH * 2 + $contentWidth;
@@ -1113,6 +1258,96 @@ final class Modal
         $padding = $width - self::MARGIN_WIDTH - AnsiUtils::visibleWidth($content);
 
         return paint('│', $tone, Tone::Panel) . $margin . $content . paint(str_repeat(' ', max(0, $padding)), Tone::Text, Tone::Panel) . paint('│', $tone, Tone::Panel);
+    }
+}
+
+/**
+ * The log of a failed CI run, in a box to scroll through.
+ */
+final class LogViewer
+{
+    // The borders, the empty rows around the content and the keys at the bottom
+    private const int CHROME_ROWS = 7;
+    private const int SIDE_COLUMNS = 8;
+
+    private int $offset = 0;
+    private bool $positioned = false;
+    private int $visibleRows = 1;
+
+    /**
+     * @param list<string> $lines
+     */
+    public function __construct(
+        private readonly string $title,
+        private readonly array $lines,
+    ) {
+    }
+
+    public function scroll(int $rows): void
+    {
+        $this->offset = max(0, min($this->offset + $rows, $this->lastOffset()));
+    }
+
+    public function scrollPage(int $direction): void
+    {
+        $this->scroll($direction * max(1, $this->visibleRows - 1));
+    }
+
+    public function scrollToTop(): void
+    {
+        $this->offset = 0;
+    }
+
+    public function scrollToBottom(): void
+    {
+        $this->offset = $this->lastOffset();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function render(int $columns, int $rows): array
+    {
+        $this->visibleRows = max(1, $rows - self::CHROME_ROWS);
+        if (!$this->positioned) {
+            // Opens on the first error, with what led to it above: the end of a
+            // log is the cleanup of the job
+            $firstError = array_find_key($this->lines, static fn (string $line) => str_contains($line, '##[error]'));
+            $this->offset = null === $firstError ? $this->lastOffset() : $firstError - intdiv($this->visibleRows * 2, 3);
+            $this->positioned = true;
+        }
+        // Also after a resize
+        $this->scroll(0);
+
+        $width = max(20, $columns - self::SIDE_COLUMNS);
+        $content = [];
+        foreach (\array_slice($this->lines, $this->offset, $this->visibleRows) as $line) {
+            $tone = match (true) {
+                str_contains($line, '##[error]') => Tone::Danger,
+                str_contains($line, '##[warning]') => Tone::Warning,
+                default => Tone::Text,
+            };
+            $content[] = paint(AnsiUtils::truncateToWidth($line, $width, '…', pad: true), $tone, Tone::Panel);
+        }
+        $content = array_pad($content, $this->visibleRows, paint(str_repeat(' ', $width), Tone::Text, Tone::Panel));
+
+        $keys = ['↑↓ j k' => 'défiler', 'PgUp PgDn' => 'page', 'g G' => 'début, fin', 'q' => 'fermer'];
+        $footer = [];
+        foreach ($keys as $key => $label) {
+            $footer[] = paint($key, Tone::Text, Tone::Panel, bold: true) . paint(" {$label}", Tone::Muted, Tone::Panel);
+        }
+        $content[] = '';
+        $content[] = implode(paint('   ', Tone::Text, Tone::Panel), $footer);
+
+        $first = [] === $this->lines ? 0 : $this->offset + 1;
+        $last = min($this->offset + $this->visibleRows, \count($this->lines));
+
+        return Modal::box("{$this->title} : lignes {$first} à {$last} sur " . \count($this->lines), Tone::Danger, $content);
+    }
+
+    private function lastOffset(): int
+    {
+        return max(0, \count($this->lines) - $this->visibleRows);
     }
 }
 
@@ -1246,6 +1481,7 @@ final readonly class Entry
         public ?string $url = null,
         public ?string $directory = null,
         public ?string $hint = null,
+        public ?Inspection $inspection = null,
         public ?LocalBranch $localBranch = null,
         public bool $isDraft = false,
         public array $failedChecks = [],
@@ -1345,7 +1581,7 @@ final readonly class Entry
             title: $branch->name,
             ageInDays: $branch->ageInDays,
             directory: $branch->directory(),
-            hint: "Pour regarder : git log {$branch->name}",
+            inspection: new Inspection($branch->repository, $branch->checkout, 'git log --oneline -10 ' . escapeshellarg($branch->name)),
         );
     }
 
@@ -1360,7 +1596,7 @@ final readonly class Entry
             title: 1 === $count ? '1 stash' : "{$count} stashes",
             ageInDays: $ageInDays,
             directory: $directory,
-            hint: 'Pour regarder : git stash list',
+            inspection: new Inspection($name, $directory, 'git stash list'),
         );
     }
 
@@ -1376,6 +1612,7 @@ final readonly class Entry
             ageInDays: $ageInDays,
             directory: $directory,
             hint: "Pour arrêter : docker compose -p {$name} stop",
+            inspection: new Inspection($name, $directory ?? home(), 'docker compose -p ' . escapeshellarg($name) . ' ps'),
         );
     }
 
@@ -1400,6 +1637,9 @@ final readonly class Entry
             url: $url,
             directory: $branch->directory(),
             hint: 'd pour supprimer',
+            inspection: null === $branch->worktree
+                ? new Inspection($branch->repository, $branch->checkout, 'git log --oneline -10 ' . escapeshellarg($branch->name))
+                : new Inspection($branch->repository, $branch->worktree, 'git status && git log --oneline -10'),
             localBranch: $branch,
         );
     }
@@ -1485,6 +1725,45 @@ final readonly class FailedCheck
     }
 }
 
+/**
+ * Where to look at something I left behind, and the command that shows it.
+ */
+final readonly class Inspection
+{
+    /**
+     * @param string $command Safe for a shell: what comes from a name is quoted
+     */
+    public function __construct(
+        private string $title,
+        private string $directory,
+        private string $command,
+    ) {
+    }
+
+    public function display(): string
+    {
+        return 'cd ' . str_replace(home(), '~', $this->directory) . " && {$this->command}";
+    }
+
+    /**
+     * Runs the command, then leaves my shell open there until exit.
+     */
+    public function openShell(): void
+    {
+        $script = <<<'SHELL'
+            printf '\033[H\033[2J\033[1;35mgh work\033[0m  %s  \033[2m(exit pour revenir)\033[0m\n\n$ %s\n' "$1" "$2"
+            eval "$2"
+            echo
+            exec "${SHELL:-bash}"
+            SHELL;
+
+        // The title and the command go as arguments, never in the script itself
+        new Process(['bash', '-c', $script, 'gh-work', $this->title, $this->command], $this->directory, timeout: null)
+            ->setTty(true)
+            ->run();
+    }
+}
+
 final readonly class LocalBranch
 {
     public function __construct(
@@ -1493,6 +1772,7 @@ final readonly class LocalBranch
         public string $name,
         public ?string $worktree,
         public int $ageInDays,
+        public ?WorktreeLock $lock = null,
     ) {
     }
 
@@ -1504,6 +1784,47 @@ final readonly class LocalBranch
     public function worktreeContains(string $directory): bool
     {
         return null !== $this->worktree && str_starts_with("{$directory}/", "{$this->worktree}/");
+    }
+}
+
+/**
+ * Claude Code locks the worktrees it creates, with the process of the session.
+ */
+final readonly class WorktreeLock
+{
+    private const string CLAUDE_SESSION = '{^claude session .*\(pid (\d+) start (\d+)\)$}';
+
+    public function __construct(
+        public string $reason,
+    ) {
+    }
+
+    public function isClaudeSession(): bool
+    {
+        return 1 === preg_match(self::CLAUDE_SESSION, $this->reason);
+    }
+
+    /**
+     * The session of Claude is over: its lock protects nothing anymore. A lock
+     * set by anything else is never stale, since nothing tells.
+     */
+    public function isStale(): bool
+    {
+        if (!preg_match(self::CLAUDE_SESSION, $this->reason, $matches)) {
+            return false;
+        }
+
+        // The process may end between a check and the read: false says it is gone
+        $stat = @file_get_contents("/proc/{$matches[1]}/stat");
+        if (false === $stat) {
+            return true;
+        }
+
+        // The start time tells the session from a new process that got its pid.
+        // After the name in parentheses, it is the 20th field.
+        $fields = explode(' ', substr($stat, (int) strrpos($stat, ')') + 2));
+
+        return ($fields[19] ?? null) !== $matches[2];
     }
 }
 
@@ -1717,20 +2038,20 @@ final readonly class GitHub
     /**
      * @return list<string>
      */
-    public function failedLogs(string $repository, string $runId, int $lineCount): array
+    public function failedLogs(string $repository, string $runId): array
     {
         $lines = explode("\n", trim(output(['gh', 'run', 'view', $runId, '--repo', $repository, '--log-failed'])));
 
-        // The end of a log is the cleanup of the job: the cause is above the first error
-        $firstError = array_find_key($lines, static fn (string $line) => str_contains($line, '##[error]'));
-        $lastLine = $firstError ?? \count($lines) - 1;
-        $relevantLines = \array_slice($lines, max(0, $lastLine - $lineCount + 1), min($lineCount, $lastLine + 1));
-
-        return array_map(
+        $cleanLines = [];
+        foreach ($lines as $line) {
             // The columns are the job, the step, then a timestamp and the line
-            static fn (string $line) => StringUtils::stripControlBytes(AnsiUtils::stripAnsiCodes(preg_replace('{^[^\t]*\t[^\t]*\t\S+\s?}', '', $line) ?? $line)),
-            $relevantLines,
-        );
+            $line = StringUtils::stripControlBytes(AnsiUtils::stripAnsiCodes(preg_replace('{^[^\t]*\t[^\t]*\t\S+\s?}', '', $line) ?? $line));
+            if (!str_starts_with($line, '##[endgroup]')) {
+                $cleanLines[] = str_replace('##[group]', '▸ ', $line);
+            }
+        }
+
+        return $cleanLines;
     }
 
     /**
@@ -1905,6 +2226,9 @@ final readonly class Workspace
         $commit = trim(output(['git', '-C', $branch->checkout, 'rev-parse', '--short', "refs/heads/{$branch->name}"]));
 
         if (null !== $branch->worktree) {
+            if (true === $branch->lock?->isStale()) {
+                output(['git', '-C', $branch->checkout, 'worktree', 'unlock', $branch->worktree]);
+            }
             output(['git', '-C', $branch->checkout, 'worktree', 'remove', $branch->worktree]);
         }
 
@@ -1934,17 +2258,39 @@ final readonly class Workspace
             '--format=%(refname:short)%09%(upstream)%09%(upstream:track)%09%(worktreepath)%09%(committerdate:unix)',
         ])->getOutput();
 
+        $rows = array_map(static fn (string $reference) => explode("\t", $reference), array_filter(explode("\n", $references)));
+        $hasWorktree = [] !== array_filter($rows, static fn (array $row) => !\in_array($row[3], ['', $checkout], true));
+        $locks = $hasWorktree ? $this->worktreeLocks($checkout) : [];
+
         $branches = [];
-        foreach (array_filter(explode("\n", $references)) as $reference) {
-            [$name, $upstream, $track, $worktree, $committedAt] = explode("\t", $reference);
+        foreach ($rows as [$name, $upstream, $track, $worktree, $committedAt]) {
+            $worktree = \in_array($worktree, ['', $checkout], true) ? null : $worktree;
             $branches[] = [
-                new LocalBranch($repository, $checkout, $name, \in_array($worktree, ['', $checkout], true) ? null : $worktree, intdiv(time() - (int) $committedAt, 86400)),
+                new LocalBranch($repository, $checkout, $name, $worktree, intdiv(time() - (int) $committedAt, 86400), null === $worktree ? null : ($locks[$worktree] ?? null)),
                 $upstream,
                 $track,
             ];
         }
 
         return $branches;
+    }
+
+    /**
+     * @return array<string, WorktreeLock> By path of the worktree
+     */
+    private function worktreeLocks(string $checkout): array
+    {
+        $locks = [];
+        $path = null;
+        foreach (explode("\n", finishedProcess(['git', '-C', $checkout, 'worktree', 'list', '--porcelain'])->getOutput()) as $line) {
+            if (str_starts_with($line, 'worktree ')) {
+                $path = substr($line, \strlen('worktree '));
+            } elseif (null !== $path && ('locked' === $line || str_starts_with($line, 'locked '))) {
+                $locks[$path] = new WorktreeLock(trim(substr($line, \strlen('locked'))));
+            }
+        }
+
+        return $locks;
     }
 
     private function stash(string $checkout, string $repository): ?Entry
