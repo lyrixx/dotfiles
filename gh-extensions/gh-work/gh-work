@@ -93,6 +93,8 @@ final class Dashboard
     private const float BOARD_REFRESH_INTERVAL_IN_SECONDS = 300;
     private const float CLOCK_REFRESH_INTERVAL_IN_SECONDS = 30;
     private const float FAILED_LOAD_RETRY_INTERVAL_IN_SECONDS = 30;
+    // Held down, any other key would act once per repeat: o would open a tab each time
+    private const array KEY_REPEAT_ACTIONS = ['down', 'next_section', 'previous_section', 'up'];
     private const int LOG_LINES = 10;
     private const array SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     private const float SPINNER_INTERVAL_IN_SECONDS = 0.08;
@@ -360,6 +362,14 @@ final class Dashboard
     {
         $data = $event->getData();
 
+        // With the Kitty protocol, a key also reports its release, and its repeats
+        // while held: to a modal, they would look like another key
+        $parser = $this->keys->getParser();
+        if ($parser->isKeyRelease($data)) {
+            return;
+        }
+        $isRepeat = $parser->isKeyRepeat($data);
+
         if ($this->keys->matches($data, 'interrupt')) {
             $this->tui->stop();
 
@@ -367,12 +377,14 @@ final class Dashboard
         }
 
         if (null !== $this->pendingDeletion) {
-            $this->answerDeletion($this->pendingDeletion, $data);
+            if (!$isRepeat) {
+                $this->answerDeletion($this->pendingDeletion, $data);
+            }
 
             return;
         }
 
-        if ($this->isHelpKey($data) || ($this->helpVisible && $this->keys->matches($data, 'quit'))) {
+        if (!$isRepeat && ($this->isHelpKey($data) || ($this->helpVisible && $this->keys->matches($data, 'quit')))) {
             $this->toggleHelp();
 
             return;
@@ -397,8 +409,10 @@ final class Dashboard
 
         foreach ($actions as $action => $callback) {
             if ($this->keys->matches($data, $action)) {
-                $callback();
-                $this->redraw();
+                if (!$isRepeat || \in_array($action, self::KEY_REPEAT_ACTIONS, true)) {
+                    $callback();
+                    $this->redraw();
+                }
 
                 return;
             }
