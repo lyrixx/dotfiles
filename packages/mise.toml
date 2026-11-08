@@ -1,6 +1,10 @@
 # Command-line tools, linked to ~/.config/mise/config.toml by mise.sh.
 # `mise install` installs them; bin/maj upgrades them within the versions below.
 
+[env]
+# Only the module cache lands there: mise points GOBIN at each tool's own directory.
+GOPATH = "{{env.HOME}}/.cache/go"
+
 [settings]
 # Nothing installs or updates on its own: only install.sh and bin/maj do.
 auto_install = false
