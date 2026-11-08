@@ -41,7 +41,14 @@ function training_on {
         echo "$theme" > "$VSCODE_THEME_BACKUP"
     fi
     set_vscode_theme "$LIGHT_THEME"
-    echo "theme = $LIGHT_THEME" > "$GHOSTTY_TRAINING_CONFIG"
+    # Dim text is drawn at 0.5 opacity by default: light grey on white. Ghostty
+    # enforces no minimum contrast either, VS Code does in its terminal (4.5).
+    # Both are needed: the minimum contrast ignores the opacity.
+    cat > "$GHOSTTY_TRAINING_CONFIG" <<EOF
+theme = $LIGHT_THEME
+faint-opacity = 0.8
+minimum-contrast = 4.5
+EOF
 }
 
 function training_off {
