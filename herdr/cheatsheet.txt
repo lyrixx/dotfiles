@@ -13,7 +13,7 @@ Workspaces, in the sidebar
   herdr-start              create my workspaces
 
 Agents
-  ctrl+a o                 go to the agent that just finished or waits for me
+  ctrl+a o                 another agent: blocked, done, working, then the others
   ctrl+alt+a               next agent (ctrl+alt+shift+a: previous)
   ctrl+a s, then b/w/i/d   only the blocked / working / idle / done agents
   ctrl+a shift+g           Git worktree, grouped under the workspace: another

@@ -44,6 +44,9 @@ move_tab_next = "prefix+period"
 next_agent = "ctrl+alt+a"
 next_tab = ["prefix+space", "prefix+n", "ctrl+alt+]"]
 next_workspace = "prefix+shift+down"
+# It only follows the toast on screen, and I have none. Unbound because an
+# action wins over a [[keys.command]] on the same key: see prefix+o below
+open_notification_target = ""
 previous_agent = "ctrl+alt+shift+a"
 previous_tab = ["prefix+backspace", "ctrl+alt+["]
 previous_workspace = "prefix+shift+up"
@@ -53,6 +56,12 @@ settings = "prefix+shift+s"
 split_vertical = ["prefix+|", "prefix+v"]
 switch_workspace = "ctrl+alt+1..9"
 zoom = ["prefix+z", "ctrl+alt+z"]
+
+[[keys.command]]
+key = "prefix+o"
+type = "shell"
+command = "exec ~/.local/bin/herdr-next-agent"
+description = "go to another agent, the most urgent first"
 
 [[keys.command]]
 key = "prefix+p"

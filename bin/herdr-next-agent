@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Goes to another agent, the most urgent first: blocked, done, working, then the
+# others, the oldest first in each group. Pressed again, it moves on to an agent
+# not visited yet in its current state, and starts over once all are visited.
+# Run by prefix+o, see herdr/config.toml.
+
+set -euo pipefail
+
+# Herdr throws away the output of a detached command
+exec 2> >(logger -t herdr-next-agent)
+
+herdr=${HERDR_BIN_PATH:-herdr}
+visited_file=~/.cache/herdr-next-agent.json
+
+# Pane id => state_change_seq at the visit: an agent that changes state since
+# counts as not visited. Forgotten after a pause, or a blocked agent seen a
+# while ago would no longer come first.
+visited='{}'
+if [[ -n $(find "$visited_file" -mmin -5 2> /dev/null) ]]; then
+    visited=$(< "$visited_file")
+fi
+
+next=$("$herdr" agent list | jq -c --argjson visited "$visited" '
+    def urgency: {blocked: 0, done: 1, working: 2}[.agent_status] // 3;
+    def not_in($round): map(select($round[.pane_id] != .state_change_seq));
+
+    .result.agents
+    | (map(select(.focused) | {(.pane_id): .state_change_seq}) | add // {}) as $focused
+    | (if not_in($visited + $focused) == [] then $focused else $visited + $focused end) as $round
+    | not_in($round)
+    | sort_by([urgency, .state_change_seq])
+    | first(.[])
+    | {pane_id, visited: ($round + {(.pane_id): .state_change_seq})}
+')
+
+# Empty when no other agent exists
+if [[ -n $next ]]; then
+    mkdir -p "$(dirname "$visited_file")"
+    jq -c .visited <<< "$next" > "$visited_file"
+    "$herdr" agent focus "$(jq -r .pane_id <<< "$next")" > /dev/null
+fi
