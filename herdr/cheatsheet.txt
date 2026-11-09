@@ -13,6 +13,7 @@ Workspaces, in the sidebar
   herdr-start              create my workspaces
 
 Agents
+  ctrl+a m                 pick an agent: up/down, enter, esc to cancel
   ctrl+a o                 another agent: blocked, done, working, then the others
   ctrl+alt+a               next agent (ctrl+alt+shift+a: previous)
   ctrl+a s, then b/w/i/d   only the blocked / working / idle / done agents

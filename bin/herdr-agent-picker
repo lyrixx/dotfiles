@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Picks an agent with the arrows, then Enter. Esc cancels. The Navigate mode of
+# prefix+w can't do it, Herdr only walks the workspaces there. Run by prefix+m
+# in a popup, see herdr/config.toml.
+
+set -euo pipefail
+
+herdr=${HERDR_BIN_PATH:-herdr}
+
+agents=$("$herdr" agent list)
+workspaces=$("$herdr" workspace list)
+
+rows=$(jq -r --argjson workspaces "$workspaces" '
+    ($workspaces.result.workspaces | map({(.workspace_id): .label}) | add) as $labels
+    | .result.agents[]
+    | ({blocked: 31, done: 34, working: 33}[.agent_status] // 90) as $color
+    | (.agent_status + (" " * (7 - (.agent_status | length)))) as $status
+    | "\(.pane_id)\t\u001b[\($color)m● \($status)\u001b[0m  \($labels[.workspace_id])  \u001b[90m\(.terminal_title_stripped // .agent)\u001b[0m"
+' <<< "$agents")
+position=$(jq '(.result.agents | map(.focused) | index(true) // 0) + 1' <<< "$agents")
+
+pane=$(fzf --ansi --cycle --no-info --reverse --prompt='' --delimiter='\t' --with-nth='2..' --bind="load:pos($position)" <<< "$rows" | cut -f1)
+
+if ! "$herdr" agent focus "$pane" > /dev/null; then
+    # The popup closes when the script exits: the error would vanish with it
+    read -r -p 'Press Enter to close.'
+    exit 1
+fi

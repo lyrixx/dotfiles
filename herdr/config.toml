@@ -58,6 +58,14 @@ switch_workspace = "ctrl+alt+1..9"
 zoom = ["prefix+z", "ctrl+alt+z"]
 
 [[keys.command]]
+key = "prefix+m"
+type = "popup"
+command = "exec ~/.local/bin/herdr-agent-picker"
+description = "pick an agent with the arrows"
+width = "70%"
+height = 16
+
+[[keys.command]]
 key = "prefix+o"
 type = "shell"
 command = "exec ~/.local/bin/herdr-next-agent"
