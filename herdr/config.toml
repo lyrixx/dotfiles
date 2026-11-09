@@ -58,6 +58,14 @@ switch_workspace = "ctrl+alt+1..9"
 zoom = ["prefix+z", "ctrl+alt+z"]
 
 [[keys.command]]
+key = "prefix+*"
+type = "popup"
+command = "exec gh work --popup"
+description = "what needs me on GitHub, in a full screen popup"
+width = "100%"
+height = "100%"
+
+[[keys.command]]
 key = "prefix+m"
 type = "popup"
 command = "exec ~/.local/bin/herdr-agent-picker"

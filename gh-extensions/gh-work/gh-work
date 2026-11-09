@@ -8,6 +8,7 @@
 
 \defined('CASTOR_USE_CHDIR') || \define('CASTOR_USE_CHDIR', true);
 
+use Castor\Attribute\AsOption;
 use Castor\Attribute\AsTask;
 use Revolt\EventLoop;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -39,13 +40,16 @@ use function Castor\io;
 use function Castor\run;
 
 #[AsTask(default: true, description: 'What needs me now, across all my repositories')]
-function work(): void
-{
+function work(
+    #[AsOption(description: 'Leave once an agent is shown, for a Herdr popup')]
+    bool $popup = false,
+): void {
     $gitHub = new GitHub();
     $workspace = new Workspace();
 
     if (stream_isatty(\STDOUT) && stream_isatty(\STDIN)) {
-        new Dashboard($gitHub, $workspace, new Herdr())->run();
+        $dashboard = new Dashboard($gitHub, $workspace, new Herdr());
+        $popup ? $dashboard->runInPopup() : $dashboard->run();
 
         return;
     }
@@ -117,6 +121,7 @@ final class Dashboard
     private bool $hasFreshData = false;
     private bool $helpVisible = false;
     private bool $herdrRunning = false;
+    private bool $inPopup = false;
     private bool $lastLoadFailed = false;
     private bool $loading = false;
     private ?LogViewer $logViewer = null;
@@ -224,6 +229,12 @@ final class Dashboard
         if (null !== $this->resumeAfterExit) {
             $this->resumeInThisTerminal($this->resumeAfterExit);
         }
+    }
+
+    public function runInPopup(): void
+    {
+        $this->inPopup = true;
+        $this->run();
     }
 
     private function load(): void
@@ -599,6 +610,7 @@ final class Dashboard
         EventLoop::queue(function () use ($agent): void {
             try {
                 $this->herdr->focus($agent);
+                $this->leaveIfInPopup();
             } catch (ProcessFailedException|ProcessTimedOutException) {
                 $this->notice = 'Herdr n\'a pas pu afficher l\'onglet';
                 $this->redraw();
@@ -616,6 +628,14 @@ final class Dashboard
         $this->tasks['ouverture de Claude'] = true;
         EventLoop::queue(function () use ($entry, $location): void {
             try {
+                if ($this->inPopup) {
+                    // No waiting behind the popup: Claude may ask me to trust the directory
+                    $this->herdr->startClaudeWithoutWaiting($entry->agentName, $location);
+                    $this->tui->stop();
+
+                    return;
+                }
+
                 $this->herdr->startClaude($entry->agentName, $location);
                 $this->loadAgents();
             } catch (ProcessFailedException|ProcessTimedOutException) {
@@ -625,6 +645,18 @@ final class Dashboard
                 $this->redraw();
             }
         });
+    }
+
+    /**
+     * Herdr ties a popup to its tab: it would stay in front of an agent of that
+     * tab, and come back with the tab otherwise. While hidden, it even blocks
+     * its own shortcut.
+     */
+    private function leaveIfInPopup(): void
+    {
+        if ($this->inPopup) {
+            $this->tui->stop();
+        }
     }
 
     private function resumeInThisTerminal(Location $location): void
@@ -2586,9 +2618,20 @@ final readonly class Herdr
 
     public function startClaude(string $agentName, Location $location): void
     {
-        $arguments = null === $location->sessionId ? [] : ['--', '--resume', $location->sessionId];
+        output(['herdr-claude', $agentName, $location->directory, ...self::claudeArguments($location)]);
+    }
 
-        output(['herdr-claude', $agentName, $location->directory, ...$arguments]);
+    public function startClaudeWithoutWaiting(string $agentName, Location $location): void
+    {
+        output(['herdr-claude', '--no-wait', $agentName, $location->directory, ...self::claudeArguments($location)]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function claudeArguments(Location $location): array
+    {
+        return null === $location->sessionId ? [] : ['--', '--resume', $location->sessionId];
     }
 }
 

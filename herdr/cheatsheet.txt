@@ -28,6 +28,7 @@ Without prefix
   ctrl+alt+z               zoom
 
 More
+  ctrl+a *                 gh work in a popup: q closes it, enter goes to the agent
   ctrl+a e                 open the scrollback in vim
   ctrl+a p                 save the history of the pane to a file, ~/herdr.history
                            by default

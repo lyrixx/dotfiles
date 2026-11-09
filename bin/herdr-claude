@@ -4,21 +4,26 @@
 # repository, and creates that workspace if needed. A worktree goes in the
 # workspace of its repository.
 #
-#   herdr-claude [--no-focus] <agent name> <directory> [-- <arguments of claude>]
+#   herdr-claude [--no-focus] [--no-wait] <agent name> <directory> [-- <arguments of claude>]
 #
-# The agent name matches [a-z][a-z0-9_-]{0,31} and must be free.
+# The agent name matches [a-z][a-z0-9_-]{0,31} and must be free. With --no-wait,
+# it returns once the tab is there, while Claude is still starting.
 
 set -euo pipefail
 
 function main {
-    local focus=1
-    if [[ ${1:-} == --no-focus ]]; then
-        focus=0
+    local focus=1 wait=1
+    while true; do
+        case ${1:-} in
+            --no-focus) focus=0 ;;
+            --no-wait) wait=0 ;;
+            *) break ;;
+        esac
         shift
-    fi
+    done
 
     if [[ $# -lt 2 ]]; then
-        echo 'Usage: herdr-claude [--no-focus] <agent name> <directory> [-- <arguments of claude>]' >&2
+        echo 'Usage: herdr-claude [--no-focus] [--no-wait] <agent name> <directory> [-- <arguments of claude>]' >&2
         exit 1
     fi
 
@@ -52,7 +57,14 @@ function main {
         herdr tab focus "$tab" > /dev/null
     fi
 
-    herdr agent start "$name" --kind claude --pane "$(jq -r .result.root_pane.pane_id <<< "$created")" --timeout 45000 -- "$@"
+    local start=(herdr agent start "$name" --kind claude --pane "$(jq -r .result.root_pane.pane_id <<< "$created")" --timeout 45000 -- "$@")
+    if (( wait )); then
+        "${start[@]}"
+    else
+        # Its own session, or it dies with the popup that started it. If Claude
+        # doesn't start, the tab says so
+        setsid --fork "${start[@]}" < /dev/null > /dev/null 2>&1
+    fi
 }
 
 function repository_name {
