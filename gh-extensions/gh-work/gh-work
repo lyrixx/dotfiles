@@ -2,8 +2,9 @@
 <?php
 
 // What needs me now, across all my repositories: my open PRs, the reviews asked
-// of me, and what I left behind. It never changes anything on GitHub, and locally
-// only the d key does, once confirmed: it deletes a branch and its worktree.
+// of me, my issues and the replies expected from me, and what I left behind. It
+// never changes anything on GitHub, and locally only the d key does, once
+// confirmed: it deletes a branch and its worktree.
 
 \defined('CASTOR_USE_CHDIR') || \define('CASTOR_USE_CHDIR', true);
 
@@ -786,6 +787,8 @@ final class Dashboard
         $left .= '  ' . implode('  ', [
             paint(\sprintf('%d à toi', $count(Section::ToDo)), Tone::Danger),
             paint(\sprintf('%d reviews', $count(Section::Reviews)), Tone::Info),
+            paint(\sprintf('%d réponses', $count(Section::AwaitedReplies)), Tone::Info),
+            paint(\sprintf('%d assignées', $count(Section::AssignedIssues)), Tone::Warning),
             paint(\sprintf('%d en attente', $count(Section::Rest)), Tone::Success),
             paint(\sprintf('%d oubliés', $count(Section::Forgotten)), Tone::Muted),
         ]);
@@ -1376,16 +1379,20 @@ enum Section: string
 {
     case ToDo = 'À TOI';
     case Reviews = 'REVIEWS DEMANDÉES';
+    case AwaitedReplies = 'RÉPONSES ATTENDUES';
+    case AssignedIssues = 'ISSUES ASSIGNÉES';
     case Rest = 'LE RESTE';
+    case CreatedIssues = 'ISSUES CRÉÉES';
     case Forgotten = 'OUBLIÉ';
 
     public function tone(): Tone
     {
         return match ($this) {
             self::ToDo => Tone::Danger,
-            self::Reviews => Tone::Info,
+            self::AwaitedReplies, self::Reviews => Tone::Info,
+            self::AssignedIssues => Tone::Warning,
             self::Rest => Tone::Success,
-            self::Forgotten => Tone::Muted,
+            self::CreatedIssues, self::Forgotten => Tone::Muted,
         };
     }
 
@@ -1404,9 +1411,12 @@ enum Icon: string
     case Blocked = '▲';
     case ReadyToMerge = '✔';
     case ReviewRequested = '◉';
+    case AwaitedReply = '❝';
+    case AssignedIssue = '⊙';
     case CiPassed = '●';
     case CiRunning = '◐';
     case Idle = '○';
+    case CreatedIssue = '⊚';
     case Forgotten = '◌';
     case DockerStack = '▣';
     case Agent = '◆';
@@ -1418,9 +1428,12 @@ enum Icon: string
             self::Blocked => 'conflit ou changements',
             self::ReadyToMerge => 'prêt à merger',
             self::ReviewRequested => 'review demandée',
+            self::AwaitedReply => 'réponse attendue',
+            self::AssignedIssue => 'issue assignée',
             self::CiPassed => 'CI verte',
             self::CiRunning => 'CI en cours',
             self::Idle => 'draft ou pas de CI',
+            self::CreatedIssue => 'issue créée, en attente',
             self::Forgotten => 'oublié',
             self::DockerStack => 'stack Docker démarrée',
             self::Agent => 'Claude tourne ici',
@@ -1431,11 +1444,11 @@ enum Icon: string
     {
         return match ($this) {
             self::Agent => Tone::Accent,
-            self::Blocked => Tone::Warning,
+            self::AssignedIssue, self::Blocked => Tone::Warning,
             self::CiFailed => Tone::Danger,
             self::CiPassed, self::ReadyToMerge => Tone::Success,
-            self::CiRunning, self::DockerStack, self::ReviewRequested => Tone::Info,
-            self::Forgotten, self::Idle => Tone::Muted,
+            self::AwaitedReply, self::CiRunning, self::DockerStack, self::ReviewRequested => Tone::Info,
+            self::CreatedIssue, self::Forgotten, self::Idle => Tone::Muted,
         };
     }
 }
@@ -1464,6 +1477,9 @@ function paint(string $text, Tone $color, ?Tone $background = null, ?bool $bold 
 
 final readonly class Entry
 {
+    // Older, a reply is an archive, not someone waiting for me
+    private const int AWAITED_REPLY_MAX_AGE_IN_DAYS = 60;
+
     /**
      * @param list<FailedCheck> $failedChecks
      * @param list<string>      $reviews
@@ -1560,6 +1576,51 @@ final readonly class Entry
         );
     }
 
+    /**
+     * @param array<string, mixed> $node
+     */
+    public static function fromAssignedIssue(array $node): self
+    {
+        $author = self::authorLogin($node);
+
+        return self::fromIssue($node, Section::AssignedIssues, "@{$author}", Icon::AssignedIssue, "Issue ouverte par @{$author}.");
+    }
+
+    /**
+     * Like my PRs: it needs me once someone answered, otherwise it waits for them.
+     *
+     * @param array<string, mixed> $node
+     */
+    public static function fromCreatedIssue(array $node, string $viewerLogin): self
+    {
+        $lastWord = self::lastWord($node);
+        $lastAuthor = self::authorLogin($lastWord);
+
+        if (self::isAwaitingMe($lastWord, $viewerLogin)) {
+            return self::fromIssue($node, Section::AwaitedReplies, "réponse de @{$lastAuthor}", Icon::AwaitedReply, "@{$lastAuthor} a répondu.");
+        }
+
+        return self::fromIssue($node, Section::CreatedIssues, $viewerLogin === $lastAuthor ? 'en attente' : "réponse de @{$lastAuthor}", Icon::CreatedIssue, 'Issue ouverte par toi.');
+    }
+
+    /**
+     * GitHub finds every issue that ever mentioned me: only a last word that
+     * names me still asks me something.
+     *
+     * @param array<string, mixed> $node
+     */
+    public static function fromMentioningIssue(array $node, string $viewerLogin): ?self
+    {
+        $lastWord = self::lastWord($node);
+        if (!self::isAwaitingMe($lastWord, $viewerLogin) || 1 !== preg_match("{(?<![\\w/@-])@{$viewerLogin}(?![\\w-])}i", $lastWord['bodyText'])) {
+            return null;
+        }
+
+        $lastAuthor = self::authorLogin($lastWord);
+
+        return self::fromIssue($node, Section::AwaitedReplies, "mention de @{$lastAuthor}", Icon::AwaitedReply, "@{$lastAuthor} te mentionne.");
+    }
+
     public static function forgottenMergedBranch(LocalBranch $branch, MergedBranch $merged): self
     {
         return self::forgottenBranch($branch, "{$branch->name} : PR mergée", $merged->url);
@@ -1622,6 +1683,54 @@ final readonly class Entry
     public function id(): string
     {
         return "{$this->reference} {$this->title}";
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    private static function fromIssue(array $node, Section $section, string $status, Icon $icon, string $hint): self
+    {
+        return new self(
+            section: $section,
+            status: $status,
+            icon: $icon,
+            reference: "{$node['repository']['nameWithOwner']}#{$node['number']}",
+            agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            title: StringUtils::stripControlBytes($node['title']),
+            ageInDays: daysSince($node['updatedAt']),
+            repository: $node['repository']['nameWithOwner'],
+            url: $node['url'],
+            hint: $hint,
+        );
+    }
+
+    /**
+     * The last comment, or else the issue itself: both have an author and a date.
+     *
+     * @param array<string, mixed> $node
+     *
+     * @return array<string, mixed>
+     */
+    private static function lastWord(array $node): array
+    {
+        return $node['comments']['nodes'][0] ?? $node;
+    }
+
+    /**
+     * @param array<string, mixed> $lastWord
+     */
+    private static function isAwaitingMe(array $lastWord, string $viewerLogin): bool
+    {
+        return $viewerLogin !== self::authorLogin($lastWord) && daysSince($lastWord['createdAt']) <= self::AWAITED_REPLY_MAX_AGE_IN_DAYS;
+    }
+
+    /**
+     * @param array<string, mixed> $node An issue or a comment
+     */
+    private static function authorLogin(array $node): string
+    {
+        // GitHub answers null for the author of a deleted account
+        return $node['author']['login'] ?? 'ghost';
     }
 
     private static function forgottenBranch(LocalBranch $branch, string $title, ?string $url = null): self
@@ -1858,9 +1967,16 @@ final readonly class Snapshot
     {
         $pullRequests = array_map(Entry::fromPullRequest(...), $data['mine']['nodes']);
         usort($pullRequests, static fn (Entry $a, Entry $b) => [$a->isDraft, $a->ageInDays] <=> [$b->isDraft, $b->ageInDays]);
+        $viewerLogin = $data['viewer']['login'];
 
         return new self(
-            [...$pullRequests, ...array_map(Entry::fromReviewRequest(...), $data['requested']['nodes'])],
+            [
+                ...$pullRequests,
+                ...array_map(Entry::fromReviewRequest(...), $data['requested']['nodes']),
+                ...array_map(Entry::fromAssignedIssue(...), $data['assignedIssues']['nodes']),
+                ...array_map(static fn (array $node) => Entry::fromCreatedIssue($node, $viewerLogin), $data['createdIssues']['nodes']),
+                ...array_filter(array_map(static fn (array $node) => Entry::fromMentioningIssue($node, $viewerLogin), $data['mentioningIssues']['nodes'])),
+            ],
             array_map(
                 static fn (array $node) => new MergedBranch($node['repository']['nameWithOwner'], $node['headRefName'], $node['url']),
                 $data['merged']['nodes'],
@@ -1937,18 +2053,27 @@ final readonly class Agent
 
 final readonly class GitHub
 {
-    private const string CACHE_FILE = '/.cache/gh-work/snapshot.json';
+    // The version follows the shape of the query: an older file can't be read
+    private const string CACHE_FILE = '/.cache/gh-work/snapshot-v2.json';
     // "merged" only asks for the repositories of Workspace::CHECKOUT_OVERRIDES: a
     // branch of a fork survives its merge, so git can't tell it from a live one.
     private const int MERGEABLE_ATTEMPTS = 3;
     private const float MERGEABLE_RETRY_DELAY_IN_SECONDS = 2;
     private const int QUERY_ATTEMPTS = 3;
     private const float QUERY_RETRY_DELAY_IN_SECONDS = 2;
-    // It answers in 3 s: past that, the connection is hanging
+    // It answers in 6 s: past that, the connection is hanging
     private const float QUERY_TIMEOUT_IN_SECONDS = 20;
 
     private const string QUERY = <<<'GRAPHQL'
+        fragment IssueFields on Issue {
+          number title url createdAt updatedAt
+          author { login }
+          repository { nameWithOwner }
+          comments(last: 1) { nodes { createdAt author { login } } }
+        }
+
         query {
+          viewer { login }
           mine: search(query: "is:pr is:open author:@me archived:false", type: ISSUE, first: 100) {
             nodes {
               ... on PullRequest {
@@ -1983,6 +2108,15 @@ final readonly class GitHub
                 repository { nameWithOwner }
               }
             }
+          }
+          assignedIssues: search(query: "is:issue is:open assignee:@me archived:false sort:updated-desc", type: ISSUE, first: 50) {
+            nodes { ... on Issue { ...IssueFields } }
+          }
+          createdIssues: search(query: "is:issue is:open author:@me -assignee:@me archived:false sort:updated-desc", type: ISSUE, first: 100) {
+            nodes { ... on Issue { ...IssueFields } }
+          }
+          mentioningIssues: search(query: "is:issue is:open mentions:@me -author:@me -assignee:@me archived:false sort:updated-desc", type: ISSUE, first: 50) {
+            nodes { ... on Issue { ...IssueFields bodyText comments(last: 1) { nodes { bodyText } } } }
           }
           merged: search(query: "is:pr is:merged author:@me repo:symfony/symfony sort:updated-desc", type: ISSUE, first: 100) {
             nodes {
