@@ -36,6 +36,7 @@ use Symfony\Component\Tui\Widget\Util\StringUtils;
 use Symfony\Component\Tui\Widget\VerticallyExpandableInterface;
 
 use function Castor\context;
+use function Castor\fs;
 use function Castor\io;
 use function Castor\run;
 
@@ -45,22 +46,23 @@ function work(
     bool $popup = false,
 ): void {
     $gitHub = new GitHub();
+    $ignoredEntries = new IgnoredEntries();
     $workspace = new Workspace();
 
     if (stream_isatty(\STDOUT) && stream_isatty(\STDIN)) {
-        $dashboard = new Dashboard($gitHub, $workspace, new Herdr());
+        $dashboard = new Dashboard($gitHub, $workspace, $ignoredEntries, new Herdr());
         $popup ? $dashboard->runInPopup() : $dashboard->run();
 
         return;
     }
 
-    printBoard($gitHub, $workspace);
+    printBoard($gitHub, $workspace, $ignoredEntries);
 }
 
 /**
  * For a pipe, or for an agent reading the output.
  */
-function printBoard(GitHub $gitHub, Workspace $workspace): void
+function printBoard(GitHub $gitHub, Workspace $workspace, IgnoredEntries $ignoredEntries): void
 {
     try {
         $snapshot = $gitHub->fetch();
@@ -69,7 +71,7 @@ function printBoard(GitHub $gitHub, Workspace $workspace): void
         io()->getErrorStyle()->warning('GitHub ne répond pas : données ' . formatAge($snapshot->fetchedAt) . '.');
     }
 
-    $entries = [...$snapshot->entries, ...$workspace->forgotten($snapshot)];
+    $entries = $ignoredEntries->apply([...$snapshot->entries, ...$workspace->forgotten($snapshot)]);
     $links = $workspace->pullRequestLinks();
 
     foreach (Section::cases() as $section) {
@@ -137,6 +139,8 @@ final class Dashboard
     private ?Location $resumeAfterExit = null;
     private ?Inspection $shellRequest = null;
     private bool $showingBoard = false;
+    /** @var list<Entry> Those of the last snapshot, ignored or not */
+    private array $snapshotEntries = [];
     private ?int $snapshotFetchedAt = null;
     private int $spinnerFrame = 0;
     /** @var array<string, true> What is running, by label */
@@ -145,12 +149,14 @@ final class Dashboard
     public function __construct(
         private readonly GitHub $gitHub,
         private readonly Workspace $workspace,
+        private readonly IgnoredEntries $ignoredEntries,
         private readonly Herdr $herdr,
     ) {
         $this->keys = new Keybindings([
             'bottom' => [Key::END],
             'delete' => ['d'],
             'down' => [Key::DOWN, 'j'],
+            'ignore' => ['i'],
             'interrupt' => ['ctrl+c'],
             'logs' => ['l'],
             'next_section' => [Key::TAB],
@@ -281,6 +287,7 @@ final class Dashboard
 
         $this->hasFreshData = true;
         $this->logs = [];
+        $this->ignoredEntries->prune($snapshot->entries);
         $this->showSnapshot($snapshot);
         $this->findLocalState($snapshot);
     }
@@ -288,8 +295,17 @@ final class Dashboard
     private function showSnapshot(Snapshot $snapshot): void
     {
         $this->showBoard();
+        $this->snapshotEntries = $snapshot->entries;
         $this->snapshotFetchedAt = $snapshot->fetchedAt;
-        $this->board->setEntries([...$snapshot->entries, ...$this->forgotten]);
+        $this->board->setEntries($this->boardEntries());
+    }
+
+    /**
+     * @return list<Entry>
+     */
+    private function boardEntries(): array
+    {
+        return $this->ignoredEntries->apply([...$this->snapshotEntries, ...$this->forgotten]);
     }
 
     private function showBoard(): void
@@ -330,7 +346,7 @@ final class Dashboard
             return;
         }
 
-        $this->board->setEntries([...$snapshot->entries, ...$this->forgotten]);
+        $this->board->setEntries($this->boardEntries());
         foreach ($this->forgotten as $entry) {
             $this->locate($entry, $links);
         }
@@ -441,6 +457,7 @@ final class Dashboard
             'bottom' => $this->board->moveToLast(...),
             'delete' => $this->askDeletion(...),
             'down' => fn () => $this->board->moveBy(1),
+            'ignore' => $this->toggleIgnored(...),
             'logs' => $this->showLogs(...),
             'next_section' => fn () => $this->board->moveToSection(1),
             'open' => $this->openInBrowser(...),
@@ -549,9 +566,8 @@ final class Dashboard
         EventLoop::queue(function () use ($branch, $entry): void {
             try {
                 $commit = $this->workspace->deleteBranch($branch);
-                $isOther = static fn (Entry $other) => $other->id() !== $entry->id();
-                $this->forgotten = array_values(array_filter($this->forgotten, $isOther));
-                $this->board->setEntries(array_values(array_filter($this->board->entries(), $isOther)));
+                $this->forgotten = array_values(array_filter($this->forgotten, static fn (Entry $other) => $other->id() !== $entry->id()));
+                $this->board->setEntries($this->boardEntries());
                 $this->notice = "Supprimée. Pour la récupérer : git branch {$branch->name} {$commit}";
             } catch (ProcessFailedException|ProcessTimedOutException $exception) {
                 $this->notice = 'Suppression refusée : le détail dit pourquoi';
@@ -561,6 +577,33 @@ final class Dashboard
                 $this->redraw();
             }
         });
+    }
+
+    private function toggleIgnored(): void
+    {
+        $entry = $this->board->selected();
+        if (null === $entry) {
+            return;
+        }
+
+        if (Section::Ignored === $entry->section) {
+            $this->notice = null;
+            $this->ignoredEntries->remove($entry);
+            // Back in its section: the selection follows it there
+            $this->board->setEntries($this->boardEntries());
+
+            return;
+        }
+
+        if (!$entry->section->isIgnorable()) {
+            $this->notice = 'i n\'ignore que les reviews, les réponses et les issues assignées';
+
+            return;
+        }
+
+        $this->notice = null;
+        $this->ignoredEntries->add($entry);
+        $this->board->setEntriesInPlace($this->boardEntries());
     }
 
     private function resume(): void
@@ -961,11 +1004,25 @@ final class BoardWidget extends AbstractWidget implements VerticallyExpandableIn
     public function setEntries(array $entries): void
     {
         $selectedId = $this->selected()?->id();
+        $this->setEntriesInPlace($entries);
+
+        $index = array_find_key($this->entries, static fn (Entry $entry) => $entry->id() === $selectedId);
+        if (null !== $index) {
+            $this->selectedIndex = $index;
+        }
+    }
+
+    /**
+     * The selected entry leaves for another section: the selection keeps its
+     * row, where the next entry comes up.
+     *
+     * @param list<Entry> $entries
+     */
+    public function setEntriesInPlace(array $entries): void
+    {
         usort($entries, static fn (Entry $a, Entry $b) => $a->section->position() <=> $b->section->position());
         $this->entries = $entries;
-
-        $index = array_find_key($entries, static fn (Entry $entry) => $entry->id() === $selectedId);
-        $this->selectedIndex = $index ?? max(0, min($this->selectedIndex, \count($entries) - 1));
+        $this->selectedIndex = max(0, min($this->selectedIndex, \count($entries) - 1));
         $this->invalidate();
     }
 
@@ -1208,6 +1265,7 @@ final class Modal
         'Entrée' => 'Claude, ou un terminal',
         'l' => 'cause de l\'échec de CI',
         'o' => 'ouvrir sur GitHub',
+        'i' => 'ignorer pour l\'instant',
         'd' => 'supprimer une branche',
         'r' => 'rafraîchir',
         '?' => 'fermer cette aide',
@@ -1416,6 +1474,12 @@ enum Section: string
     case Rest = 'LE RESTE';
     case CreatedIssues = 'ISSUES CRÉÉES';
     case Forgotten = 'OUBLIÉ';
+    case Ignored = 'IGNORÉ';
+
+    public function isIgnorable(): bool
+    {
+        return \in_array($this, [self::AssignedIssues, self::AwaitedReplies, self::Reviews], true);
+    }
 
     public function tone(): Tone
     {
@@ -1424,7 +1488,7 @@ enum Section: string
             self::AwaitedReplies, self::Reviews => Tone::Info,
             self::AssignedIssues => Tone::Warning,
             self::Rest => Tone::Success,
-            self::CreatedIssues, self::Forgotten => Tone::Muted,
+            self::CreatedIssues, self::Forgotten, self::Ignored => Tone::Muted,
         };
     }
 
@@ -1524,6 +1588,7 @@ final readonly class Entry
         public string $agentName,
         public string $title,
         public int $ageInDays,
+        public ?string $updatedAt = null,
         public ?string $repository = null,
         public ?string $branch = null,
         public ?string $url = null,
@@ -1576,6 +1641,7 @@ final readonly class Entry
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
+            updatedAt: $node['updatedAt'],
             repository: $node['repository']['nameWithOwner'],
             branch: $node['headRefName'],
             url: $node['url'],
@@ -1602,6 +1668,7 @@ final readonly class Entry
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
+            updatedAt: $node['updatedAt'],
             repository: $node['repository']['nameWithOwner'],
             url: $node['url'],
             hint: "Review demandée par @{$node['author']['login']}.",
@@ -1717,6 +1784,14 @@ final readonly class Entry
         return "{$this->reference} {$this->title}";
     }
 
+    public function ignored(): self
+    {
+        return clone($this, [
+            'section' => Section::Ignored,
+            'hint' => "{$this->hint} Ignorée jusqu'à du nouveau sur GitHub : i pour la remettre.",
+        ]);
+    }
+
     /**
      * @param array<string, mixed> $node
      */
@@ -1730,6 +1805,7 @@ final readonly class Entry
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
+            updatedAt: $node['updatedAt'],
             repository: $node['repository']['nameWithOwner'],
             url: $node['url'],
             hint: $hint,
@@ -2269,6 +2345,75 @@ final readonly class GitHub
         // Atomic: a reader never sees a half-written file
         file_put_contents("{$file}.tmp", json_encode($data, \JSON_THROW_ON_ERROR));
         rename("{$file}.tmp", $file);
+    }
+}
+
+/**
+ * The lines I put aside, with the update GitHub gave them then: once it gives
+ * another, something happened since, and the line comes back.
+ */
+final readonly class IgnoredEntries
+{
+    private const string FILE = '/.local/state/gh-work/ignored.json';
+
+    /**
+     * @param list<Entry> $entries
+     *
+     * @return list<Entry>
+     */
+    public function apply(array $entries): array
+    {
+        $ignored = $this->read();
+
+        return array_map(
+            static fn (Entry $entry) => \array_key_exists($entry->id(), $ignored) && $ignored[$entry->id()] === $entry->updatedAt ? $entry->ignored() : $entry,
+            $entries,
+        );
+    }
+
+    public function add(Entry $entry): void
+    {
+        $this->write([...$this->read(), $entry->id() => $entry->updatedAt]);
+    }
+
+    public function remove(Entry $entry): void
+    {
+        $ignored = $this->read();
+        unset($ignored[$entry->id()]);
+        $this->write($ignored);
+    }
+
+    /**
+     * Gone from GitHub, a line has nothing left to hide.
+     *
+     * @param list<Entry> $entries All those GitHub gave
+     */
+    public function prune(array $entries): void
+    {
+        $ignored = $this->read();
+        $kept = array_intersect_key($ignored, array_flip(array_map(static fn (Entry $entry) => $entry->id(), $entries)));
+        if ($kept !== $ignored) {
+            $this->write($kept);
+        }
+    }
+
+    /**
+     * @return array<string, ?string> The update GitHub gave each line, by id
+     */
+    private function read(): array
+    {
+        $file = home() . self::FILE;
+
+        return is_file($file) ? json_decode((string) file_get_contents($file), true, flags: \JSON_THROW_ON_ERROR) : [];
+    }
+
+    /**
+     * @param array<string, ?string> $ignored
+     */
+    private function write(array $ignored): void
+    {
+        // Atomic: the gh work of a popup may read it at the same time
+        fs()->dumpFile(home() . self::FILE, json_encode($ignored, \JSON_THROW_ON_ERROR));
     }
 }
 
