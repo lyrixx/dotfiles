@@ -44,6 +44,7 @@ packages=(
     librsvg2-dev          # SVG rendering, needed by Tauri
     libwebkit2gtk-4.1-dev # WebKitGTK, the webview of Tauri
     libxdo-dev            # Keyboard and mouse simulation, needed by Tauri
+    xvfb                  # Virtual X server: xvfb-run starts the app without a screen
 
     # Building C code
     bison           # Parser generator, to build php-src
