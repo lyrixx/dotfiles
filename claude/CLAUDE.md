@@ -11,6 +11,10 @@ Règles de collaboration, valables partout. Les règles techniques sont dans `ru
 Ne jamais créer de commit ni pousser vers un remote sans que je le demande explicitement. Attendre
 toujours une instruction explicite (« commite », « pousse », etc.).
 
+Pour un nouveau dépôt GitHub, configurer `origin` en SSH (`git@github.com:lyrixx/<repo>.git`), même
+si un dépôt voisin est en HTTPS : en HTTPS, le push passe par le token `gh`, qui n'a pas le scope
+`workflow`, et GitHub refuse tout fichier sous `.github/workflows/`.
+
 ## Publication
 
 ### Ne jamais publier à ma place sans accord préalable
