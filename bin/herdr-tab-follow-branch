@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Names the Herdr tab of the current pane after the git branch of a directory.
+# .bashrc runs it when the branch changes at the prompt, the Claude hook
+# herdr-tab-branch.sh when the HEAD of the session changes.
+#
+#   herdr-tab-follow-branch <directory>
+#
+# A tab with a custom name keeps it. On a default branch, the tab gets its
+# position back, the label Herdr gives a tab without a custom name. A detached
+# HEAD (rebase, bisect) or a directory out of git leaves the tab alone.
+
+set -euo pipefail
+
+function main {
+    local directory=$1 branch
+
+    if [[ ${HERDR_ENV:-} != 1 ]]; then
+        exit 0
+    fi
+    branch=$(git -C "$directory" symbolic-ref --quiet --short HEAD 2> /dev/null) || exit 0
+
+    local tab_id tab label
+    # Through the pane: HERDR_TAB_ID is stale once the pane has been moved
+    tab_id=$(herdr pane current --current | jq -r .result.pane.tab_id)
+    tab=$(herdr tab get "$tab_id" | jq -c .result.tab)
+    label=$(jq -r .label <<< "$tab")
+
+    # For Herdr, a branch written here is a custom name like any other: remember
+    # it, or the tab would stop following the branch after the first rename
+    local written_label=${XDG_STATE_HOME:-$HOME/.local/state}/herdr-tab-follow-branch/$tab_id
+    if [[ ! $label =~ ^[0-9]+$ && $label != "$(cat "$written_label" 2> /dev/null)" ]]; then
+        exit 0
+    fi
+
+    local new_label=$branch
+    # Keep in sync with claude/hooks/session-title.sh, and with the branches
+    # brc, brcc, wtc and wtcc spare, in .gitconfig
+    if [[ $branch =~ ^(master|main|develop)$ ]]; then
+        new_label=$(herdr tab list --workspace "$(jq -r .workspace_id <<< "$tab")" \
+            | jq -r --arg tab_id "$tab_id" '.result.tabs | map(.tab_id) | index($tab_id) + 1')
+    fi
+    if [[ $new_label == "$label" ]]; then
+        exit 0
+    fi
+
+    herdr tab rename "$tab_id" "$new_label" > /dev/null
+    mkdir -p "$(dirname "$written_label")"
+    printf '%s' "$new_label" > "$written_label"
+}
+
+main "$@"

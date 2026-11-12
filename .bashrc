@@ -98,7 +98,18 @@ function _truncate_pwd() {
     fi
 }
 
-PROMPT_COMMAND='_set_exit_color;history -a;_truncate_pwd;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
+# The Herdr tab follows the branch. Git only at each prompt: Herdr is called
+# once the branch has changed. A detached HEAD keeps the last one
+function _herdr_tab_follow_branch() {
+    local branch
+    [[ ${HERDR_ENV:-} == 1 ]] || return 0
+    branch=$(git symbolic-ref --quiet --short HEAD 2> /dev/null) || return 0
+    [[ $branch != "$_HERDR_TAB_BRANCH" ]] || return 0
+    _HERDR_TAB_BRANCH=$branch
+    herdr-tab-follow-branch "$PWD"
+}
+
+PROMPT_COMMAND='_set_exit_color;history -a;_truncate_pwd;_herdr_tab_follow_branch;PS1="$EXITCOLOR$NoColor$PROMPT_PREFIX$Cyan$PWD2$NoColor$PS1GIT "'
 #PS1='\[\e[01;33m\]\u \[\e[00;32m\]\w\[\e[0m\] ' # simple
 #PS1='\[\e[01;31m\]\u@\H \[\e[00;32m\]\w\[\e[0m\] ' # simple - prod
 
