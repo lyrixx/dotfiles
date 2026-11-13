@@ -19,6 +19,7 @@ TITLECOLOR='\033[1;34m'
 
 formulae=(
     bash    # bash 5, the login shell: macOS only ships bash 3.2
+    gh      # GitHub CLI
 )
 
 casks=(
