@@ -10,8 +10,8 @@
     bra             = branch -v -a
     brc             = ! git branch --merged=HEAD --format='%(HEAD)%09%(worktreepath)%09%(refname:short)' | awk -F'\\t' '$1 != \"*\" && $2 == \"\" && $3 !~ /^(master|main|develop)$/ { print $3 }' | xargs --no-run-if-empty git branch -d
     brcc            = ! git branch --format='%(HEAD)%09%(worktreepath)%09%(upstream:track)%09%(refname:short)' | awk -F'\\t' '$1 != \"*\" && $2 == \"\" && $3 == \"[gone]\" && $4 !~ /^(master|main|develop)$/ { print $4 }' | xargs --no-run-if-empty git branch -D
-    wtc             = ! git branch --merged=HEAD --format='%(HEAD)%09%(worktreepath)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $3 }' | xargs --no-run-if-empty -d '\\n' -n2 sh -c 'git worktree remove \"$1\" && git branch -d \"$2\"' _
-    wtcc            = ! git branch --format='%(HEAD)%09%(worktreepath)%09%(upstream:track)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 == \"[gone]\" && $4 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $4 }' | xargs --no-run-if-empty -d '\\n' -n2 sh -c 'git worktree remove --force --force \"$1\" && git branch -D \"$2\"' _
+    wtc             = ! git branch --merged=HEAD --format='%(HEAD)%09%(worktreepath)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $3 }' | tr '\\n' '\\0' | xargs -0 --no-run-if-empty -n2 sh -c 'git worktree remove \"$1\" && git branch -d \"$2\"' _
+    wtcc            = ! git branch --format='%(HEAD)%09%(worktreepath)%09%(upstream:track)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 == \"[gone]\" && $4 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $4 }' | tr '\\n' '\\0' | xargs -0 --no-run-if-empty -n2 sh -c 'git worktree remove --force --force \"$1\" && git branch -D \"$2\"' _
     sync            = ! git fetch --prune && git rebase && git wtc && git brc && git br
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
@@ -27,16 +27,16 @@
     rebt            = rebase --abort
     rebs            = rebase --skip
     new             = ! git-new "$@"
-    php-lint        = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
-    php-cs-fixer    = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
-    eslint          = ! cd -- ${GIT_PREFIX:-.} && git status --short | /bin/grep -e '^[AUM ][UM ].*\\.\\(js\\|jsx\\|ts\\|tsx\\)$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
+    php-lint        = ! cd -- ${GIT_PREFIX:-.} && git status --short | grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php -l
+    php-cs-fixer    = ! cd -- ${GIT_PREFIX:-.} && git status --short | grep -e '^[AUM ][UM ].*\\.php$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 php $(which php-cs-fixer) fix --quiet
+    eslint          = ! cd -- ${GIT_PREFIX:-.} && git status --short | grep -e '^[AUM ][UM ].*\\.\\(js\\|jsx\\|ts\\|tsx\\)$' | awk '{print $2}' | xargs --no-run-if-empty -L 1 eslint --fix
     notes-fetch     = fetch origin refs/notes/*:refs/notes/*
     notes-push      = push origin refs/notes/*
     daily           = log --no-merges --all --author='Grégoire Pineau' --since='midnight yesterday' --format='%s'
-    reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
-    open            = ! git status -s --no-renames | /bin/grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
-    open-conflict   = ! git status -s | /bin/grep ^UU | awk '{print $2}' | xargs --no-run-if-empty code
-    ignored         = ! git ls-files -v | /bin/grep '^[[:lower:]]'
+    reopen          = ! git diff-tree --no-commit-id -r ${1:-HEAD} | cut -d ' ' -f 5-6 | grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
+    open            = ! git status -s --no-renames | grep -v "^D" | awk '{print $2}' | xargs --no-run-if-empty code
+    open-conflict   = ! git status -s | grep ^UU | awk '{print $2}' | xargs --no-run-if-empty code
+    ignored         = ! git ls-files -v | grep '^[[:lower:]]'
     ghost           = commit --allow-empty --allow-empty-message -m ""
 [color]
     ui              = true
