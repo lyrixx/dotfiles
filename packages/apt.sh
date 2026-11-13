@@ -125,8 +125,7 @@ packages=(
     graphviz        # dot: draws graphs, Symfony workflows, dependencies
     vlc             # Video player
 
-    # 3D and electronics
-    blender         # 3D modeling and rendering
+    # Electronics
     kicad           # Electronic circuit design: schematics, PCB
 )
 

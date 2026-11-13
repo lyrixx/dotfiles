@@ -12,6 +12,8 @@ auto_install = false
 node.corepack = true
 
 [tools]
+# The build of blender.org: the Ubuntu package has no OpenImageDenoise, so no Cycles denoiser
+blender = "latest"
 "cargo:asciinema" = "latest"
 "cargo:cargo-hack" = "latest"
 "cargo:cross" = "latest"
