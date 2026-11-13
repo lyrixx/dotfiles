@@ -6,8 +6,19 @@ if [ -f ~/.bash_private ]; then
     . ~/.bash_private
 fi
 
+# macOS: no profile puts Homebrew in the PATH
+if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
 if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
+elif [ -x /usr/bin/xcode-select ]; then
+    # macOS has no bash-completion: the git of Xcode ships its completion and __git_ps1
+    git_core=$(xcode-select -p 2>/dev/null)/usr/share/git-core
+    if [ -f "$git_core/git-completion.bash" ]; then . "$git_core/git-completion.bash"; fi
+    if [ -f "$git_core/git-prompt.sh" ]; then . "$git_core/git-prompt.sh"; fi
+    unset git_core
 fi
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
@@ -79,12 +90,9 @@ elif [[ $SSH_CONNECTION ]]; then
     PROMPT_PREFIX="$Yellow\u@\H$NoColor"
 fi
 
-type -t __git_ps1 &>/dev/null
-GIT=$?
-if [[ $GIT ]]; then
+if type -t __git_ps1 &>/dev/null; then
     PS1GIT=$Purple'$(__git_ps1 "(%s)")'$NoColor
 fi
-unset GIT
 
 function _set_exit_color() {
     if [[ $? != "0" ]]; then EXITCOLOR=$Red\>$NoColor; else EXITCOLOR=$Green\>$Nocolor; fi

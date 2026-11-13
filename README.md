@@ -14,6 +14,14 @@ updates on its own.
 * `dnsmasq/`, `php/`, `claude/`…: the config of each software
 * `bin/`: commands linked into `~/.local/bin`
 
+My Mac, a lighter setup: bash, git and Ghostty, the rest case by case. With
+[Homebrew](https://brew.sh) installed:
+
+    git clone https://github.com/lyrixx/dotfiles ~/dev/github.com/lyrixx/dotfiles
+    ~/dev/github.com/lyrixx/dotfiles/install-macos.sh
+
+It makes the bash 5 of Homebrew the login shell. `brew upgrade` updates it all.
+
 credit
 ------
 

@@ -9,7 +9,10 @@ alias df="df -h"
 alias du="du -h"
 alias free="free -m"
 
-alias fd="fdfind"
+# Debian names it fdfind: elsewhere, fd is fd
+if command -v fdfind >/dev/null; then
+    alias fd="fdfind"
+fi
 
 alias grep='grep --color=tty'
 
