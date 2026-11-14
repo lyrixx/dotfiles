@@ -12,6 +12,8 @@ BASE_URL=https://raw.githubusercontent.com/lyrixx/dotfiles/master/claude
 
 function main {
     fetch CLAUDE.md
+    # RTK.md comes from `rtk init -g`, and rtk isn't on the VM
+    sed -i '/^@RTK\.md$/d' ~/.claude/CLAUDE.md
     fetch hooks/block-claude-attribution.sh
     # Keep in sync with the files of rules/
     fetch rules/code.md
