@@ -9,6 +9,11 @@ font-size = 11
 # Ghostty toggles fullscreen on it: Claude Code inserts a newline with it
 keybind = ctrl+enter=unbind
 
+# Consumed even when Ghostty has no selection: the default is performable, and
+# under Herdr, which takes the mouse, it reached the pane as a Ctrl+C. Herdr
+# copies on mouse selection already, see herdr/config.toml
+keybind = ctrl+shift+c=copy_to_clipboard:mixed
+
 # Over SSH, TERM=xterm-256color: servers do not know xterm-ghostty, Backspace
 # and clear break there. No ssh-terminfo: it installs it in the ~/.terminfo of
 # the SSH user only, readline breaks after a sudo -sHu
