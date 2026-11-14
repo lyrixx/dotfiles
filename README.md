@@ -22,6 +22,17 @@ My Mac, a lighter setup: bash, git and Ghostty, the rest case by case. With
 
 It makes the bash 5 of Homebrew the login shell. `brew upgrade` updates it all.
 
+The cloud sessions of Claude Code (claude.ai/code) start without my
+`~/.claude`. The setup script of the cloud environment brings it back:
+
+    #!/bin/bash
+    set -euo pipefail
+    curl -fsSL --max-time 30 https://raw.githubusercontent.com/lyrixx/dotfiles/master/claude/cloud-setup.sh | bash
+
+The environment is a snapshot kept about seven days: a change pushed here
+reaches new sessions after that, or right away once the setup script is saved
+again.
+
 credit
 ------
 
