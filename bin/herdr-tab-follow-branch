@@ -4,21 +4,36 @@
 # .bashrc runs it when the branch changes at the prompt, the Claude hook
 # herdr-tab-branch.sh when the HEAD of the session changes.
 #
-#   herdr-tab-follow-branch <directory>
+#   herdr-tab-follow-branch [--drop-custom-name] <directory>
 #
 # A tab with a custom name keeps it. On a default branch, the tab gets its
 # position back, the label Herdr gives a tab without a custom name. A detached
 # HEAD (rebase, bisect) or a directory out of git leaves the tab alone.
+#
+# With --drop-custom-name, a tab on a default branch gets its position back
+# even with a custom name: the Claude hook herdr-tab-session-end.sh passes it
+# once the session is over, so the tab doesn't keep the name of the agent.
 
 set -euo pipefail
 
 function main {
+    local drop_custom_name=0
+    if [[ ${1:-} == --drop-custom-name ]]; then
+        drop_custom_name=1
+        shift
+    fi
     local directory=$1 branch
 
     if [[ ${HERDR_ENV:-} != 1 ]]; then
         exit 0
     fi
     branch=$(git -C "$directory" symbolic-ref --quiet --short HEAD 2> /dev/null) || exit 0
+
+    local default_branch=0
+    # Keep in sync with claude/hooks/session-title.sh and bin/git-sync
+    if [[ $branch =~ ^(master|main|develop|[0-9]+[.][0-9]+)$ ]]; then
+        default_branch=1
+    fi
 
     local tab_id tab label
     # Through the pane: HERDR_TAB_ID is stale once the pane has been moved
@@ -30,12 +45,13 @@ function main {
     # it, or the tab would stop following the branch after the first rename
     local written_label=${XDG_STATE_HOME:-$HOME/.local/state}/herdr-tab-follow-branch/$tab_id
     if [[ ! $label =~ ^[0-9]+$ && $label != "$(cat "$written_label" 2> /dev/null)" ]]; then
-        exit 0
+        if ! (( drop_custom_name && default_branch )); then
+            exit 0
+        fi
     fi
 
     local new_label=$branch
-    # Keep in sync with claude/hooks/session-title.sh and bin/git-sync
-    if [[ $branch =~ ^(master|main|develop|[0-9]+[.][0-9]+)$ ]]; then
+    if (( default_branch )); then
         new_label=$(herdr tab list --workspace "$(jq -r .workspace_id <<< "$tab")" \
             | jq -r --arg tab_id "$tab_id" '.result.tabs | map(.tab_id) | index($tab_id) + 1')
     fi
