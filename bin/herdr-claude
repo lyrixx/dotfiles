@@ -43,14 +43,13 @@ function main {
     label=$(repository_name "$directory")
     workspace=$(herdr workspace list | jq -r --arg label "$label" 'first(.result.workspaces[] | select(.label == $label) | .workspace_id) // empty')
 
+    # No label for the tab: the status line of Claude names it after the session
     if [[ -n $workspace ]]; then
-        created=$(herdr tab create --workspace "$workspace" --cwd "$directory" --label "$name" --no-focus)
-        tab=$(jq -r .result.tab.tab_id <<< "$created")
+        created=$(herdr tab create --workspace "$workspace" --cwd "$directory" --no-focus)
     else
         created=$(herdr workspace create --cwd "$directory" --label "$label" --no-focus)
-        tab=$(jq -r .result.tab.tab_id <<< "$created")
-        herdr tab rename "$tab" "$name" > /dev/null
     fi
+    tab=$(jq -r .result.tab.tab_id <<< "$created")
 
     # Before starting Claude: in a directory it doesn't trust yet, it asks me first
     if (( focus )); then

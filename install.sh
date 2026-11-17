@@ -153,6 +153,8 @@ function setup_herdr {
     ln -sf $DOTFILES/herdr/config.toml ~/.config/herdr/config.toml
     # Printed by help_herd, of .bash_aliases
     ln -sf $DOTFILES/herdr/cheatsheet.txt ~/.config/herdr/cheatsheet.txt
+    # Linked again, it stays as it is
+    mise exec -- herdr plugin link $DOTFILES/herdr/plugins/tab-follow-session > /dev/null
 }
 
 function setup_php {

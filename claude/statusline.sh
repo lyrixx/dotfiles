@@ -5,10 +5,19 @@
 # usage limits. Reads the JSON Claude Code writes on stdin
 # (https://code.claude.com/docs/en/statusline). The limits are only there for a
 # subscription, after the first API response.
+#
+# It also names the Herdr tab after the session: no hook runs on /rename, and
+# only the status line gets the name of a session that has no custom one, the
+# title Claude Code generates.
 
 set -euo pipefail
 
 input=$(cat)
+
+# Before the transcripts: a newer update cancels this run. Its output would end
+# up in the status line
+~/.local/bin/herdr-tab-follow-session "$(jq -r '.session_name // empty' <<<"$input")" > /dev/null \
+    || echo 'Could not name the Herdr tab after the session.' >&2
 
 # Claude Code gives no token totals for the session: sum them from the
 # transcripts, the session's and its subagents'. An API response spans one line

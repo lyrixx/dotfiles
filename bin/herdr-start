@@ -12,11 +12,10 @@ function main {
         exit 1
     fi
 
-    # The repository in ~/dev/github.com, then the labels of its tabs. In a
-    # "claude" tab, claude is typed at the prompt but not run: it takes no
-    # memory until Enter.
-    workspace jolicode/redirection.io claude shell
-    workspace jolicode/orpi claude shell
+    # The repositories in ~/dev/github.com, each with one tab. The status line of
+    # Claude names a tab after its session
+    workspace jolicode/redirection.io
+    workspace jolicode/orpi
     workspace lyrixx/symfony
     workspace jolicode/castor
     workspace jolicode/docker-starter
@@ -35,7 +34,6 @@ function main {
 
 function workspace {
     local repository=$1
-    shift
     local directory=$HOME/dev/github.com/$repository
     local label=${repository#*/}
 
@@ -49,33 +47,8 @@ function workspace {
         return
     fi
 
-    local created workspace_id
-    created=$(herdr workspace create --label "$label" --cwd "$directory" --no-focus)
-    workspace_id=$(jq -r .result.workspace.workspace_id <<< "$created")
-
-    local tab first=1
-    for tab in "$@"; do
-        # The workspace comes with its first tab
-        if (( first )); then
-            herdr tab rename "$(jq -r .result.tab.tab_id <<< "$created")" "$tab" > /dev/null
-            first=0
-        else
-            created=$(herdr tab create --workspace "$workspace_id" --label "$tab" --cwd "$directory" --no-focus)
-        fi
-        if [[ $tab == claude ]]; then
-            type_claude "$(jq -r .result.root_pane.pane_id <<< "$created")"
-        fi
-    done
+    herdr workspace create --label "$label" --cwd "$directory" --no-focus > /dev/null
     echo 'created.'
-}
-
-function type_claude {
-    local pane=$1
-
-    # The prompt of .bashrc starts with ">". Typed before it, the text would be
-    # echoed once more above it.
-    herdr pane wait-output "$pane" --match '>' --timeout 10000 > /dev/null
-    herdr pane send-text "$pane" claude > /dev/null
 }
 
 main

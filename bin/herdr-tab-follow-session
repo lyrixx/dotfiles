@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Names a Herdr tab after a Claude session. The Claude status line runs it with
+# the name of the session, the Herdr plugin tab-follow-session without, once
+# Claude has left the tab.
+#
+#   herdr-tab-follow-session [--tab <tab id>] [<session name>]
+#
+# By default, the tab of the current pane. Without a name, the tab gets its
+# position back, the label Herdr gives a tab without a custom name: `herdr tab
+# rename` can't clear a label.
+
+set -euo pipefail
+
+function main {
+    local tab_id=
+    if [[ ${1:-} == --tab ]]; then
+        tab_id=$2
+        shift 2
+    fi
+    local session_name=${1:-}
+
+    if [[ ${HERDR_ENV:-} != 1 ]]; then
+        exit 0
+    fi
+
+    if [[ -z $tab_id ]]; then
+        # Through the pane: HERDR_TAB_ID is stale once the pane has been moved
+        tab_id=$(herdr pane current --current | jq -r .result.pane.tab_id)
+    fi
+    local tab
+    tab=$(herdr tab get "$tab_id" | jq -c .result.tab)
+
+    local label=$session_name
+    if [[ -z $label ]]; then
+        label=$(herdr tab list --workspace "$(jq -r .workspace_id <<< "$tab")" \
+            | jq -r --arg tab_id "$tab_id" '.result.tabs | map(.tab_id) | index($tab_id) + 1')
+    fi
+    # The status line runs it after each response: Herdr is called only for a
+    # new name
+    if [[ $label == "$(jq -r .label <<< "$tab")" ]]; then
+        exit 0
+    fi
+
+    herdr tab rename "$tab_id" "$label" > /dev/null
+}
+
+main "$@"

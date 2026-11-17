@@ -1,0 +1,11 @@
+id = "lyrixx.tab-follow-session"
+name = "Tab follows the Claude session"
+version = "1.0.0"
+# Tested with it: pane.agent_detected and its "released"
+min_herdr_version = "0.9.5"
+description = "Gives a tab its position back once Claude has left it, after /exit as after a crash"
+platforms = ["linux"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["./agent-released.sh"]
