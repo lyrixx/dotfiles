@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+# Brings the current branch up to date, then removes the worktrees and the
+# branches that are done: merged into a default branch (master, main, develop
+# or a version like 8.2), a branch without a commit of its own too, or whose
+# upstream is gone (a squashed PR).
+#
+#   git sync                    fetch, rebase, then both cleanups
+#   git sync --clean-worktrees  git wtc: only the worktrees, with their branch
+#   git sync --clean-branches   git brc: only the branches without a worktree
+#
+# A worktree created less than an hour ago stays: a Claude session may have just
+# started in it, without a file written yet. git worktree remove refuses a
+# worktree with modified or untracked files, or a locked one: it stays and the
+# cleanup goes on. Ignored files (vendor/, .env.local) go with the worktree.
+
+set -euo pipefail
+
+# Keep in sync with claude/hooks/session-title.sh, bin/herdr-tab-follow-branch
+# and gh-extensions/gh-work/gh-work
+default_branches='^(master|main|develop|[0-9]+[.][0-9]+)$'
+min_worktree_age_in_minutes=60
+
+function main {
+    case ${1:-} in
+        '')
+            git fetch --prune
+            git rebase
+            clean_worktrees
+            clean_branches
+            git branch -v
+            ;;
+        --clean-branches)
+            clean_branches
+            ;;
+        --clean-worktrees)
+            clean_worktrees
+            ;;
+        *)
+            echo "usage: git sync [--clean-branches | --clean-worktrees]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+function clean_worktrees {
+    local main_worktree branch worktree
+    main_worktree=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+
+    while IFS=$'\t' read -r branch worktree; do
+        if [[ -z $worktree || $worktree == "$main_worktree" ]]; then
+            continue
+        fi
+        if is_recent "$worktree"; then
+            echo "git sync: $worktree kept, created less than $min_worktree_age_in_minutes minutes ago." >&2
+        elif git worktree remove "$worktree"; then
+            # -D: the branch of a squashed PR isn't merged
+            git branch -D "$branch" || true
+        fi
+    done < <(done_branches)
+}
+
+function clean_branches {
+    local branch worktree
+
+    while IFS=$'\t' read -r branch worktree; do
+        if [[ -z $worktree ]]; then
+            git branch -D "$branch" || true
+        fi
+    done < <(done_branches)
+}
+
+# Branch, then the worktree it's checked out in, if any. Never the current
+# branch nor a default one
+function done_branches {
+    awk -F'\t' -v default_branches="$default_branches" '
+        FILENAME == ARGV[1] { merged[$1]; next }
+        $1 != "*" && $2 !~ default_branches && ($2 in merged || $3 == "[gone]") { print $2 "\t" $4 }
+    ' \
+        <(merged_branches) \
+        <(git branch --format='%(HEAD)%09%(refname:short)%09%(upstream:track)%09%(worktreepath)')
+}
+
+function merged_branches {
+    local branch
+
+    git branch --format='%(refname:short)' | while read -r branch; do
+        if [[ $branch =~ $default_branches ]]; then
+            git branch --merged="$branch" --format='%(refname:short)'
+        fi
+    done
+}
+
+# The .git file of a worktree is written by git worktree add, and only rewritten
+# by git worktree move or repair
+function is_recent {
+    local worktree=$1
+
+    [[ -e $worktree/.git && -n $(find "$worktree/.git" -maxdepth 0 -mmin "-$min_worktree_age_in_minutes") ]]
+}
+
+main "$@"

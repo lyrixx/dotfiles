@@ -64,8 +64,9 @@ function link_bin {
     title 'Link the commands of bin/ the Mac uses'
     mkdir -p ~/.local/bin
 
-    # git new, of .gitconfig
+    # git new and git sync, of .gitconfig
     ln -sf $DOTFILES/bin/git-new ~/.local/bin/
+    ln -sf $DOTFILES/bin/git-sync ~/.local/bin/
 }
 
 function install_packages {

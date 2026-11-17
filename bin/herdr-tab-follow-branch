@@ -34,9 +34,8 @@ function main {
     fi
 
     local new_label=$branch
-    # Keep in sync with claude/hooks/session-title.sh, and with the branches
-    # brc, brcc, wtc and wtcc spare, in .gitconfig
-    if [[ $branch =~ ^(master|main|develop)$ ]]; then
+    # Keep in sync with claude/hooks/session-title.sh and bin/git-sync
+    if [[ $branch =~ ^(master|main|develop|[0-9]+[.][0-9]+)$ ]]; then
         new_label=$(herdr tab list --workspace "$(jq -r .workspace_id <<< "$tab")" \
             | jq -r --arg tab_id "$tab_id" '.result.tabs | map(.tab_id) | index($tab_id) + 1')
     fi

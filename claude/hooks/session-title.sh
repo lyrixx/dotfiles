@@ -9,9 +9,8 @@ set -euo pipefail
 cwd=$(jq -r '.cwd')
 
 branch=$(git -C "$cwd" symbolic-ref --quiet --short HEAD 2>/dev/null) || exit 0
-# Keep in sync with bin/herdr-tab-follow-branch, and with the branches brc,
-# brcc, wtc and wtcc spare, in .gitconfig
-if [[ $branch =~ ^(master|main|develop)$ ]]; then
+# Keep in sync with bin/herdr-tab-follow-branch and bin/git-sync
+if [[ $branch =~ ^(master|main|develop|[0-9]+[.][0-9]+)$ ]]; then
     exit 0
 fi
 

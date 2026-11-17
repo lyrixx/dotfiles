@@ -8,11 +8,8 @@
     co              = checkout
     br              = branch -v
     bra             = branch -v -a
-    brc             = ! git branch --merged=HEAD --format='%(HEAD)%09%(worktreepath)%09%(refname:short)' | awk -F'\\t' '$1 != \"*\" && $2 == \"\" && $3 !~ /^(master|main|develop)$/ { print $3 }' | xargs --no-run-if-empty git branch -d
-    brcc            = ! git branch --format='%(HEAD)%09%(worktreepath)%09%(upstream:track)%09%(refname:short)' | awk -F'\\t' '$1 != \"*\" && $2 == \"\" && $3 == \"[gone]\" && $4 !~ /^(master|main|develop)$/ { print $4 }' | xargs --no-run-if-empty git branch -D
-    wtc             = ! git branch --merged=HEAD --format='%(HEAD)%09%(worktreepath)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $3 }' | tr '\\n' '\\0' | xargs -0 --no-run-if-empty -n2 sh -c 'git worktree remove \"$1\" && git branch -d \"$2\"' _
-    wtcc            = ! git branch --format='%(HEAD)%09%(worktreepath)%09%(upstream:track)%09%(refname:short)' | awk -F'\\t' -v mainwt=\"$(git worktree list --porcelain | sed -n '1s/^worktree //p')\" '$1 != \"*\" && $2 != \"\" && $2 != mainwt && $3 == \"[gone]\" && $4 !~ /^(master|main|develop)$/ { print $2 \"\\n\" $4 }' | tr '\\n' '\\0' | xargs -0 --no-run-if-empty -n2 sh -c 'git worktree remove --force --force \"$1\" && git branch -D \"$2\"' _
-    sync            = ! git fetch --prune && git rebase && git wtc && git brc && git br
+    brc             = ! git-sync --clean-branches
+    wtc             = ! git-sync --clean-worktrees
     lg              = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit
     lga             = log --graph --pretty=tformat:'%Cred%h%Creset -%C(cyan)%d %Creset%s %Cgreen(%an %cr)%Creset' --abbrev-commit --all
     di              = diff -M

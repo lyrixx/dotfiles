@@ -2427,8 +2427,8 @@ final readonly class Workspace
     private const array CHECKOUT_OVERRIDES = ['symfony/symfony' => 'lyrixx/symfony'];
     private const string CHECKOUTS_DIRECTORY = '/dev/github.com';
     private const string CLAUDE_PROJECTS_DIRECTORY = '/.claude/projects';
-    // Keep in sync with the branches brc, brcc, wtc and wtcc spare, in .gitconfig
-    private const string DEFAULT_BRANCHES = '{^(master|main|develop)$}';
+    // Keep in sync with bin/git-sync
+    private const string DEFAULT_BRANCHES = '{^(master|main|develop|[0-9]+[.][0-9]+)$}';
     private const string DEVELOPMENT_DIRECTORY = '/dev';
     // Older, an unpushed branch or a stash is an archive, not work I forgot
     private const int MAX_AGE_IN_DAYS = 60;
