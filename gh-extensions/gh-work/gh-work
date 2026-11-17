@@ -673,13 +673,13 @@ final class Dashboard
             try {
                 if ($this->inPopup) {
                     // No waiting behind the popup: Claude may ask me to trust the directory
-                    $this->herdr->startClaudeWithoutWaiting($entry->agentName, $location);
+                    $this->herdr->startClaudeWithoutWaiting($entry->agentName, $entry->sessionName, $location);
                     $this->tui->stop();
 
                     return;
                 }
 
-                $this->herdr->startClaude($entry->agentName, $location);
+                $this->herdr->startClaude($entry->agentName, $entry->sessionName, $location);
                 $this->loadAgents();
             } catch (ProcessFailedException|ProcessTimedOutException) {
                 $this->notice = 'Claude n\'a pas démarré : regarde son onglet dans Herdr';
@@ -1588,6 +1588,7 @@ final readonly class Entry
         public string $agentName,
         public string $title,
         public int $ageInDays,
+        public ?string $sessionName = null,
         public ?string $updatedAt = null,
         public ?string $repository = null,
         public ?string $branch = null,
@@ -1639,6 +1640,7 @@ final readonly class Entry
             icon: $icon,
             reference: "{$node['repository']['nameWithOwner']}#{$node['number']}" . ($node['isDraft'] ? ' (draft)' : ''),
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            sessionName: self::sessionName($node),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
             updatedAt: $node['updatedAt'],
@@ -1666,6 +1668,7 @@ final readonly class Entry
             icon: Icon::ReviewRequested,
             reference: "{$node['repository']['nameWithOwner']}#{$node['number']}",
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            sessionName: self::sessionName($node),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
             updatedAt: $node['updatedAt'],
@@ -1803,6 +1806,7 @@ final readonly class Entry
             icon: $icon,
             reference: "{$node['repository']['nameWithOwner']}#{$node['number']}",
             agentName: self::agentName($node['repository']['nameWithOwner'], (string) $node['number']),
+            sessionName: self::sessionName($node),
             title: StringUtils::stripControlBytes($node['title']),
             ageInDays: daysSince($node['updatedAt']),
             updatedAt: $node['updatedAt'],
@@ -1871,6 +1875,17 @@ final readonly class Entry
         $suffix = substr($slug($suffix), 0, 16);
 
         return substr('' === $name ? 'repository' : $name, 0, 31 - \strlen($suffix)) . "-{$suffix}";
+    }
+
+    /**
+     * The name of a new Claude session, shown by its tab in the Herdr workspace
+     * of the repository: the agent name would repeat the repository.
+     *
+     * @param array<string, mixed> $node
+     */
+    private static function sessionName(array $node): string
+    {
+        return "#{$node['number']} " . StringUtils::stripControlBytes($node['title']);
     }
 
     /**
@@ -2761,22 +2776,28 @@ final readonly class Herdr
         output(['herdr', 'tab', 'focus', $agent->tabId]);
     }
 
-    public function startClaude(string $agentName, Location $location): void
+    public function startClaude(string $agentName, ?string $sessionName, Location $location): void
     {
-        output(['herdr-claude', $agentName, $location->directory, ...self::claudeArguments($location)]);
+        output(['herdr-claude', $agentName, $location->directory, ...self::claudeArguments($sessionName, $location)]);
     }
 
-    public function startClaudeWithoutWaiting(string $agentName, Location $location): void
+    public function startClaudeWithoutWaiting(string $agentName, ?string $sessionName, Location $location): void
     {
-        output(['herdr-claude', '--no-wait', $agentName, $location->directory, ...self::claudeArguments($location)]);
+        output(['herdr-claude', '--no-wait', $agentName, $location->directory, ...self::claudeArguments($sessionName, $location)]);
     }
 
     /**
+     * A resumed session keeps its name: I may have renamed it.
+     *
      * @return list<string>
      */
-    private static function claudeArguments(Location $location): array
+    private static function claudeArguments(?string $sessionName, Location $location): array
     {
-        return null === $location->sessionId ? [] : ['--', '--resume', $location->sessionId];
+        return match (true) {
+            null !== $location->sessionId => ['--', '--resume', $location->sessionId],
+            null !== $sessionName => ['--', '--name', $sessionName],
+            default => [],
+        };
     }
 }
 
