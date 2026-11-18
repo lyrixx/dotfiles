@@ -1612,8 +1612,8 @@ final readonly class Entry
      */
     public static function fromPullRequest(array $node): self
     {
-        $rollup = $node['commits']['nodes'][0]['commit']['statusCheckRollup'] ?? null;
-        $ci = $rollup['state'] ?? 'NONE';
+        $commit = $node['commits']['nodes'][0]['commit'];
+        $ci = $commit['ci']['state'] ?? 'NONE';
         $reviews = $node['latestOpinionatedReviews']['nodes'];
         $reviewStates = array_column($reviews, 'state');
         $conflicting = 'CONFLICTING' === $node['mergeable'];
@@ -1625,7 +1625,7 @@ final readonly class Entry
         $blockers = array_keys(array_filter([
             'CI rouge' => $ciFailed,
             'conflit' => $conflicting,
-            'changements demandés' => $changesRequested,
+            'changements demandés' => $changesRequested && !self::awaitsReReview($node),
         ]));
 
         [$section, $status, $icon] = match (true) {
@@ -1648,7 +1648,7 @@ final readonly class Entry
             branch: $node['headRefName'],
             url: $node['url'],
             isDraft: $node['isDraft'],
-            failedChecks: FailedCheck::fromRollup($rollup),
+            failedChecks: FailedCheck::fromRollup($commit['statusCheckRollup']),
             reviews: array_map(self::renderReview(...), $reviews),
             additions: $node['additions'],
             deletions: $node['deletions'],
@@ -1895,9 +1895,26 @@ final readonly class Entry
     {
         return implode(', ', array_filter([
             $node['isDraft'] ? 'draft' : null,
+            self::awaitsReReview($node) ? 're-review' : null,
             ['EXPECTED' => 'CI en cours', 'NONE' => 'pas de CI', 'PENDING' => 'CI en cours', 'SUCCESS' => 'CI verte'][$ci] ?? null,
             'UNKNOWN' === $node['mergeable'] ? 'conflit ?' : null,
         ]));
+    }
+
+    /**
+     * Changes asked, then a push and no thread left open: GitHub still says
+     * "changes requested", but the reviewer has to look again.
+     *
+     * @param array<string, mixed> $node
+     */
+    private static function awaitsReReview(array $node): bool
+    {
+        $changeRequests = array_filter($node['latestOpinionatedReviews']['nodes'], static fn (array $review) => 'CHANGES_REQUESTED' === $review['state']);
+        $unresolvedThreads = array_filter($node['reviewThreads']['nodes'], static fn (array $thread) => !$thread['isResolved']);
+
+        return [] !== $changeRequests
+            && [] === $unresolvedThreads
+            && [] === array_filter($changeRequests, static fn (array $review) => ($review['commit']['oid'] ?? null) === $node['headRefOid']);
     }
 
     /**
@@ -1941,19 +1958,44 @@ final readonly class FailedCheck
      */
     public static function fromRollup(?array $rollup): array
     {
-        $failedChecks = [];
+        $latestCheckRuns = [];
+        $failedStatuses = [];
         foreach ($rollup['contexts']['nodes'] ?? [] as $check) {
-            if ('CheckRun' === $check['__typename'] && \in_array($check['conclusion'], self::FAILED_CONCLUSIONS, true)) {
-                preg_match('{/actions/runs/(\d+)}', (string) $check['detailsUrl'], $matches);
-                $failedChecks[] = new self(StringUtils::stripControlBytes($check['name']), $matches[1] ?? null);
+            if ('CheckRun' === $check['__typename']) {
+                // An event (edited, labeled…) runs a workflow again on the same
+                // commit: only the last run of a check says where it stands
+                $workflowRun = $check['checkSuite']['workflowRun'] ?? null;
+                $key = implode("\0", [$workflowRun['workflow']['name'] ?? '', $workflowRun['event'] ?? '', $check['name']]);
+                if (!isset($latestCheckRuns[$key]) || self::startedLater($check, $latestCheckRuns[$key])) {
+                    $latestCheckRuns[$key] = $check;
+                }
             }
 
             if ('StatusContext' === $check['__typename'] && \in_array($check['state'], self::FAILED_STATES, true)) {
-                $failedChecks[] = new self(StringUtils::stripControlBytes($check['context']), null);
+                $failedStatuses[] = new self(StringUtils::stripControlBytes($check['context']), null);
             }
         }
 
-        return $failedChecks;
+        $failedCheckRuns = [];
+        foreach ($latestCheckRuns as $check) {
+            if (\in_array($check['conclusion'], self::FAILED_CONCLUSIONS, true)) {
+                preg_match('{/actions/runs/(\d+)}', (string) $check['detailsUrl'], $matches);
+                $failedCheckRuns[] = new self(StringUtils::stripControlBytes($check['name']), $matches[1] ?? null);
+            }
+        }
+
+        return [...$failedCheckRuns, ...$failedStatuses];
+    }
+
+    /**
+     * A queued run has no start yet: it is the newest.
+     *
+     * @param array<string, mixed> $checkRun
+     * @param array<string, mixed> $than
+     */
+    private static function startedLater(array $checkRun, array $than): bool
+    {
+        return null === $checkRun['startedAt'] || (null !== $than['startedAt'] && $checkRun['startedAt'] > $than['startedAt']);
     }
 }
 
@@ -2177,7 +2219,7 @@ final readonly class Agent
 final readonly class GitHub
 {
     // The version follows the shape of the query: an older file can't be read
-    private const string CACHE_FILE = '/.cache/gh-work/snapshot-v2.json';
+    private const string CACHE_FILE = '/.cache/gh-work/snapshot-v3.json';
     // "merged" only asks for the repositories of Workspace::CHECKOUT_OVERRIDES: a
     // branch of a fork survives its merge, so git can't tell it from a live one.
     private const int MERGEABLE_ATTEMPTS = 3;
@@ -2200,19 +2242,24 @@ final readonly class GitHub
           mine: search(query: "is:pr is:open author:@me archived:false", type: ISSUE, first: 100) {
             nodes {
               ... on PullRequest {
-                number title url isDraft mergeable updatedAt headRefName additions deletions changedFiles
+                number title url isDraft mergeable updatedAt headRefName headRefOid additions deletions changedFiles
                 repository { nameWithOwner }
-                latestOpinionatedReviews(first: 20) { nodes { state author { login } } }
+                latestOpinionatedReviews(first: 20) { nodes { state author { login } commit { oid } } }
                 reviewThreads(first: 50) { nodes { isResolved } }
                 commits(last: 1) {
                   nodes {
                     commit {
+                      # Asked alongside the contexts, the state counts a run cancelled
+                      # by a newer one as a failure: on its own, it doesn't
+                      ci: statusCheckRollup { state }
                       statusCheckRollup {
-                        state
-                        contexts(first: 50) {
+                        contexts(first: 100) {
                           nodes {
                             __typename
-                            ... on CheckRun { name conclusion detailsUrl }
+                            ... on CheckRun {
+                              name conclusion detailsUrl startedAt
+                              checkSuite { workflowRun { event workflow { name } } }
+                            }
                             ... on StatusContext { context state }
                           }
                         }
