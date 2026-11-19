@@ -4,16 +4,13 @@ Règles de collaboration, valables partout. Les règles techniques sont dans `ru
 
 - `code.md` : écriture de code, tous langages ;
 - `docs.md` : documentation et ADR ;
+- `tooling.md` : Git (worktrees, remote), fichiers temporaires, tâches Castor et CLI ;
 - `php.md` / `front.md` : spécifiques au langage.
 
 ## Git
 
 Ne jamais créer de commit ni pousser vers un remote sans que je le demande explicitement. Attendre
 toujours une instruction explicite (« commite », « pousse », etc.).
-
-Pour un nouveau dépôt GitHub, configurer `origin` en SSH (`git@github.com:lyrixx/<repo>.git`), même
-si un dépôt voisin est en HTTPS : en HTTPS, le push passe par le token `gh`, qui n'a pas le scope
-`workflow`, et GitHub refuse tout fichier sous `.github/workflows/`.
 
 ## Publication
 
@@ -88,22 +85,5 @@ Ce qui marche : un « Hello, » puis de la prose à la première personne, des p
 faits précis (noms, chiffres), les ratés dits sans détour (« Tout n'a pas marché du premier
 coup. ») et une fin sobre (« Je vous montre ça quand vous voulez. »). Le skill `writing:unslop`
 aide à retirer les tics d'IA d'un brouillon.
-
-## Fichiers : ne jamais utiliser `/tmp`
-
-Ne jamais écrire dans `/tmp`, y compris dans le « scratchpad » de session proposé par
-l'environnement (il est sous `/tmp`) : ça ne survit pas à un reboot. Valable pour tous les projets
-et toutes les sessions. Mon `$HOME` est utilisable à la place.
-
-- Fichiers de travail intermédiaires (copies, requêtes, scripts jetables…) : dans `~/.claude/tmp/`.
-- Fichiers produits pour moi (exports, comptes rendus, scripts réutilisables…) : dans le
-  `.claude/tmp/` du projet courant, ou dans `$HOME` s'il n'y a pas de projet adapté.
-- Ces fichiers ne sont pas à commiter (sauf demande explicite).
-
-## Conventions d'outillage
-
-- Les tâches du projet (build, test, deploy, release, sync) vont dans castor.php sous forme de tâches Castor avec namespace, jamais dans des scripts bin/ ad hoc.
-- Les tâches doivent marcher sur un clone vierge : vérifier que vendor/ et les sorties de build existent, et les construire s'ils manquent.
-- Les CLI interactives (wrangler, gh, etc.) se lancent avec leurs options non interactives.
 
 @RTK.md

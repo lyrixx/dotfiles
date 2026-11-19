@@ -27,8 +27,9 @@ Lancer ce skill vaut demande explicite de piloter herdr, pour cette fois. Ne cha
 
 3. **Vérifier que le dossier est libre.** `herdr agent list` : si un agent est `working` dans ce dossier,
    une deuxième session y écrirait en même temps. Demande-moi : même dossier, ou worktree
-   (`herdr worktree create --cwd <dossier> --branch <nom> --label <nom> --no-focus`, qui donne aussi le
-   pane de l'étape 5, dans `.result.root_pane.pane_id`).
+   (`herdr worktree create --cwd <dossier> --branch <nom> --path <dossier>/.claude/worktrees/<nom> --label <nom> --no-focus`,
+   qui donne aussi le pane de l'étape 5, dans `.result.root_pane.pane_id`). Sans `--path`, herdr le
+   met sous `~/.herdr/worktrees`, hors du projet.
 
 4. **Écrire le brief** dans `~/.claude/tmp/spawn-<nom>.md`. La nouvelle session ne sait rien de cette
    conversation.

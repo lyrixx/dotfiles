@@ -28,6 +28,7 @@ function main {
     fetch rules/docs.md
     fetch rules/front.md
     fetch rules/php.md
+    fetch rules/tooling.md
     chmod +x ~/.claude/hooks/block-claude-attribution.sh
 
     # Only what makes sense away from this laptop: no herdr hook, no status
