@@ -1,0 +1,266 @@
+#!/usr/bin/env bash
+
+# Removes a linked worktree with the Docker stack Castor started for it: a
+# worktree that's done leaves no container nor volume behind. Its branch stays,
+# git sync, /land and /clean delete it, each after its own check.
+#
+#   git worktree-drop [--dry-run] [--ignore-own-session] <path>
+#
+# Refuses, before touching anything, a worktree still in use or holding work:
+# locked (Claude locks the worktrees it creates), opened by a Herdr agent, with
+# modified or untracked files, or holding the current directory.
+#
+# --ignore-own-session: the lock of a process calling this command and the
+# Herdr agent of the caller's pane don't count. For a Claude session removing
+# the worktree it has just left, never for git sync: a session would remove
+# the worktree it still works in.
+#
+# The stack goes only if it's the worktree's own: named after the worktree, as
+# the worktree support of Castor projects does, and without container outside
+# of it. A stack shared with another checkout stays, and the worktree with it: a
+# destroy would empty the volumes of that checkout. An own stack goes through
+# the worktree:delete task of castor-php/docker when the project has it, which
+# removes the worktree too, otherwise through castor destroy --force.
+#
+# Exit codes:
+#   0   removed (--dry-run: removable, the plan is printed)
+#   1   unexpected failure
+#   10  not a linked worktree
+#   11  the current directory is inside the worktree (not checked by --dry-run)
+#   12  in use: locked, or a Herdr agent is in it
+#   13  modified or untracked files
+#   14  a Castor stack that isn't the worktree's own
+
+set -euo pipefail
+
+function main {
+    local dry_run=0 ignore_own_session=0
+    while [[ ${1:-} == --* ]]; do
+        case $1 in
+            --dry-run) dry_run=1 ;;
+            --ignore-own-session) ignore_own_session=1 ;;
+            *) break ;;
+        esac
+        shift
+    done
+    if [[ $# -ne 1 ]]; then
+        echo 'usage: git worktree-drop [--dry-run] [--ignore-own-session] <path>' >&2
+        exit 1
+    fi
+
+    local worktree main_worktree entry
+    worktree=$(cd "$1" 2>/dev/null && pwd -P) || die 10 "$1 is not a directory."
+    main_worktree=$(git -C "$worktree" worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p') || true
+    main_worktree=$(cd "$main_worktree" 2>/dev/null && pwd -P) || die 10 "$worktree is not in a git repository."
+    entry=$(worktree_entry "$main_worktree" "$worktree")
+    if [[ $worktree == "$main_worktree" || -z $entry ]]; then
+        die 10 "$worktree is not a linked worktree."
+    fi
+
+    if [[ $dry_run == 0 && $(pwd -P)/ == "$worktree"/* ]]; then
+        die 11 "The current directory is inside $worktree: run it from another checkout."
+    fi
+
+    local own_lock=0
+    if grep -q '^locked' <<<"$entry"; then
+        check_lock "$worktree" "$(sed -n 's/^locked *//p' <<<"$entry")" "$ignore_own_session"
+        own_lock=1
+    fi
+
+    local agents self_pane=''
+    if [[ $ignore_own_session == 1 ]]; then
+        self_pane=${HERDR_PANE_ID:-}
+    fi
+    agents=$(herdr_agents_in "$worktree" "$self_pane")
+    if [[ -n $agents ]]; then
+        die 12 "A Herdr agent is in $worktree: $agents."
+    fi
+
+    if [[ -n $(git -C "$worktree" status --porcelain) ]]; then
+        git -C "$worktree" status --short >&2
+        die 13 "$worktree has modified or untracked files."
+    fi
+
+    local stack teardown=none
+    stack=$(castor_stack "$worktree")
+    if [[ -n $stack ]]; then
+        if ! is_own_stack "$stack" "$worktree"; then
+            die 14 "The stack $stack of $worktree isn't its own: it stays, and the worktree too."
+        fi
+        if castor_has_task "$main_worktree" worktree:delete; then
+            teardown=worktree-delete
+        else
+            teardown=destroy
+        fi
+    fi
+
+    if [[ $dry_run == 1 ]]; then
+        [[ $own_lock == 0 ]] || echo "would unlock $worktree, locked by this session"
+        case $teardown in
+            worktree-delete) echo "would destroy the stack $stack and remove $worktree (castor worktree:delete)" ;;
+            destroy) echo "would destroy the stack $stack (castor destroy), then remove $worktree" ;;
+            none) echo "would remove $worktree, without a Castor stack" ;;
+        esac
+        exit 0
+    fi
+
+    if [[ $own_lock == 1 ]]; then
+        run git -C "$main_worktree" worktree unlock "$worktree"
+    fi
+
+    case $teardown in
+        worktree-delete)
+            (cd "$main_worktree" && run castor worktree:delete "$(castor_worktree_slug "$worktree" "$main_worktree")" --force)
+            # It reports a refusal without failing
+            if [[ -n $(worktree_entry "$main_worktree" "$worktree") ]]; then
+                die 1 "castor worktree:delete left $worktree in place."
+            fi
+            ;;
+        destroy)
+            (cd "$worktree" && run castor destroy --force)
+            run git -C "$main_worktree" worktree remove "$worktree"
+            ;;
+        none)
+            run git -C "$main_worktree" worktree remove "$worktree"
+            ;;
+    esac
+}
+
+# The paragraph of the worktree in git worktree list --porcelain, empty when
+# it's not one. Paths are compared once resolved: git keeps them as given.
+function worktree_entry {
+    local main_worktree=$1 worktree=$2 line paragraph='' path
+
+    while IFS= read -r line || [[ -n $paragraph ]]; do
+        if [[ -n $line ]]; then
+            paragraph+=$line$'\n'
+            continue
+        fi
+        path=$(sed -n '1s/^worktree //p' <<<"$paragraph")
+        if [[ -n $path && $(cd "$path" 2>/dev/null && pwd -P) == "$worktree" ]]; then
+            printf '%s' "$paragraph"
+            return
+        fi
+        paragraph=''
+    done < <(git -C "$main_worktree" worktree list --porcelain)
+}
+
+# A lock held by a process that is an ancestor of this one is the caller's:
+# Claude calling this command for the worktree its session created
+function check_lock {
+    local worktree=$1 reason=$2 ignore_own_session=$3 pid
+    pid=$(sed -n 's/.*(pid \([0-9]\{1,\}\).*/\1/p' <<<"$reason")
+
+    if [[ $ignore_own_session == 1 && -n $pid ]] && is_ancestor "$pid"; then
+        return
+    fi
+    if [[ -n $pid ]] && ! kill -0 "$pid" 2>/dev/null; then
+        die 12 "$worktree is locked by a process that is gone ($reason): git worktree unlock it once checked."
+    fi
+
+    die 12 "$worktree is locked: ${reason:-no reason given}."
+}
+
+function is_ancestor {
+    local pid=$$
+
+    while [[ $pid -gt 1 ]]; do
+        if [[ $pid == "$1" ]]; then
+            return 0
+        fi
+        pid=$(ps -o ppid= -p "$pid" | tr -d ' ')
+    done
+
+    return 1
+}
+
+# Herdr agents whose foreground directory is in the worktree, but the one of
+# the pane given
+function herdr_agents_in {
+    local worktree=$1 self_pane=$2 agents
+
+    command -v herdr >/dev/null || return 0
+    if ! agents=$(herdr agent list 2>/dev/null); then
+        # Outside of Herdr, no server is a normal answer
+        if [[ ${HERDR_ENV:-} == 1 ]]; then
+            echo "git worktree-drop: herdr agent list failed, the Herdr agents of $worktree are not checked." >&2
+        fi
+        return 0
+    fi
+
+    jq -r --arg worktree "$worktree" --arg self "$self_pane" '
+        [.result.agents[]
+            | select(.pane_id != $self)
+            | select((.foreground_cwd // "") as $cwd | $cwd == $worktree or ($cwd | startswith($worktree + "/")))
+            | .name // .terminal_title_stripped // .pane_id]
+        | join(", ")
+    ' <<<"$agents"
+}
+
+# The compose project started from the worktree, if it's a Castor project
+function castor_stack {
+    local worktree=$1 stacks
+
+    [[ -f $worktree/castor.php || -d $worktree/.castor ]] || return 0
+    command -v docker >/dev/null || return 0
+    stacks=$(docker compose ls --all --format json) || die 1 "docker compose ls failed: the stack of $worktree can't be checked."
+
+    jq -r --arg worktree "$worktree/" '
+        [.[] | select((.ConfigFiles | split(",")[0]) | startswith($worktree)) | .Name] | join(" ")
+    ' <<<"$stacks"
+}
+
+# Named after the worktree, as both the castor-php/docker plugin
+# (<project>-<slug>) and the older starter (<project>-wt-<name>) do, and
+# without container started from elsewhere. Both are needed: a project that
+# doesn't isolate its worktrees keeps its name ("app"), and the containers of
+# the last checkout that started it.
+function is_own_stack {
+    local stack=$1 worktree=$2 name working_dir
+
+    [[ $stack != *' '* ]] || return 1
+    name=$(basename "$worktree" | tr '[:upper:]' '[:lower:]')
+    [[ $stack == *-"$name" || $stack == *-"$(slugify "$name")" ]] || return 1
+
+    while IFS= read -r working_dir; do
+        [[ $working_dir/ == "$worktree"/* ]] || return 1
+    done < <(docker ps --all --filter "label=com.docker.compose.project=$stack" --format '{{.Label "com.docker.compose.project.working_dir"}}')
+}
+
+function castor_has_task {
+    local directory=$1 task=$2 tasks
+
+    [[ -f $directory/castor.php || -d $directory/.castor ]] || return 1
+    # Captured first: with pipefail, grep -q stopping early fails the pipe
+    tasks=$(cd "$directory" && castor list --raw 2>/dev/null) || return 1
+    grep -q "^$task " <<<"$tasks"
+}
+
+# Keep in sync with worktree_slug() of castor-php/docker, src/worktree.php
+function castor_worktree_slug {
+    local worktree=$1 main_worktree=$2 name
+    name=$(basename "$worktree")
+    if [[ $name == "$(basename "$main_worktree")" ]]; then
+        name=$(basename "$(dirname "$worktree")")
+    fi
+
+    slugify "$name"
+}
+
+function slugify {
+    tr '[:upper:]' '[:lower:]' <<<"$1" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//'
+}
+
+function run {
+    echo "+ $*" >&2
+    "$@"
+}
+
+function die {
+    local code=$1
+    shift
+    echo "git worktree-drop: $*" >&2
+    exit "$code"
+}
+
+main "$@"

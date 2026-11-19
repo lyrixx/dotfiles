@@ -10,9 +10,10 @@
 #   git sync --clean-branches   git brc: only the branches without a worktree
 #
 # A worktree created less than an hour ago stays: a Claude session may have just
-# started in it, without a file written yet. git worktree remove refuses a
-# worktree with modified or untracked files, or a locked one: it stays and the
-# cleanup goes on. Ignored files (vendor/, .env.local) go with the worktree.
+# started in it, without a file written yet. git worktree-drop removes the
+# others with their Castor stack, and refuses one with modified or untracked
+# files, a locked one, or one a Herdr agent is in: it stays and the cleanup goes
+# on. Ignored files (vendor/, .env.local) go with the worktree.
 
 set -euo pipefail
 
@@ -52,7 +53,7 @@ function clean_worktrees {
         fi
         if is_recent "$worktree"; then
             echo "git sync: $worktree kept, created less than $min_worktree_age_in_minutes minutes ago." >&2
-        elif git worktree remove "$worktree"; then
+        elif git-worktree-drop "$worktree"; then
             # -D: the branch of a squashed PR isn't merged
             git branch -D "$branch" || true
         fi
