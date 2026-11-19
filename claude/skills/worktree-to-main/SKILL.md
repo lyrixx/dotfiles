@@ -55,9 +55,10 @@ Nom de branche demandé : `$ARGUMENTS`
 
 6. **Proposer la suppression du worktree.** Seulement après accord explicite :
    - regarde d'abord si le projet documente un nettoyage propre aux worktrees (CLAUDE.md,
-     AGENTS.md : conteneurs, volumes, ports…) et propose-le ;
-   - `git worktree remove <chemin>` depuis le worktree principal, sans `--force` : un refus
-     signale un reste de travail, à montrer à l'utilisateur ;
+     AGENTS.md : conteneurs, volumes, ports…) que la stack Castor ne couvre pas, et propose-le ;
+   - `git worktree-drop --ignore-own-session <chemin>` depuis le worktree principal : il détruit
+     la stack Castor du worktree quand elle est à lui, puis le supprime. Un refus signale un reste
+     de travail, une autre session ou une stack partagée, à montrer à l'utilisateur ;
    - si une nouvelle branche a été créée, l'ancienne branche du worktree pointe sur le même
      commit : propose `git branch --delete <ancienne>`.
 

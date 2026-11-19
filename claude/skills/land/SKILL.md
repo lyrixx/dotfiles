@@ -39,9 +39,12 @@ PR visée : $ARGUMENTS (à défaut, celle de la branche courante)
 
    - Compare `git rev-parse <branche>` à `headRefOid`. S'ils diffèrent, des commits locaux ne sont
      pas dans la PR : arrête-toi et demande.
-   - Worktree de la branche (`git worktree list`) : s'il a des modifications, arrête-toi et demande.
-     Sinon, si la session tourne dedans et qu'elle l'a créé, appelle `ExitWorktree` avec
-     `action: "remove"`. Sinon, sors-en et lance `git worktree remove <chemin>`, sans `--force`.
+   - Worktree de la branche (`git worktree list`) : si la session tourne dedans, `ExitWorktree`
+     avec `action: "keep"` (`"remove"` laisserait sa stack Castor derrière). Si elle n'en sort pas
+     (lancée directement dedans), ne le supprime pas sous ses pieds : donne-moi la commande à la
+     fin. Puis, depuis le worktree principal, `git worktree-drop --ignore-own-session <chemin>` :
+     il détruit la stack Castor du worktree quand elle est à lui, puis le supprime. Code non nul
+     (modifications, autre session, stack partagée…) : relaie son message et arrête-toi.
    - Branche locale : `git branch -D <branche>`, le `-d` refuse une branche squashée. La comparaison
      des SHA ci-dessus vaut vérification.
    - Branche distante : seulement si `delete_branch_on_merge` est faux et que `isCrossRepository`
