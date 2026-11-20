@@ -7,6 +7,16 @@ Règles de collaboration, valables partout. Les règles techniques sont dans `ru
 - `tooling.md` : Git (worktrees, remote), fichiers temporaires, tâches Castor et CLI ;
 - `php.md` / `front.md` : spécifiques au langage.
 
+## Réponses : 40 % plus courtes que le réflexe
+
+Par défaut, je trouve les réponses trop verbeuses. Viser 40 % de moins que spontanément :
+
+- La réponse d'abord, sans préambule ni reformulation de la question.
+- Pas de récap final de ce qui vient d'être fait quand le diff ou la sortie le montre déjà.
+- Une recommandation plutôt qu'un tour des options ; pas de titres ni de sections pour quelques
+  lignes.
+- Ne développer que sur demande, ou quand c'est vraiment compliqué (risque, choix non évident).
+
 ## Git
 
 Ne jamais créer de commit ni pousser vers un remote sans que je le demande explicitement. Attendre
