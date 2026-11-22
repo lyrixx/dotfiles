@@ -36,7 +36,7 @@ why.
 
 ## 2. Check before writing
 
-Download files to `~/.claude/tmp/`, and delete them at the end.
+Download files to `.claude/tmp/` at the root of this repository, and delete them at the end.
 
 - **apt repository:**
   - The key URL comes from the vendor's official documentation. Download the key and the

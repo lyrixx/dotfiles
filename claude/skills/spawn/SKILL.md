@@ -31,7 +31,7 @@ Lancer ce skill vaut demande explicite de piloter herdr, pour cette fois. Ne cha
    qui donne aussi le pane de l'étape 5, dans `.result.root_pane.pane_id`). Sans `--path`, herdr le
    met sous `~/.herdr/worktrees`, hors du projet.
 
-4. **Écrire le brief** dans `~/.claude/tmp/spawn-<nom>.md`. La nouvelle session ne sait rien de cette
+4. **Écrire le brief** dans `.claude/tmp/spawn-<nom>.md` du projet courant. La nouvelle session ne sait rien de cette
    conversation.
 
    - Pars de ma demande. Si elle se suffit, envoie-la telle quelle.
@@ -53,7 +53,7 @@ Lancer ce skill vaut demande explicite de piloter herdr, pour cette fois. Ne cha
 6. **Envoyer le brief.**
 
    ```bash
-   herdr agent prompt <nom> "$(cat ~/.claude/tmp/spawn-<nom>.md)" --wait --until working --until blocked --timeout 30000
+   herdr agent prompt <nom> "$(cat .claude/tmp/spawn-<nom>.md)" --wait --until working --until blocked --timeout 30000
    ```
 
    `agent_not_ready` ou `blocked` : lis `herdr agent read <nom> --source recent-unwrapped --lines 30`.

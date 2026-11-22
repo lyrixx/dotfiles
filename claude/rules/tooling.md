@@ -14,12 +14,14 @@ si un dépôt voisin est en HTTPS : en HTTPS, le push passe par le token `gh`, q
 
 Ne jamais écrire dans `/tmp`, y compris dans le « scratchpad » de session proposé par
 l'environnement (il est sous `/tmp`) : ça ne survit pas à un reboot. Valable pour tous les projets
-et toutes les sessions. Mon `$HOME` est utilisable à la place.
+et toutes les sessions.
 
-- Fichiers de travail intermédiaires (copies, requêtes, scripts jetables…) : dans `~/.claude/tmp/`.
-- Fichiers produits pour moi (exports, comptes rendus, scripts réutilisables…) : dans le
-  `.claude/tmp/` du projet courant, ou dans `$HOME` s'il n'y a pas de projet adapté.
-- Ces fichiers ne sont pas à commiter (sauf demande explicite).
+- Tout fichier hors du code, intermédiaire ou produit pour moi (copies, requêtes, scripts jetables,
+  exports, comptes rendus…), va dans le `.claude/tmp/` du projet courant, à la racine du dépôt.
+  Jamais dans `~/.claude/tmp/` quand la session tourne dans un projet.
+- `~/.claude/tmp/` seulement quand la session ne tourne dans aucun projet.
+- Ces fichiers ne sont pas à commiter (sauf demande explicite) : `.claude/tmp` est dans l'exclude
+  global de Git.
 
 ## Tâches et CLI
 
