@@ -76,8 +76,9 @@ function install_packages {
 
 function setup_claude_code {
     title 'Setup Claude Code'
-    mkdir -p ~/.claude/skills
+    mkdir -p ~/.claude/skills ~/.local/share/bash-completion/completions
 
+    ln -sf $DOTFILES/claude/completion.bash ~/.local/share/bash-completion/completions/claude
     ln -sf $DOTFILES/claude/CLAUDE.md     ~/.claude/CLAUDE.md
     ln -sfn $DOTFILES/claude/hooks        ~/.claude/hooks
     ln -sfn $DOTFILES/claude/rules        ~/.claude/rules
