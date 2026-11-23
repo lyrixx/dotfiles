@@ -22,7 +22,7 @@ function main {
     workspace lyrixx/nativella
     workspace jolicode/qotd
     workspace jolicode/monologue
-    workspace lyrixx/homeassistant-ai-helper
+    workspace lyrixx/homelab
     workspace lyrixx/laptop-ai-helper
     workspace lyrixx/phone-ai-helper
     workspace lyrixx/life-style
