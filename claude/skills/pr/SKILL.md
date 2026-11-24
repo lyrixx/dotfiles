@@ -1,5 +1,5 @@
 ---
-name: ship
+name: pr
 description: Commite le travail en cours, le pousse, ouvre une PR en draft et surveille la CI jusqu'au résultat.
 argument-hint: "[précision pour le commit ou la PR]"
 disable-model-invocation: true

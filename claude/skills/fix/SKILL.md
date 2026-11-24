@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Lancer ce skill vaut demande explicite de travailler dans un worktree, pour cette fois, même dans un
 dépôt où la règle est de ne pas en créer. Il ne couvre ni commit, ni push, ni PR, ni commentaire sur
-l'issue : la livraison passe par `/ship`.
+l'issue : la livraison passe par `/pr`.
 
 Demande : $ARGUMENTS
 
@@ -49,4 +49,4 @@ Sans issue, demande-la-moi.
    que demandent l'issue et mon indication.
 
 6. **Rendre compte.** Le chemin du worktree, la branche, la cause, ce qui a changé et le résultat
-   des tests. Rappelle que `/ship` livre et que `/land` nettoiera le worktree.
+   des tests. Rappelle que `/pr` livre et que `/land` nettoiera le worktree.
